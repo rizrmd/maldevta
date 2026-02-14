@@ -18,6 +18,7 @@ type Querier interface {
 	GetSession(ctx context.Context, tokenHash string) (GetSessionRow, error)
 	GetSubclientByDomain(ctx context.Context, domain string) (GetSubclientByDomainRow, error)
 	GetSubclientByID(ctx context.Context, id string) (string, error)
+	GetSubclientFullByID(ctx context.Context, id string) (GetSubclientFullByIDRow, error)
 	GetSubclientUser(ctx context.Context, arg GetSubclientUserParams) (GetSubclientUserRow, error)
 	GetTenantByDomain(ctx context.Context, domain string) (string, error)
 	GetTenantByID(ctx context.Context, id string) (string, error)

@@ -150,6 +150,25 @@ func (q *Queries) GetSubclientByID(ctx context.Context, id string) (string, erro
 	return domain, err
 }
 
+const getSubclientFullByID = `-- name: GetSubclientFullByID :one
+SELECT subclients.id, subclients.project_id, (SELECT tenant_id FROM projects WHERE id = subclients.project_id) as tenant_id
+FROM subclients
+WHERE subclients.id = ?
+`
+
+type GetSubclientFullByIDRow struct {
+	ID        string `json:"id"`
+	ProjectID string `json:"project_id"`
+	TenantID  string `json:"tenant_id"`
+}
+
+func (q *Queries) GetSubclientFullByID(ctx context.Context, id string) (GetSubclientFullByIDRow, error) {
+	row := q.db.QueryRowContext(ctx, getSubclientFullByID, id)
+	var i GetSubclientFullByIDRow
+	err := row.Scan(&i.ID, &i.ProjectID, &i.TenantID)
+	return i, err
+}
+
 const getSubclientUser = `-- name: GetSubclientUser :one
 SELECT id, role, password_hash
 FROM users

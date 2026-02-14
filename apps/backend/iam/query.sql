@@ -94,3 +94,8 @@ SELECT domain FROM tenants WHERE id = ?;
 
 -- name: GetSubclientByID :one
 SELECT domain FROM subclients WHERE id = ?;
+
+-- name: GetSubclientFullByID :one
+SELECT subclients.id, subclients.project_id, (SELECT tenant_id FROM projects WHERE id = subclients.project_id) as tenant_id
+FROM subclients
+WHERE subclients.id = ?;

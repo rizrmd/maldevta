@@ -26,13 +26,23 @@ import (
 
 // SQLite database setup - runs migrations on startup
 func setupSQLite(ctx context.Context) (*sql.DB, error) {
+	// Get data directory from environment variable
+	dataDir := os.Getenv("DATA_DIR")
+	if dataDir == "" {
+		// Default: store in root directory of the binary
+		exePath, err := os.Executable()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get executable path: %w", err)
+		}
+		dataDir = filepath.Join(filepath.Dir(exePath), "data")
+	}
+
 	// Create data directory if it doesn't exist
-	dataDir := "./data"
 	if err := os.MkdirAll(dataDir, 0755); err != nil {
 		return nil, fmt.Errorf("failed to create data directory: %w", err)
 	}
 
-	dbPath := dataDir + "/iam.db"
+	dbPath := filepath.Join(dataDir, "iam.db")
 	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %w", err)
@@ -280,6 +290,11 @@ func Install(ctx context.Context, p *installParams) (*authResponse, error) {
 		return nil, err
 	}
 
+	// Initialize tenant directory structure
+	if err := os.MkdirAll(getTenantPath(tenantID), 0755); err != nil && !os.IsExist(err) {
+		return nil, fmt.Errorf("failed to initialize tenant directory: %w", err)
+	}
+
 	err = q().InsertUser(ctx, iamdb.InsertUserParams{
 		ID:           userID,
 		TenantID:     sql.NullString{String: tenantID, Valid: true},
@@ -431,6 +446,11 @@ func CreateProject(ctx context.Context, p *createProjectParams) (*projectRespons
 		return nil, err
 	}
 
+	// Initialize project directory structure
+	if err := ensureProjectDirs(data.TenantID, projectID); err != nil {
+		return nil, fmt.Errorf("failed to initialize project directories: %w", err)
+	}
+
 	return &projectResponse{
 		ID:               projectID,
 		TenantID:         data.TenantID,
@@ -534,6 +554,11 @@ func CreateSubclient(ctx context.Context, p *createSubclientParams) (*subclientR
 	)
 	if err != nil {
 		return nil, err
+	}
+
+	// Initialize subclient directory structure
+	if err := ensureSubclientDirs(data.TenantID, p.ProjectID, subclientID); err != nil {
+		return nil, fmt.Errorf("failed to initialize subclient directories: %w", err)
 	}
 
 	return &subclientResponse{
