@@ -5,7 +5,14 @@
         ".base-commit",
         ".gitignore",
         "Makefile",
-        "apps/.gitignore"
+        "apps/.gitignore",
+        "apps/frontend/node_modules",
+        "apps/frontend/.dockerignore",
+        "apps/frontend/.gitignore",
+        "apps/frontend/biome.json",
+        "apps/frontend/bun.lock",
+        "apps/frontend/eslint.config.js",
+        "apps/frontend/README.md"
     ],
     "files.exclude": {
         "**/.git": true,
@@ -18,6 +25,13 @@
         ".base-commit": true,
         ".gitignore": true,
         "Makefile": true,
-        "apps/.gitignore": true
+        "apps/.gitignore": true,
+        "apps/frontend/node_modules": true,
+        "apps/frontend/.dockerignore": true,
+        "apps/frontend/.gitignore": true,
+        "apps/frontend/biome.json": true,
+        "apps/frontend/bun.lock": true,
+        "apps/frontend/eslint.config.js": true,
+        "apps/frontend/README.md": true
     }
 }
