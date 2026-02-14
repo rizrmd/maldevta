@@ -1,0 +1,23 @@
+{
+    "hide-files.files": [
+        ".claude",
+        ".vscode",
+        ".base-commit",
+        ".gitignore",
+        "Makefile",
+        "apps/.gitignore"
+    ],
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/.DS_Store": true,
+        "**/Thumbs.db": true,
+        ".claude": true,
+        ".vscode": true,
+        ".base-commit": true,
+        ".gitignore": true,
+        "Makefile": true,
+        "apps/.gitignore": true
+    }
+}
