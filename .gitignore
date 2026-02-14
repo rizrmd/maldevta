@@ -48,3 +48,6 @@ logs/
 
 # Base template migrations
 .base-migrations/
+
+data
+apps/data
