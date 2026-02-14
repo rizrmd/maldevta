@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -49,6 +48,10 @@ func getProjectChatsPath(tenantID, projectID string) string {
 	return filepath.Join(getProjectPath(tenantID, projectID), "chats")
 }
 
+func getProjectWAMetaPath(tenantID, projectID string) string {
+	return filepath.Join(getProjectPath(tenantID, projectID), "wa_meta")
+}
+
 func getConversationPath(tenantID, projectID, conversationID string) string {
 	return filepath.Join(getProjectChatsPath(tenantID, projectID), conversationID)
 }
@@ -75,6 +78,7 @@ func ensureProjectDirs(tenantID, projectID string) error {
 		getProjectPath(tenantID, projectID),
 		getProjectFilesPath(tenantID, projectID),
 		getProjectChatsPath(tenantID, projectID),
+		getProjectWAMetaPath(tenantID, projectID),
 	}
 
 	for _, p := range paths {
@@ -234,7 +238,7 @@ func generateMsgID() string {
 // Helper to check project ownership
 func canAccessProject(ctx context.Context, tenantID, projectID string) bool {
 	raw := auth.Data()
-	data, ok := raw.(*authData)
+	data, ok := raw.(*AuthData)
 	if !ok || data == nil {
 		return false
 	}
@@ -251,7 +255,7 @@ func canAccessProject(ctx context.Context, tenantID, projectID string) bool {
 // Helper to check subclient ownership
 func canAccessSubclient(ctx context.Context, tenantID, projectID, subclientID string) bool {
 	raw := auth.Data()
-	data, ok := raw.(*authData)
+	data, ok := raw.(*AuthData)
 	if !ok || data == nil {
 		return false
 	}
@@ -277,7 +281,7 @@ func CreateProjectConversation(ctx context.Context, projectID string, req *Creat
 	}
 
 	raw := auth.Data()
-	data, ok := raw.(*authData)
+	data, ok := raw.(*AuthData)
 	if !ok || data == nil || data.ScopeType != scopeTenant {
 		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "tenant session required"}
 	}
@@ -324,7 +328,7 @@ func AddProjectMessage(ctx context.Context, projectID, conversationID string, re
 	}
 
 	raw := auth.Data()
-	data, ok := raw.(*authData)
+	data, ok := raw.(*AuthData)
 	if !ok || data == nil || data.ScopeType != scopeTenant {
 		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "tenant session required"}
 	}
@@ -366,7 +370,7 @@ func AddProjectMessage(ctx context.Context, projectID, conversationID string, re
 //encore:api auth method=GET path=/projects/:projectID/conversations/:conversationID
 func GetProjectConversation(ctx context.Context, projectID, conversationID string) (*GetConversationResponse, error) {
 	raw := auth.Data()
-	data, ok := raw.(*authData)
+	data, ok := raw.(*AuthData)
 	if !ok || data == nil || data.ScopeType != scopeTenant {
 		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "tenant session required"}
 	}
@@ -400,7 +404,7 @@ func GetProjectConversation(ctx context.Context, projectID, conversationID strin
 //encore:api auth method=GET path=/projects/:projectID/conversations
 func ListProjectConversations(ctx context.Context, projectID string) (*ListConversationsResponse, error) {
 	raw := auth.Data()
-	data, ok := raw.(*authData)
+	data, ok := raw.(*AuthData)
 	if !ok || data == nil || data.ScopeType != scopeTenant {
 		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "tenant session required"}
 	}
@@ -465,7 +469,7 @@ func ListProjectConversations(ctx context.Context, projectID string) (*ListConve
 //encore:api auth method=GET path=/projects/:projectID/context
 func GetProjectContext(ctx context.Context, projectID string) (*ContextResponse, error) {
 	raw := auth.Data()
-	data, ok := raw.(*authData)
+	data, ok := raw.(*AuthData)
 	if !ok || data == nil || data.ScopeType != scopeTenant {
 		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "tenant session required"}
 	}
@@ -500,7 +504,7 @@ func UpdateProjectContext(ctx context.Context, projectID string, req *UpdateCont
 	}
 
 	raw := auth.Data()
-	data, ok := raw.(*authData)
+	data, ok := raw.(*AuthData)
 	if !ok || data == nil || data.ScopeType != scopeTenant {
 		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "tenant session required"}
 	}
@@ -533,7 +537,7 @@ func CreateSubclientConversation(ctx context.Context, subclientID string, req *C
 	}
 
 	raw := auth.Data()
-	data, ok := raw.(*authData)
+	data, ok := raw.(*AuthData)
 	if !ok || data == nil {
 		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "authentication required"}
 	}
@@ -593,7 +597,7 @@ func AddSubclientMessage(ctx context.Context, subclientID, conversationID string
 	}
 
 	raw := auth.Data()
-	data, ok := raw.(*authData)
+	data, ok := raw.(*AuthData)
 	if !ok || data == nil {
 		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "authentication required"}
 	}
@@ -632,7 +636,7 @@ func AddSubclientMessage(ctx context.Context, subclientID, conversationID string
 //encore:api auth method=GET path=/subclients/:subclientID/conversations/:conversationID
 func GetSubclientConversation(ctx context.Context, subclientID, conversationID string) (*GetConversationResponse, error) {
 	raw := auth.Data()
-	data, ok := raw.(*authData)
+	data, ok := raw.(*AuthData)
 	if !ok || data == nil {
 		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "authentication required"}
 	}
@@ -663,7 +667,7 @@ func GetSubclientConversation(ctx context.Context, subclientID, conversationID s
 //encore:api auth method=GET path=/subclients/:subclientID/conversations
 func ListSubclientConversations(ctx context.Context, subclientID string) (*ListConversationsResponse, error) {
 	raw := auth.Data()
-	data, ok := raw.(*authData)
+	data, ok := raw.(*AuthData)
 	if !ok || data == nil {
 		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "authentication required"}
 	}

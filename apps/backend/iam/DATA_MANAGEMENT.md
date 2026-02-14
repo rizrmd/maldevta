@@ -12,8 +12,10 @@ data/
         {project-id}/
           context.md          # Project documentation
           files/              # Project-level files
-          chats/
+          chats/              # Conversation history
             {conversation-id}.json
+          wa_meta/            # WhatsApp session data
+            whatsmeow.db      # Device session database
       subs/
         {sub-client-id}/
           files/              # Subclient-level files

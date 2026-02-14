@@ -90,7 +90,8 @@ const (
 	scopeSubclient scopeType = "subclient"
 )
 
-type authData struct {
+// AuthData contains the authenticated user's session information
+type AuthData struct {
 	UserID      string
 	Role        role
 	TenantID    string
@@ -115,7 +116,7 @@ type licenseVerifyResponse struct {
 }
 
 //encore:authhandler
-func AuthHandler(ctx context.Context, p *authParams) (auth.UID, *authData, error) {
+func AuthHandler(ctx context.Context, p *authParams) (auth.UID, *AuthData, error) {
 	if p == nil || p.SessionCookie == nil || p.SessionCookie.Value == "" {
 		return "", nil, &errs.Error{Code: errs.Unauthenticated, Message: "missing session"}
 	}
@@ -157,7 +158,7 @@ func AuthHandler(ctx context.Context, p *authParams) (auth.UID, *authData, error
 		}
 	}
 
-	data := &authData{
+	data := &AuthData{
 		UserID:      session.UserID,
 		Role:        role(user.Role),
 		TenantID:    toString(user.TenantID),
@@ -393,7 +394,7 @@ func CreateProject(ctx context.Context, p *createProjectParams) (*projectRespons
 	}
 
 	raw := auth.Data()
-	data, _ := raw.(*authData)
+	data, _ := raw.(*AuthData)
 	if data == nil || data.ScopeType != scopeTenant {
 		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "tenant session required"}
 	}
@@ -490,7 +491,7 @@ func CreateSubclient(ctx context.Context, p *createSubclientParams) (*subclientR
 	}
 
 	raw := auth.Data()
-	data, _ := raw.(*authData)
+	data, _ := raw.(*AuthData)
 	if data == nil || data.ScopeType != scopeTenant {
 		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "tenant session required"}
 	}
@@ -634,7 +635,7 @@ func SubclientLogin(ctx context.Context, p *subclientLoginParams) (*authResponse
 //encore:api auth method=GET path=/auth/session
 func SessionStatus(ctx context.Context) (*sessionStatusResponse, error) {
 	raw := auth.Data()
-	data, _ := raw.(*authData)
+	data, _ := raw.(*AuthData)
 	if data == nil {
 		return nil, &errs.Error{Code: errs.Unauthenticated, Message: "not authenticated"}
 	}
@@ -682,7 +683,7 @@ func Logout(ctx context.Context, p *authParams) (*logoutResponse, error) {
 //encore:api auth method=GET path=/projects
 func ListProjects(ctx context.Context) (*listProjectsResponse, error) {
 	raw := auth.Data()
-	data, _ := raw.(*authData)
+	data, _ := raw.(*AuthData)
 	if data == nil || data.ScopeType != scopeTenant {
 		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "tenant session required"}
 	}
@@ -720,7 +721,7 @@ func ListSubclients(ctx context.Context, p *listSubclientsParams) (*listSubclien
 		return nil, badRequest("project_id is required")
 	}
 	raw := auth.Data()
-	data, _ := raw.(*authData)
+	data, _ := raw.(*AuthData)
 	if data == nil || data.ScopeType != scopeTenant {
 		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "tenant session required"}
 	}
@@ -764,14 +765,14 @@ type whatsappProvisionResponse struct {
 
 // ProvisionWhatsappUser creates a user from an incoming WhatsApp chat event.
 //
-//encore:api auth method=POST path=/projects/whatsapp/provision-user
+//encore:api auth method=POST path=/whatsapp/provision-user
 func ProvisionWhatsappUser(ctx context.Context, p *whatsappProvisionParams) (*whatsappProvisionResponse, error) {
 	if p == nil || p.ProjectID == "" || p.PhoneNumber == "" {
 		return nil, badRequest("project_id and phone_number are required")
 	}
 
 	raw := auth.Data()
-	data, _ := raw.(*authData)
+	data, _ := raw.(*AuthData)
 	if data == nil {
 		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "auth required"}
 	}

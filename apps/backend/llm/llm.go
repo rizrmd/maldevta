@@ -60,7 +60,7 @@ func (s *Service) Generate(ctx context.Context, p *GenerateParams) (*GenerateRes
 		return nil, badRequest("prompt is required")
 	}
 	if s.err != nil || s.model == nil {
-		return nil, errs.New(errs.Unavailable, "llm not configured")
+		return nil, &errs.Error{Code: errs.Unavailable, Message: "llm not configured"}
 	}
 	if p.ProjectContext == nil {
 		return nil, badRequest("project_context is required")
@@ -87,7 +87,7 @@ func (s *Service) Generate(ctx context.Context, p *GenerateParams) (*GenerateRes
 		},
 	})
 	if err != nil {
-		return nil, errs.New(errs.Internal, fmt.Sprintf("generate failed: %v", err))
+		return nil, &errs.Error{Code: errs.Internal, Message: fmt.Sprintf("generate failed: %v", err)}
 	}
 
 	content := strings.TrimSpace(resp.Content)
@@ -139,8 +139,8 @@ type ProjectContext struct {
 	// Extensions to apply
 	Extensions []string `json:"extensions"`
 
-	// Additional context
-	Metadata map[string]any `json:"metadata"`
+	// Additional context (string values only)
+	Metadata map[string]string `json:"metadata"`
 }
 
 type GenerateResponse struct {
