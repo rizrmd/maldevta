@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import AppLayout from "@/components/app-layout";
+import SetupLayout from "@/components/setup-layout";
 import { useAuth } from "@/hooks/useAuth";
 import {
   Breadcrumb,
@@ -215,16 +215,8 @@ export default function LicenseSetupPage() {
 
   if (authLoading) {
     return (
-      <AppLayout
-        header={
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbPage>Setup</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-        }
+      <SetupLayout
+
       >
         <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-6">
           <Card className="w-full max-w-md">
@@ -234,21 +226,13 @@ export default function LicenseSetupPage() {
             </CardContent>
           </Card>
         </div>
-      </AppLayout>
+      </SetupLayout>
     );
   }
 
   return (
-    <AppLayout
-      header={
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbPage>Setup</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-      }
+    <SetupLayout
+
     >
       <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-6">
         <Card className="mx-auto w-full max-w-lg border-slate-200 bg-white/80 backdrop-blur">
@@ -444,6 +428,6 @@ export default function LicenseSetupPage() {
           </CardContent>
         </Card>
       </div>
-    </AppLayout>
+    </SetupLayout>
   );
 }

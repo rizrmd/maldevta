@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
+	"crypto/tls"
 	"database/sql"
 	"encoding/hex"
 	"encoding/json"
@@ -18,8 +19,8 @@ import (
 	"encore.dev"
 	"encore.dev/beta/auth"
 	"encore.dev/beta/errs"
-	_ "modernc.org/sqlite"
 	"golang.org/x/crypto/bcrypt"
+	_ "modernc.org/sqlite"
 
 	iamdb "encore.app/backend/iam/db"
 )
@@ -107,12 +108,12 @@ type authParams struct {
 }
 
 type licenseVerifyResponse struct {
-	Valid                 bool   `json:"valid"`
-	TenantName            string `json:"tenant_name"`
-	MaxProjectsPerTenant  int    `json:"max_projects_per_tenant"`
-	WhatsappEnabled       bool   `json:"whatsapp_enabled"`
-	SubclientEnabled      bool   `json:"subclient_enabled"`
-	Error                 string `json:"error"`
+	Valid                bool   `json:"valid"`
+	TenantName           string `json:"tenant_name"`
+	MaxProjectsPerTenant int    `json:"max_projects_per_tenant"`
+	WhatsappEnabled      bool   `json:"whatsapp_enabled"`
+	SubclientEnabled     bool   `json:"subclient_enabled"`
+	Error                string `json:"error"`
 }
 
 //encore:authhandler
@@ -271,12 +272,12 @@ func Install(ctx context.Context, p *installParams) (*authResponse, error) {
 	}
 
 	err = q().InsertLicense(ctx, iamdb.InsertLicenseParams{
-		ID:                 licenseID,
-		LicenseKey:         p.LicenseKey,
+		ID:                   licenseID,
+		LicenseKey:           p.LicenseKey,
 		MaxProjectsPerTenant: int64(verified.MaxProjectsPerTenant),
-		WhatsappEnabled:    whatsappEnabled,
-		SubclientEnabled:   subclientEnabled,
-		TenantName:         tenantName,
+		WhatsappEnabled:      whatsappEnabled,
+		SubclientEnabled:     subclientEnabled,
+		TenantName:           tenantName,
 	})
 	if err != nil {
 		return nil, err
@@ -340,9 +341,9 @@ func VerifyLicense(ctx context.Context, p *verifyLicenseParams) (*licenseVerifyR
 	return &licenseVerifyResult{
 		Valid:                verified.Valid,
 		TenantName:           verified.TenantName,
-		MaxProjectsPerTenant:  verified.MaxProjectsPerTenant,
+		MaxProjectsPerTenant: verified.MaxProjectsPerTenant,
 		WhatsappEnabled:      verified.WhatsappEnabled,
-		SubclientEnabled:      verified.SubclientEnabled,
+		SubclientEnabled:     verified.SubclientEnabled,
 		Error:                verified.Error,
 	}, nil
 }
@@ -352,12 +353,12 @@ type verifyLicenseParams struct {
 }
 
 type licenseVerifyResult struct {
-	Valid               bool   `json:"valid"`
-	TenantName          string `json:"tenant_name,omitempty"`
+	Valid                bool   `json:"valid"`
+	TenantName           string `json:"tenant_name,omitempty"`
 	MaxProjectsPerTenant int    `json:"max_projects_per_tenant,omitempty"`
-	WhatsappEnabled     bool   `json:"whatsapp_enabled,omitempty"`
-	SubclientEnabled    bool   `json:"subclient_enabled,omitempty"`
-	Error               string `json:"error,omitempty"`
+	WhatsappEnabled      bool   `json:"whatsapp_enabled,omitempty"`
+	SubclientEnabled     bool   `json:"subclient_enabled,omitempty"`
+	Error                string `json:"error,omitempty"`
 }
 
 type tenantLoginParams struct {
@@ -409,13 +410,13 @@ type createProjectParams struct {
 }
 
 type projectResponse struct {
-	ID                 string `json:"id"`
-	TenantID           string `json:"tenant_id"`
-	Name               string `json:"name"`
-	WhatsappEnabled    bool   `json:"whatsapp_enabled"`
-	SubclientEnabled   bool   `json:"subclient_enabled"`
-	CreatedByUserID    string `json:"created_by_user_id"`
-	CreatedAt          string `json:"created_at"`
+	ID               string `json:"id"`
+	TenantID         string `json:"tenant_id"`
+	Name             string `json:"name"`
+	WhatsappEnabled  bool   `json:"whatsapp_enabled"`
+	SubclientEnabled bool   `json:"subclient_enabled"`
+	CreatedByUserID  string `json:"created_by_user_id"`
+	CreatedAt        string `json:"created_at"`
 }
 
 type listProjectsResponse struct {
@@ -636,7 +637,7 @@ func SubclientLogin(ctx context.Context, p *subclientLoginParams) (*authResponse
 
 	user, err := q().GetSubclientUser(ctx, iamdb.GetSubclientUserParams{
 		SubclientID: sql.NullString{String: subclient.ID, Valid: true},
-		Username:     p.Username,
+		Username:    p.Username,
 	})
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -790,10 +791,10 @@ func ListSubclients(ctx context.Context, p *listSubclientsParams) (*listSubclien
 }
 
 type whatsappProvisionParams struct {
-	ProjectID    string `json:"project_id"`
-	PhoneNumber  string `json:"phone_number"`
-	AsSubclient  bool   `json:"as_subclient"`
-	SubclientID  string `json:"subclient_id"`
+	ProjectID   string `json:"project_id"`
+	PhoneNumber string `json:"phone_number"`
+	AsSubclient bool   `json:"as_subclient"`
+	SubclientID string `json:"subclient_id"`
 }
 
 type whatsappProvisionResponse struct {
@@ -881,6 +882,37 @@ func getLicense(ctx context.Context) (*license, error) {
 		maxProjects = 1
 	}
 
+	// Dev mode: auto-generate trial license if none exists
+	if encore.Meta().Environment.Type == "development" {
+		count, err := q().CountLicenses(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if count == 0 {
+			// Create dev trial license
+			devLicenseId := newID("lic")
+			devLicenseKey := newID("dev")
+			tenantName := "Dev Trial"
+			err = q().InsertLicense(ctx, iamdb.InsertLicenseParams{
+				ID:                   devLicenseId,
+				LicenseKey:           devLicenseKey,
+				MaxProjectsPerTenant: 999,
+				WhatsappEnabled:      1,
+				SubclientEnabled:     1,
+				TenantName:           tenantName,
+			})
+			if err != nil {
+				return nil, err
+			}
+			// Auto-use dev license
+			return &license{
+				MaxProjectsPerTenant: 999,
+				WhatsappEnabled:      true,
+				SubclientEnabled:     true,
+			}, nil
+		}
+	}
+
 	return &license{
 		MaxProjectsPerTenant: maxProjects,
 		WhatsappEnabled:      row.WhatsappEnabled == 1,
@@ -897,6 +929,20 @@ func isInstalled(ctx context.Context) (bool, error) {
 }
 
 func verifyLicenseWithHub(ctx context.Context, key string) (*licenseVerifyResponse, error) {
+	// Dev Bypass: Use OPENAI_API_KEY from .env as a valid license key in development
+	if encore.Meta().Environment.Type == "development" {
+		devKey := os.Getenv("OPENAI_API_KEY")
+		if devKey != "" && key == devKey {
+			return &licenseVerifyResponse{
+				Valid:                true,
+				TenantName:           "Dev Local (Bypass)",
+				MaxProjectsPerTenant: 999,
+				WhatsappEnabled:      true,
+				SubclientEnabled:     true,
+			}, nil
+		}
+	}
+
 	body, err := json.Marshal(map[string]string{"license_key": key})
 	if err != nil {
 		return nil, err
@@ -908,7 +954,14 @@ func verifyLicenseWithHub(ctx context.Context, key string) (*licenseVerifyRespon
 	}
 	request.Header.Set("Content-Type", "application/json")
 
-	resp, err := http.DefaultClient.Do(request)
+	// Create a custom client. Only skip SSL verification in development.
+	tr := &http.Transport{}
+	if encore.Meta().Environment.Type == "development" {
+		tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	}
+	client := &http.Client{Transport: tr}
+
+	resp, err := client.Do(request)
 	if err != nil {
 		return nil, &errs.Error{Code: errs.Unavailable, Message: "failed contacting license hub"}
 	}
@@ -973,7 +1026,7 @@ func hashPassword(password string) (string, error) {
 func findTenantUser(ctx context.Context, tenantID, username string) (userID, userRole, passwordHash string, err error) {
 	user, err := q().GetTenantUser(ctx, iamdb.GetTenantUserParams{
 		TenantID: sql.NullString{String: tenantID, Valid: true},
-		Username:  username,
+		Username: username,
 	})
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

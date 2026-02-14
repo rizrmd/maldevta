@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import AppLayout from "@/components/app-layout";
+import SetupLayout from "@/components/setup-layout";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -133,7 +133,7 @@ export default function LicenseVerifyPage() {
   };
 
   return (
-    <AppLayout
+    <SetupLayout
       header={
         <Breadcrumb>
           <BreadcrumbList>
@@ -208,6 +208,6 @@ export default function LicenseVerifyPage() {
           </CardContent>
         </Card>
       </div>
-    </AppLayout>
+    </SetupLayout>
   );
 }
