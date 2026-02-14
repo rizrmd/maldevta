@@ -323,6 +323,43 @@ func Install(ctx context.Context, p *installParams) (*authResponse, error) {
 	}, nil
 }
 
+// VerifyLicense verifies a license key without installing it.
+// This endpoint can be called multiple times for validation purposes.
+//
+//encore:api public method=POST path=/auth/verify-license
+func VerifyLicense(ctx context.Context, p *verifyLicenseParams) (*licenseVerifyResult, error) {
+	if p == nil || p.LicenseKey == "" {
+		return nil, badRequest("license_key is required")
+	}
+
+	verified, err := verifyLicenseWithHub(ctx, p.LicenseKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return &licenseVerifyResult{
+		Valid:                verified.Valid,
+		TenantName:           verified.TenantName,
+		MaxProjectsPerTenant:  verified.MaxProjectsPerTenant,
+		WhatsappEnabled:      verified.WhatsappEnabled,
+		SubclientEnabled:      verified.SubclientEnabled,
+		Error:                verified.Error,
+	}, nil
+}
+
+type verifyLicenseParams struct {
+	LicenseKey string `json:"license_key"`
+}
+
+type licenseVerifyResult struct {
+	Valid               bool   `json:"valid"`
+	TenantName          string `json:"tenant_name,omitempty"`
+	MaxProjectsPerTenant int    `json:"max_projects_per_tenant,omitempty"`
+	WhatsappEnabled     bool   `json:"whatsapp_enabled,omitempty"`
+	SubclientEnabled    bool   `json:"subclient_enabled,omitempty"`
+	Error               string `json:"error,omitempty"`
+}
+
 type tenantLoginParams struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
