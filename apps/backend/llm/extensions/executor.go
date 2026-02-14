@@ -11,7 +11,8 @@ import (
 	"time"
 )
 
-// HTTPExecutor communicates with the Bun extension runtime via HTTP.
+// HTTPExecutor communicates with an external extension runtime via HTTP.
+// Note: Use GojaExecutor for in-process execution with better performance.
 type HTTPExecutor struct {
 	client  *http.Client
 	baseURL string

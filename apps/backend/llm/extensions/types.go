@@ -20,7 +20,7 @@ type Extension struct {
 	Config   map[string]any `json:"config"`
 }
 
-// ExecuteRequest is sent to the Bun extension runtime.
+// ExecuteRequest is sent to the extension executor.
 type ExecuteRequest struct {
 	ExtensionID string            `json:"extension_id"`
 	Hook        HookType          `json:"hook"`
@@ -29,7 +29,7 @@ type ExecuteRequest struct {
 	Context     map[string]any    `json:"context"`
 }
 
-// ExecuteResponse is received from the Bun extension runtime.
+// ExecuteResponse is received from the extension executor.
 type ExecuteResponse struct {
 	Output string `json:"output"`
 	Error  string `json:"error"`

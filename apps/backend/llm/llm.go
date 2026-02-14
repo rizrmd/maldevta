@@ -25,7 +25,7 @@ type Service struct {
 func initService() (*Service, error) {
 	ctx := context.Background()
 	model, err := initModel(ctx)
-	executor := extensions.NewHTTPExecutor("")
+	executor := extensions.NewGojaExecutor("")
 	return &Service{model: model, err: err, executor: executor}, nil
 }
 

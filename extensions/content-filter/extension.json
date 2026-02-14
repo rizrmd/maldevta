@@ -1,0 +1,12 @@
+{
+  "id": "content-filter",
+  "version": "1.0.0",
+  "name": "Content Filter",
+  "description": "Validates and filters content for prohibited words",
+  "hooks": ["validate", "pre-generate", "post-generate"],
+  "enabled": true,
+  "config": {
+    "prohibited_words": ["spam", "hack", "exploit"],
+    "max_length": 10000
+  }
+}

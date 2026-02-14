@@ -1,0 +1,9 @@
+{
+  "id": "example-uppercase",
+  "version": "1.0.0",
+  "name": "Uppercase Transformer",
+  "description": "Converts prompts to uppercase before sending to LLM",
+  "hooks": ["pre-generate", "post-generate"],
+  "enabled": true,
+  "config": {}
+}
