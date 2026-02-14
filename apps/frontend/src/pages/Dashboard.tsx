@@ -36,10 +36,15 @@ type ListProjectsResponse = {
   projects: ProjectResponse[];
 };
 
-type QRResponse = {
-  code: string;
-  updated_at: string;
+type StatusResponse = {
   connected: boolean;
+  logged_in: boolean;
+  project_id: string;
+  last_qr: string;
+  last_qr_at: string;
+  llm_ready: boolean;
+  llm_error: string;
+  last_error: string;
 };
 
 async function parseError(response: Response): Promise<ApiError> {
@@ -96,7 +101,6 @@ export default function DashboardPage() {
   const [connected, setConnected] = useState(false);
   const [busy, setBusy] = useState(false);
   const [uiStatus, setUiStatus] = useState("Idle");
-  console.log("uiStatus:", uiStatus);
   const [error, setError] = useState("");
   const [polling, setPolling] = useState(false);
 
@@ -168,7 +172,11 @@ export default function DashboardPage() {
 
     const poll = async () => {
       try {
-        const response = await apiRequest<QRResponse>(
+        const response = await apiRequest<{
+          code: string;
+          updated_at: string;
+          connected: boolean;
+        }>(
           `/projects/${projectID}/wa/qr`,
         );
         if (cancelled) {
@@ -191,7 +199,7 @@ export default function DashboardPage() {
       }
 
       if (!cancelled) {
-        timeoutId = window.setTimeout(poll, 2000);
+        timeoutId = window.setTimeout(poll, 2000) as unknown as number;
       }
     };
 

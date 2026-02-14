@@ -2,22 +2,22 @@
 
 import * as React from "react";
 import {
-  BookOpen,
-  Bot,
-  Command,
-  Frame,
-  LifeBuoy,
-  Map,
-  PieChart,
-  Send,
+  MessageSquare,
+  Folder,
   Settings2,
-  SquareTerminal,
+  LifeBuoy,
+  Send,
+  Clock,
+  Database,
+  Code,
+  Puzzle,
+  type LucideIcon,
 } from "lucide-react";
 
 import { NavMain } from "@/components/nav-main";
-import { NavProjects } from "@/components/nav-projects";
 import { NavSecondary } from "@/components/nav-secondary";
 import { NavUser } from "@/components/nav-user";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Sidebar,
   SidebarContent,
@@ -28,157 +28,172 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 
-const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
-  navMain: [
-    {
-      title: "Playground",
-      url: "#",
-      icon: SquareTerminal,
-      isActive: true,
-      items: [
-        {
-          title: "History",
-          url: "#",
-        },
-        {
-          title: "Starred",
-          url: "#",
-        },
-        {
-          title: "Settings",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Models",
-      url: "#",
-      icon: Bot,
-      items: [
-        {
-          title: "Genesis",
-          url: "#",
-        },
-        {
-          title: "Explorer",
-          url: "#",
-        },
-        {
-          title: "Quantum",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Documentation",
-      url: "#",
-      icon: BookOpen,
-      items: [
-        {
-          title: "Introduction",
-          url: "#",
-        },
-        {
-          title: "Get Started",
-          url: "#",
-        },
-        {
-          title: "Tutorials",
-          url: "#",
-        },
-        {
-          title: "Changelog",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Settings",
-      url: "#",
-      icon: Settings2,
-      items: [
-        {
-          title: "General",
-          url: "#",
-        },
-        {
-          title: "Team",
-          url: "#",
-        },
-        {
-          title: "Billing",
-          url: "#",
-        },
-        {
-          title: "Limits",
-          url: "#",
-        },
-      ],
-    },
-  ],
-  navSecondary: [
+interface MenuItem {
+  title: string;
+  url: string;
+  icon?: LucideIcon;
+  isActive?: boolean;
+  defaultOpen?: boolean;
+  items?: {
+    title: string;
+    url: string;
+  }[];
+}
+
+export function AppSidebar({
+  ...props
+}: React.ComponentProps<typeof Sidebar>) {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
+
+  // ----- Platform menu items -----
+  const platformItems = React.useMemo<MenuItem[]>(() => {
+    const items: MenuItem[] = [
+      {
+        title: "Dashboard",
+        url: "/dashboard",
+        icon: Folder,
+      },
+      {
+        title: "Chats",
+        url: "/chats",
+        icon: MessageSquare,
+      },
+      {
+        title: "History",
+        url: "/history",
+        icon: Clock,
+      },
+    ];
+
+    // Workspace group (admin only)
+    if (isAdmin) {
+      items.push({
+        title: "Workspace",
+        url: "/settings/context",
+        icon: Database,
+        items: [
+          {
+            title: "Context",
+            url: "/settings/context",
+          },
+          {
+            title: "Files",
+            url: "/files",
+          },
+          {
+            title: "Memory",
+            url: "/memory",
+          },
+        ],
+      });
+    }
+
+    return items;
+  }, [isAdmin]);
+
+  // ----- Management menu items (admin only) -----
+  const managementItems = React.useMemo<MenuItem[]>(() => {
+    if (!isAdmin) return [];
+
+    return [
+      {
+        title: "Projects",
+        url: "/projects",
+        icon: Folder,
+      },
+      {
+        title: "Developer",
+        url: "/developer",
+        icon: Code,
+        items: [
+          {
+            title: "API",
+            url: "/developer",
+          },
+          {
+            title: "Extensions",
+            url: "/extensions",
+          },
+        ],
+      },
+      {
+        title: "Settings",
+        url: "/settings",
+        icon: Settings2,
+        items: [
+          {
+            title: "General",
+            url: "/settings/general",
+          },
+          {
+            title: "Projects",
+            url: "/settings/projects",
+          },
+          {
+            title: "Profile",
+            url: "/settings/profile",
+          },
+        ],
+      },
+    ];
+  }, [isAdmin]);
+
+  // ----- Secondary nav items -----
+  const navSecondary = [
     {
       title: "Support",
-      url: "#",
+      url: "/support",
       icon: LifeBuoy,
     },
     {
       title: "Feedback",
-      url: "#",
+      url: "/feedback",
       icon: Send,
     },
-  ],
-  projects: [
-    {
-      name: "Design Engineering",
-      url: "#",
-      icon: Frame,
-    },
-    {
-      name: "Sales & Marketing",
-      url: "#",
-      icon: PieChart,
-    },
-    {
-      name: "Travel",
-      url: "#",
-      icon: Map,
-    },
-  ],
-};
+  ];
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar variant="inset" {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <a href="#">
+              <a href="/dashboard">
                 <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                  <Command className="size-4" />
+                  <Puzzle className="size-4" />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">Acme Inc</span>
-                  <span className="truncate text-xs">Enterprise</span>
+                  <span className="truncate font-medium">MaldevtaHub</span>
+                  <span className="truncate text-xs">Control Panel</span>
                 </div>
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
+
       <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
+        {/* Platform section */}
+        <NavMain label="Platform" items={platformItems} />
+
+        {/* Management section (admin only) */}
+        {managementItems.length > 0 && (
+          <NavMain label="Management" items={managementItems} />
+        )}
+
+        {/* Secondary nav at bottom */}
+        <NavSecondary items={navSecondary} className="mt-auto" />
       </SidebarContent>
+
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser
+          user={{
+            name: user?.userId || "User",
+            email: `${user?.role || "member"}`,
+            avatar: "",
+          }}
+        />
       </SidebarFooter>
     </Sidebar>
   );
