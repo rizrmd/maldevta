@@ -20,7 +20,7 @@ import LicenseVerifyPage from "@/pages/LicenseVerify";
 import LicenseSetupPage from "@/pages/LicenseSetup";
 import NotFoundPage from "@/pages/NotFound";
 
-
+//take out hardcode license true
 function LoadingScreen() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50">
