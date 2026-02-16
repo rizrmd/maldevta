@@ -228,9 +228,7 @@ export default function ChatsPage() {
         </Breadcrumb>
       }
     >
-      <div className="relative min-h-[calc(100vh-4rem)] overflow-hidden rounded-2xl border bg-white p-6">
-
-        <div className="mx-auto flex w-full max-w-6xl gap-6">
+      <div className="mx-auto flex w-full max-w-6xl gap-6">
           {/* Header */}
           <div className="flex w-full flex-wrap items-center justify-between gap-3">
             <div>
@@ -428,7 +426,6 @@ export default function ChatsPage() {
             </div>
           )}
         </div>
-      </div>
     </AppLayout>
   );
 }

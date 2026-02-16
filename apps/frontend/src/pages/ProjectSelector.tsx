@@ -161,9 +161,7 @@ export default function ProjectSelectorPage() {
         </Breadcrumb>
       }
     >
-      <div className="relative min-h-[calc(100vh-4rem)] overflow-hidden rounded-2xl border bg-white p-6">
-
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+      <div className="mx-auto grid max-w-6xl gap-6">
           {/* Header */}
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -226,7 +224,7 @@ export default function ProjectSelectorPage() {
                     onClick={() => openDialog("create-project")}
                     className="mt-4"
                   >
-                    <Plus className="mr-2 h-4 w-4" />
+                    <Plus className="mr-2 h-4 w-4 shrink-0" />
                     Create Project
                   </Button>
                 )}
@@ -252,7 +250,7 @@ export default function ProjectSelectorPage() {
                           {new Date(project.created_at).toLocaleDateString()}
                         </CardDescription>
                       </div>
-                      <ArrowRight className="h-5 w-5 flex-shrink-0 text-slate-400 transition-colors group-hover:text-slate-600" />
+                      <ArrowRight className="h-5 w-5 shrink-0 text-slate-400 transition-colors group-hover:text-slate-600" />
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-3">
@@ -337,7 +335,6 @@ export default function ProjectSelectorPage() {
             </div>
           )}
         </div>
-      </div>
 
       {/* Create Project Dialog */}
       <Dialog

@@ -262,9 +262,7 @@ export default function DashboardPage() {
         </Breadcrumb>
       }
     >
-      <div className="relative min-h-[calc(100vh-4rem)] overflow-hidden rounded-2xl border bg-white p-6">
-
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs uppercase tracking-[0.28em] text-muted-foreground">
@@ -377,7 +375,6 @@ export default function DashboardPage() {
             </Card>
           </div>
         </div>
-      </div>
     </AppLayout>
   );
 }

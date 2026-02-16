@@ -244,8 +244,6 @@ export default function FilesPage() {
         </Breadcrumb>
       }
     >
-      <div className="relative min-h-[calc(100vh-4rem)] overflow-hidden rounded-2xl border bg-white p-6">
-
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
           {/* Header */}
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -402,7 +400,6 @@ export default function FilesPage() {
             </div>
           )}
         </div>
-      </div>
     </AppLayout>
   );
 }

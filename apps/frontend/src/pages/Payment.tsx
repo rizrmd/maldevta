@@ -21,11 +21,6 @@ export default function PaymentPage() {
         </Breadcrumb>
       }
     >
-      <div className="relative min-h-[calc(100vh-4rem)] overflow-hidden rounded-2xl border bg-gradient-to-br from-[#f7f2ea] via-white to-[#e6f7f1] p-6">
-        <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.9),_rgba(255,255,255,0))]" />
-        <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-[#ffd7a8]/60 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-28 left-16 h-72 w-72 rounded-full bg-[#9fe7d4]/70 blur-3xl" />
-
         <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
           {/* Header */}
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -61,7 +56,7 @@ export default function PaymentPage() {
               <div className="grid gap-4 md:grid-cols-2">
                 {/* Payment Methods */}
                 <div className="flex gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
-                  <CreditCard className="h-5 w-5 text-slate-600 flex-shrink-0 mt-0.5" />
+                  <CreditCard className="h-5 w-5 text-slate-600 shrink-0 mt-0.5" />
                   <div>
                     <h3 className="font-medium text-slate-900">Payment Methods</h3>
                     <p className="text-sm text-slate-500">
@@ -72,7 +67,7 @@ export default function PaymentPage() {
 
                 {/* Transaction History */}
                 <div className="flex gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
-                  <Clock className="h-5 w-5 text-slate-600 flex-shrink-0 mt-0.5" />
+                  <Clock className="h-5 w-5 text-slate-600 shrink-0 mt-0.5" />
                   <div>
                     <h3 className="font-medium text-slate-900">Transaction History</h3>
                     <p className="text-sm text-slate-500">
@@ -83,7 +78,7 @@ export default function PaymentPage() {
 
                 {/* Invoice Payments */}
                 <div className="flex gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
-                  <FileText className="h-5 w-5 text-slate-600 flex-shrink-0 mt-0.5" />
+                  <FileText className="h-5 w-5 text-slate-600 shrink-0 mt-0.5" />
                   <div>
                     <h3 className="font-medium text-slate-900">Invoice Payments</h3>
                     <p className="text-sm text-slate-500">
@@ -94,7 +89,7 @@ export default function PaymentPage() {
 
                 {/* Payment Scheduling */}
                 <div className="flex gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
-                  <RefreshCw className="h-5 w-5 text-slate-600 flex-shrink-0 mt-0.5" />
+                  <RefreshCw className="h-5 w-5 text-slate-600 shrink-0 mt-0.5" />
                   <div>
                     <h3 className="font-medium text-slate-900">Payment Scheduling</h3>
                     <p className="text-sm text-slate-500">
@@ -105,7 +100,7 @@ export default function PaymentPage() {
 
                 {/* Refund Requests */}
                 <div className="flex gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
-                  <DollarSign className="h-5 w-5 text-slate-600 flex-shrink-0 mt-0.5" />
+                  <DollarSign className="h-5 w-5 text-slate-600 shrink-0 mt-0.5" />
                   <div>
                     <h3 className="font-medium text-slate-900">Refund Requests</h3>
                     <p className="text-sm text-slate-500">
@@ -116,7 +111,7 @@ export default function PaymentPage() {
 
                 {/* Payment Receipts */}
                 <div className="flex gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
-                  <FileText className="h-5 w-5 text-slate-600 flex-shrink-0 mt-0.5" />
+                  <FileText className="h-5 w-5 text-slate-600 shrink-0 mt-0.5" />
                   <div>
                     <h3 className="font-medium text-slate-900">Payment Receipts</h3>
                     <p className="text-sm text-slate-500">
@@ -128,7 +123,6 @@ export default function PaymentPage() {
             </CardContent>
           </Card>
         </div>
-      </div>
     </AppLayout>
   );
 }

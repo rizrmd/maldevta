@@ -227,11 +227,6 @@ export default function MemoryPage() {
         </Breadcrumb>
       }
     >
-      <div className="relative min-h-[calc(100vh-4rem)] overflow-hidden rounded-2xl border bg-gradient-to-br from-[#f7f2ea] via-white to-[#e6f7f1] p-6">
-        <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.9),_rgba(255,255,255,0))]" />
-        <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-[#ffd7a8]/60 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-28 left-16 h-72 w-72 rounded-full bg-[#9fe7d4]/70 blur-3xl" />
-
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
           {/* Header */}
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -424,7 +419,6 @@ export default function MemoryPage() {
             </div>
           )}
         </div>
-      </div>
     </AppLayout>
   );
 }

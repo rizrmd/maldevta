@@ -63,7 +63,7 @@ function ChatMessage({ message, isGenerating }: { message: Message; isGenerating
   return (
     <div className={clsx("flex gap-3", isUser ? "justify-end" : "justify-start")}>
       {!isUser && (
-        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#ffd7a8] to-[#9fe7d4] text-sm font-semibold text-slate-700">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-[#ffd7a8] to-[#9fe7d4] text-sm font-semibold text-slate-700">
           AI
         </div>
       )}
@@ -77,7 +77,7 @@ function ChatMessage({ message, isGenerating }: { message: Message; isGenerating
         )}
       >
         <div className="prose prose-sm max-w-none">
-          <p className="whitespace-pre-wrap break-words">{message.content}</p>
+          <p className="whitespace-pre-wrap wrap-break-word">{message.content}</p>
         </div>
 
         {isGenerating && !isUser && (
@@ -136,7 +136,7 @@ function ChatMessage({ message, isGenerating }: { message: Message; isGenerating
       </div>
 
       {isUser && (
-        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-slate-200 text-sm font-semibold text-slate-700">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-200 text-sm font-semibold text-slate-700">
           U
         </div>
       )}
@@ -308,6 +308,7 @@ export default function ChatPage() {
 
   return (
     <AppLayout
+      containerClassName=""
       header={
         <Breadcrumb>
           <BreadcrumbList>
@@ -327,8 +328,6 @@ export default function ChatPage() {
         </Breadcrumb>
       }
     >
-      <div className="relative min-h-[calc(100vh-4rem)] overflow-hidden rounded-2xl border bg-white">
-
         <div className="flex h-full">
           {/* Messages area */}
           <div className="flex-1 flex flex-col">
@@ -344,7 +343,7 @@ export default function ChatPage() {
               <div className="mx-auto max-w-3xl space-y-6">
                 {currentConversation?.messages.length === 0 ? (
                   <div className="flex h-[50vh] flex-col items-center justify-center text-center">
-                    <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-[#ffd7a8] to-[#9fe7d4]">
+                    <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-linear-to-br from-[#ffd7a8] to-[#9fe7d4]">
                       <span className="text-2xl">💬</span>
                     </div>
                     <h2 className="text-xl font-semibold text-slate-900">
@@ -437,7 +436,6 @@ export default function ChatPage() {
             </div>
           </div>
         </div>
-      </div>
     </AppLayout>
   );
 }

@@ -6,12 +6,16 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 
+import { cn } from "@/lib/utils";
+
 export default function AppLayout({
   children,
   header,
+  containerClassName,
 }: {
   children?: React.ReactNode;
-  header?: React.ReactNode
+  header?: React.ReactNode;
+  containerClassName?: string;
 }) {
   return (
     <SidebarProvider>
@@ -28,19 +32,26 @@ export default function AppLayout({
           </div>
         </header>
         <div className="flex flex-1 pt-0 overflow-auto relative">
-          <main className="absolute inset-0 px-4 flex flex-col gap-4">
-            {children ? (
-              children
-            ) : (
-              <>
-                <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-                  <div className="bg-muted/50 aspect-video rounded-xl" />
-                  <div className="bg-muted/50 aspect-video rounded-xl" />
-                  <div className="bg-muted/50 aspect-video rounded-xl" />
+          <main className="absolute inset-0 px-4 pb-4 flex flex-col">
+            <div 
+              className={cn(
+                "relative flex-1 rounded-2xl border bg-white overflow-hidden",
+                containerClassName === undefined ? "p-6" : containerClassName
+              )}
+            >
+              {children ? (
+                children
+              ) : (
+                <div className="flex min-h-screen flex-col bg-slate-50/50">
+                  <div className="grid auto-rows-min gap-4 md:grid-cols-3">
+                    <div className="bg-muted/50 aspect-video rounded-xl" />
+                    <div className="bg-muted/50 aspect-video rounded-xl" />
+                    <div className="bg-muted/50 aspect-video rounded-xl" />
+                  </div>
+                  <div className="bg-muted/50 flex-1 rounded-xl md:min-h-min" />
                 </div>
-                <div className="bg-muted/50 min-h-[100vh] flex-1 rounded-xl md:min-h-min" />
-              </>
-            )}
+              )}
+            </div>
           </main>
         </div>
       </SidebarInset>
