@@ -9,11 +9,15 @@ import ProjectsPage from "@/pages/Projects";
 import ChatsPage from "@/pages/Chats";
 import FilesPage from "@/pages/Files";
 import HistoryPage from "@/pages/History";
+import ContextPage from "@/pages/Context";
 import MemoryPage from "@/pages/Memory";
 import ExtensionsPage from "@/pages/Extensions";
 import DeveloperPage from "@/pages/Developer";
+import EmbedRedirectorPage from "@/pages/Embed";
+import { DeveloperAPIPage } from "@/components/pages/developer/developer-api";
+import { EmbedSettings } from "@/components/pages/developer/embed-settings";
 import SettingsPage from "@/pages/Settings";
-
+// import SupportPage from "@/pages/Support"; // TODO: Create SupportPage
 import BillingPage from "@/pages/Billing";
 import PaymentPage from "@/pages/Payment";
 import LicenseVerifyPage from "@/pages/LicenseVerify";
@@ -31,34 +35,6 @@ function LoadingScreen() {
     </div>
   );
 }
-
-// Wrapper to check if license is installed
-// function LicenseCheck({ children }: { children: React.ReactNode }) {
-//   // In development mode with OPENAI_API_KEY, we assume license is "installed"
-//   // In production, this would check /auth/verify-license or similar
-//   // For now, we'll use a simple check - if we can reach the auth endpoints, assume setup is done
-
-//   // TODO: Add proper license check
-//   // const isLicensed = await checkLicenseStatus();
-
-//   // For development, always consider license as installed
-//   // The LicenseSetupPage itself handles the "first time" flow
-//   const isLicensed = true;
-
-//   if (!isLicensed) {
-//     return (
-//       <Switch>
-//         <Route path="/license/setup" component={LicenseSetupPage} />
-//         <Route path="/license/verify" component={LicenseVerifyPage} />
-//         <Route path="/*">
-//           <LicenseSetupPage />
-//         </Route>
-//       </Switch>
-//     );
-//   }
-
-//   return <>{children}</>;
-// }
 
 function LicenseCheck({ children }: { children: React.ReactNode }) {
   const [isInstalled, setIsInstalled] = useState<boolean | null>(null);
@@ -150,15 +126,23 @@ function App() {
             <Route path="/chat/:projectId" component={ChatPage} />
             <Route path="/dashboard" component={DashboardPage} />
             <Route path="/projects" component={ProjectsPage} />
+            <Route path="/projects/:projectId/api" component={DeveloperAPIPage} />
+            <Route path="/projects/:projectId/embed" component={EmbedSettings} />
             <Route path="/chats" component={ChatsPage} />
             <Route path="/files" component={FilesPage} />
             <Route path="/history" component={HistoryPage} />
             <Route path="/settings" component={SettingsPage} />
+            <Route path="/settings/general" component={SettingsPage} />
+            <Route path="/settings/context" component={ContextPage} />
+            <Route path="/settings/projects" component={SettingsPage} />
+            <Route path="/settings/profile" component={SettingsPage} />
             <Route path="/settings/*" component={SettingsPage} />
             <Route path="/memory" component={MemoryPage} />
             <Route path="/extensions" component={ExtensionsPage} />
             <Route path="/developer" component={DeveloperPage} />
-
+            <Route path="/embed" component={EmbedRedirectorPage} />
+            {/* <Route path="/support" component={SupportPage} /> */}
+            {/* <Route path="/feedback" component={SupportPage} /> */}
             <Route path="/billing" component={BillingPage} />
             <Route path="/payment" component={PaymentPage} />
           </Switch>

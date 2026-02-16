@@ -213,9 +213,33 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       ]
     });
 
+    // Settings (collapsible)
+    items.push({
+      title: "Settings",
+      url: "/settings",
+      icon: Settings2,
+      items: [
+        {
+          title: "General",
+          url: "/settings/general",
+        },
+        {
+          title: "Context",
+          url: "/settings/context",
+        },
+        {
+          title: "Projects",
+          url: "/settings/projects",
+        },
+        {
+          title: "Profile",
+          url: "/settings/profile",
+        },
+      ],
+    });
+
     return items;
   }, [isInProjectPage, isAdmin]);
-
 
 
   return (
