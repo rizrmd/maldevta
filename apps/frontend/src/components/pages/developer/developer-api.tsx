@@ -101,6 +101,8 @@ function showToast(message: string, type: "success" | "error" = "success") {
 }
 
 export function DeveloperAPIPage() {
+  const params = useParams<{ projectId: string }>();
+  const projectId = params?.projectId || "";
   const API_BASE_URL = typeof window !== 'undefined' ? window.location.origin : '';
 
   const [context, setContext] = useState("");

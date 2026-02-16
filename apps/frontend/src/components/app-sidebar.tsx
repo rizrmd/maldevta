@@ -12,6 +12,7 @@ import {
   CreditCard,
   DollarSign,
   Building2,
+  Settings2,
 } from "lucide-react"
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
@@ -55,7 +56,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   React.useEffect(() => {
     const pathname = window.location.pathname;
 
-    // Project pages: /chat/:id, /files, /memory, /history, /settings/context, /whatsapp, /extensions, /developer
+    // Project pages: /chat/:id, /files, /memory, /history, /settings/context, /whatsapp, /extensions, /developer, /projects/:id/api, /projects/:id/embed
     // Non-project pages: /, /projects, /dashboard, /chats, /billing, /payment
     const projectPagePatterns = [
       /^\/chat(\/|$)/,
@@ -66,8 +67,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       /^\/whatsapp/,
       /^\/extensions/,
       /^\/developer/,
-      /^\/api/,
-      /^\/embed/,
+      /^\/projects\/([^/]+)\/api/,  // /projects/:projectId/api
+      /^\/projects\/([^/]+)\/embed/, // /projects/:projectId/embed
       /^\/sub-clients/,
     ];
 
@@ -76,9 +77,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
     // Also sync project with Zustand if URL contains project ID
     if (onProjectPage) {
-      const pathMatch = pathname.match(/^\/chat\/([^\/]+)/);
-      if (pathMatch && pathMatch[1]) {
-        const projectId = pathMatch[1];
+      // Check for /chat/:projectId pattern
+      const chatPathMatch = pathname.match(/^\/chat\/([^\/]+)/);
+      // Check for /projects/:projectId/* pattern
+      const projectPathMatch = pathname.match(/^\/projects\/([^\/]+)/);
+
+      const projectId = chatPathMatch?.[1] || projectPathMatch?.[1];
+
+      if (projectId) {
         const project = projects.find(p => p.id === projectId);
         if (project && currentProject?.id !== projectId) {
           useProjectStore.getState().selectProject(projectId);
@@ -202,11 +208,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       items: [
         {
           title: "API",
-          url: "/api",
+          url: currentProject ? `/projects/${currentProject.id}/api` : "/developer",
         },
         {
           title: "Embed",
-          url: "/embed",
+          url: currentProject ? `/projects/${currentProject.id}/embed` : "/embed",
         },
         {
           title: "Extensions",
@@ -241,7 +247,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     });
 
     return items;
-  }, [isInProjectPage, isAdmin]);
+  }, [isInProjectPage, isAdmin, currentProject]);
 
 
   return (

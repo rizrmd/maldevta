@@ -146,7 +146,7 @@ export default function ProjectsPage() {
   };
 
   const openProject = (projectId: string) => {
-    setLocation(`/projects/${projectId}`);
+    setLocation(`/chat/${projectId}`);
   };
 
   return (
