@@ -151,6 +151,7 @@ function App() {
             <Route path="/chat/:projectId" component={ChatPage} />
 
             <Route path="/projects" component={ProjectsPage} />
+            <Route path="/whatsapp" component={ChatsPage} />
             <Route path="/chats" component={ChatsPage} />
             <Route path="/files" component={FilesPage} />
             <Route path="/history" component={HistoryPage} />

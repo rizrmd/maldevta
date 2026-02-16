@@ -228,7 +228,7 @@ export default function ChatsPage() {
         </Breadcrumb>
       }
     >
-      <div className="mx-auto flex w-full max-w-6xl gap-6">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
           {/* Header */}
           <div className="flex w-full flex-wrap items-center justify-between gap-3">
             <div>
