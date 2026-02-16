@@ -2,12 +2,6 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import SetupLayout from "@/components/setup-layout";
 import { useAuth } from "@/hooks/useAuth";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-} from "@/components/ui/breadcrumb";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -66,17 +60,40 @@ async function parseError(response: Response): Promise<ApiError> {
 }
 
 async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(path, {
-    ...init,
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers || {}),
-    },
-  });
+  const fullUrl = `${window.location.origin}${path}`;
+  console.log(`[LICENSE] API request: ${init?.method || "GET"} ${fullUrl}`);
+
+  let response: Response;
+  try {
+    response = await fetch(path, {
+      ...init,
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        ...(init?.headers || {}),
+      },
+    });
+  } catch (fetchErr) {
+    console.error(`[LICENSE] Network error calling ${fullUrl}:`, fetchErr);
+    throw {
+      message: `Network error: Could not reach ${fullUrl}. Make sure the backend (Encore) is running and you are accessing the correct port.`,
+      status: 0,
+      code: "network_error",
+    } as ApiError;
+  }
+
+  console.log(`[LICENSE] Response: ${response.status} ${response.statusText}`);
 
   if (!response.ok) {
-    throw await parseError(response);
+    const apiErr = await parseError(response);
+    // Add diagnostic hints for common issues
+    if (response.status === 404) {
+      apiErr.message = `404 Not Found — The API endpoint "${path}" was not found. This usually means you are accessing the Vite dev server port instead of the Encore API port. Check the terminal output for the correct API port.`;
+    } else if (response.status === 502) {
+      apiErr.message = `502 Bad Gateway — The backend server is not reachable. Make sure Encore is running.`;
+    }
+    console.error(`[LICENSE] API error:`, apiErr);
+    throw apiErr;
   }
 
   if (response.status === 204) {
@@ -121,6 +138,8 @@ export default function LicenseSetupPage() {
     setVerifying(true);
     setError("");
 
+    console.log(`[LICENSE] Verifying license from origin: ${window.location.origin}`);
+
     try {
       const response = await apiRequest<VerifyLicenseResponse>(
         "/auth/verify-license",
@@ -142,6 +161,7 @@ export default function LicenseSetupPage() {
       }
     } catch (err) {
       const apiError = err as ApiError;
+      console.error("[LICENSE] Verification failed:", apiError);
       setError(apiError.message || "Failed to verify license");
     } finally {
       setVerifying(false);
@@ -315,13 +335,19 @@ export default function LicenseSetupPage() {
 
                 {error && (
                   <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
-                    {error}
+                    <p className="font-medium mb-1">Error:</p>
+                    <p>{error}</p>
                   </div>
                 )}
 
                 <Button onClick={handleVerifyLicense} disabled={verifying || !licenseKey.trim()} className="w-full">
                   {verifying ? "Verifying..." : "Verify & Continue"}
                 </Button>
+
+                {/* Debug info - helps diagnose port issues */}
+                <p className="text-[10px] text-muted-foreground text-center select-all">
+                  Origin: {window.location.origin} • API: {window.location.origin}/auth/verify-license
+                </p>
               </div>
             )}
 

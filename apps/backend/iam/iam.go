@@ -329,14 +329,20 @@ func Install(ctx context.Context, p *installParams) (*authResponse, error) {
 //
 //encore:api public method=POST path=/auth/verify-license
 func VerifyLicense(ctx context.Context, p *verifyLicenseParams) (*licenseVerifyResult, error) {
+	fmt.Println("[LICENSE] ── POST /auth/verify-license called ──")
+
 	if p == nil || p.LicenseKey == "" {
+		fmt.Println("[LICENSE] ✗ missing license_key in request body")
 		return nil, badRequest("license_key is required")
 	}
 
 	verified, err := verifyLicenseWithHub(ctx, p.LicenseKey)
 	if err != nil {
+		fmt.Printf("[LICENSE] ✗ verification error: %v\n", err)
 		return nil, err
 	}
+
+	fmt.Printf("[LICENSE] ── result: valid=%v ──\n", verified.Valid)
 
 	return &licenseVerifyResult{
 		Valid:                verified.Valid,
@@ -929,26 +935,51 @@ func isInstalled(ctx context.Context) (bool, error) {
 }
 
 func verifyLicenseWithHub(ctx context.Context, key string) (*licenseVerifyResponse, error) {
+	envType := string(encore.Meta().Environment.Type)
+	maskedKey := key
+	if len(maskedKey) > 8 {
+		maskedKey = maskedKey[:4] + "..." + maskedKey[len(maskedKey)-4:]
+	}
+
+	fmt.Printf("[LICENSE] verify started | env=%s | input_key=%s\n", envType, maskedKey)
+
 	// Dev Bypass: Use OPENAI_API_KEY from .env as a valid license key in development
 	if encore.Meta().Environment.Type == "development" {
 		devKey := os.Getenv("OPENAI_API_KEY")
-		if devKey != "" && key == devKey {
-			return &licenseVerifyResponse{
-				Valid:                true,
-				TenantName:           "Dev Local (Bypass)",
-				MaxProjectsPerTenant: 999,
-				WhatsappEnabled:      true,
-				SubclientEnabled:     true,
-			}, nil
+		if devKey == "" {
+			fmt.Println("[LICENSE] ⚠ OPENAI_API_KEY is empty — .env file missing or key not set. Dev bypass disabled.")
+		} else {
+			maskedDevKey := devKey
+			if len(maskedDevKey) > 8 {
+				maskedDevKey = maskedDevKey[:4] + "..." + maskedDevKey[len(maskedDevKey)-4:]
+			}
+			fmt.Printf("[LICENSE] dev bypass check | env_key=%s | match=%v\n", maskedDevKey, key == devKey)
+
+			if key == devKey {
+				fmt.Println("[LICENSE] ✓ Dev bypass activated — license accepted locally")
+				return &licenseVerifyResponse{
+					Valid:                true,
+					TenantName:           "Dev Local (Bypass)",
+					MaxProjectsPerTenant: 999,
+					WhatsappEnabled:      true,
+					SubclientEnabled:     true,
+				}, nil
+			}
+			fmt.Println("[LICENSE] ✗ Key does not match OPENAI_API_KEY, falling through to hub verification")
 		}
+	} else {
+		fmt.Printf("[LICENSE] not in development mode (env=%s), skipping dev bypass\n", envType)
 	}
+
+	hubURL := "https://hub.maldevta.com/api/license/verify"
+	fmt.Printf("[LICENSE] contacting license hub: %s\n", hubURL)
 
 	body, err := json.Marshal(map[string]string{"license_key": key})
 	if err != nil {
 		return nil, err
 	}
 
-	request, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://hub.maldevta.com/api/license/verify", strings.NewReader(string(body)))
+	request, err := http.NewRequestWithContext(ctx, http.MethodPost, hubURL, strings.NewReader(string(body)))
 	if err != nil {
 		return nil, err
 	}
@@ -959,16 +990,20 @@ func verifyLicenseWithHub(ctx context.Context, key string) (*licenseVerifyRespon
 	if encore.Meta().Environment.Type == "development" {
 		tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	}
-	client := &http.Client{Transport: tr}
+	client := &http.Client{Transport: tr, Timeout: 15 * time.Second}
 
 	resp, err := client.Do(request)
 	if err != nil {
-		return nil, &errs.Error{Code: errs.Unavailable, Message: "failed contacting license hub"}
+		fmt.Printf("[LICENSE] ✗ hub connection failed: %v\n", err)
+		return nil, &errs.Error{Code: errs.Unavailable, Message: fmt.Sprintf("failed contacting license hub: %v", err)}
 	}
 	defer resp.Body.Close()
 
+	fmt.Printf("[LICENSE] hub responded with status=%d\n", resp.StatusCode)
+
 	var out licenseVerifyResponse
 	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
+		fmt.Printf("[LICENSE] ✗ failed to decode hub response: %v\n", err)
 		return nil, &errs.Error{Code: errs.Internal, Message: "invalid response from license hub"}
 	}
 
@@ -977,6 +1012,9 @@ func verifyLicenseWithHub(ctx context.Context, key string) (*licenseVerifyRespon
 			out.Error = fmt.Sprintf("license hub rejected request (%d)", resp.StatusCode)
 		}
 		out.Valid = false
+		fmt.Printf("[LICENSE] ✗ hub rejected: status=%d error=%s\n", resp.StatusCode, out.Error)
+	} else {
+		fmt.Printf("[LICENSE] hub result: valid=%v tenant=%s\n", out.Valid, out.TenantName)
 	}
 
 	return &out, nil
