@@ -1,7 +1,7 @@
 import { Route, Switch } from "wouter";
 import { useEffect, useState } from "react";
 import { useAuthStore } from "@/stores/authStore";
-import DashboardPage from "@/pages/Dashboard";
+
 import ProjectSelectorPage from "@/pages/ProjectSelector";
 import LoginPage from "@/pages/Login";
 import ChatPage from "@/pages/Chat";
@@ -123,11 +123,13 @@ function App() {
           <Switch>
             <Route path="/" component={ProjectSelectorPage} />
             <Route path="/projects-selector" component={ProjectSelectorPage} />
+            <Route path="/chat" component={ChatPage} />
             <Route path="/chat/:projectId" component={ChatPage} />
-            <Route path="/dashboard" component={DashboardPage} />
+
             <Route path="/projects" component={ProjectsPage} />
             <Route path="/projects/:projectId/api" component={DeveloperAPIPage} />
             <Route path="/projects/:projectId/embed" component={EmbedSettings} />
+            <Route path="/whatsapp" component={ChatsPage} />
             <Route path="/chats" component={ChatsPage} />
             <Route path="/files" component={FilesPage} />
             <Route path="/history" component={HistoryPage} />

@@ -35,8 +35,8 @@ export default function AppLayout({
           <main className="absolute inset-0 px-4 pb-4 flex flex-col">
             <div 
               className={cn(
-                "relative flex-1 rounded-2xl border bg-white overflow-hidden",
-                containerClassName === undefined ? "p-6" : containerClassName
+                "relative flex-1 rounded-2xl border bg-white min-h-0",
+                containerClassName === undefined ? "p-6 overflow-auto" : cn("overflow-hidden", containerClassName)
               )}
             >
               {children ? (
