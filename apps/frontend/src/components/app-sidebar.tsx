@@ -56,7 +56,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     // Project pages: /chat/:id, /files, /memory, /history, /settings/context, /whatsapp, /extensions, /developer
     // Non-project pages: /, /projects, /dashboard, /chats, /billing, /payment
     const projectPagePatterns = [
-      /^\/chat\//,
+      /^\/chat(\/|$)/,
       /^\/files/,
       /^\/memory/,
       /^\/history/,
