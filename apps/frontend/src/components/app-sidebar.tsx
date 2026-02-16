@@ -13,6 +13,11 @@ import {
   Folder,
   CreditCard,
   DollarSign,
+  Building2,
+  Brain,
+  FolderTree,
+  Code2,
+  Settings,
 } from "lucide-react"
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
@@ -55,7 +60,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   React.useEffect(() => {
     const pathname = window.location.pathname;
 
-    // Project pages: /chat/:id, /files, /memory, /settings/context
+    // Project pages: /chat/:id, /files, /memory, /history, /settings/context, /whatsapp, /extensions, /developer
     // Non-project pages: /, /projects, /dashboard, /chats, /billing, /payment
     const projectPagePatterns = [
       /^\/chat\//,
@@ -63,6 +68,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       /^\/memory/,
       /^\/history/,
       /^\/settings\/context/,
+      /^\/whatsapp/,
+      /^\/extensions/,
+      /^\/developer/,
+      /^\/api/,
+      /^\/embed/,
+      /^\/sub-clients/,
     ];
 
     const onProjectPage = projectPagePatterns.some(pattern => pattern.test(pathname));
@@ -164,21 +175,31 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
     const items: MenuItem[] = [];
 
-    // WhatsApp Dashboard (khusus project yang aktif)
+    // WhatsApp (khusus project yang aktif)
     items.push({
       title: "WhatsApp",
-      url: "/dashboard",
+      url: "/whatsapp",
       icon: MessageSquare,
     });
 
-    // WhatsApp Chats (khusus project yang aktif)
+    // Sub Client (collapsible) - exact structure from AIBase
     items.push({
-      title: "WhatsApp Chats",
-      url: "/chats",
-      icon: MessageSquare,
+      title: "Sub Client",
+      url: "/sub-clients",
+      icon: Building2,
+      items: [
+        {
+          title: "Management",
+          url: "/sub-clients/management",
+        },
+        {
+          title: "Settings",
+          url: "/sub-clients/settings",
+        },
+      ]
     });
 
-    // Developer (exact structure from AIBase)
+    // Developer (collapsible) - exact structure from AIBase
     items.push({
       title: "Developer",
       url: "/developer",
@@ -186,7 +207,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       items: [
         {
           title: "API",
-          url: "/developer",
+          url: "/api",
+        },
+        {
+          title: "Embed",
+          url: "/embed",
         },
         {
           title: "Extensions",
