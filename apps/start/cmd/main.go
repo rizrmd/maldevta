@@ -415,7 +415,23 @@ func buildFrontendApp(frontendDir string, envFile map[string]string) error {
 
 	ctx := context.Background()
 
-	if _, err := os.Stat(filepath.Join(frontendDir, "node_modules")); os.IsNotExist(err) {
+	// Check if dependencies need to be installed
+	needsInstall := false
+	nodeModulesPath := filepath.Join(frontendDir, "node_modules")
+	packageJSONPath := filepath.Join(frontendDir, "package.json")
+
+	nodeModulesInfo, statErr := os.Stat(nodeModulesPath)
+	if os.IsNotExist(statErr) {
+		needsInstall = true
+	} else if statErr == nil {
+		if pkgInfo, pkgErr := os.Stat(packageJSONPath); pkgErr == nil {
+			if pkgInfo.ModTime().After(nodeModulesInfo.ModTime()) {
+				needsInstall = true
+			}
+		}
+	}
+
+	if needsInstall {
 		fmt.Println("Installing frontend dependencies...")
 		session, err := ptyx.Spawn(ctx, ptyx.SpawnOpts{
 			Prog: "bun",
@@ -455,8 +471,24 @@ func buildFrontendApp(frontendDir string, envFile map[string]string) error {
 }
 
 func startFrontendDevServerWithPTY(ctx context.Context, frontendDir string, port int, encorePort int, envFile map[string]string) (*exec.Cmd, ptyx.Session, error) {
-	// Install dependencies if node_modules doesn't exist
-	if _, err := os.Stat(filepath.Join(frontendDir, "node_modules")); os.IsNotExist(err) {
+	// Install dependencies if node_modules doesn't exist or package.json has changed
+	needsInstall := false
+	nodeModulesPath := filepath.Join(frontendDir, "node_modules")
+	packageJSONPath := filepath.Join(frontendDir, "package.json")
+
+	nodeModulesInfo, err := os.Stat(nodeModulesPath)
+	if os.IsNotExist(err) {
+		needsInstall = true
+	} else if err == nil {
+		// Check if package.json is newer than node_modules (new deps added)
+		if pkgInfo, pkgErr := os.Stat(packageJSONPath); pkgErr == nil {
+			if pkgInfo.ModTime().After(nodeModulesInfo.ModTime()) {
+				needsInstall = true
+			}
+		}
+	}
+
+	if needsInstall {
 		fmt.Println("Installing frontend dependencies...")
 		session, err := ptyx.Spawn(ctx, ptyx.SpawnOpts{
 			Prog: "bun",
