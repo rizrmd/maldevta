@@ -17,8 +17,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Settings as SettingsIcon, User, Building, Key, Save, LogOut } from "lucide-react";
+import { User, Building, Key, Save, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
@@ -59,6 +58,7 @@ async function parseError(response: Response): Promise<ApiError> {
   };
 }
 
+/*
 async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, {
     ...init,
@@ -79,13 +79,13 @@ async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
 
   return response.json() as Promise<T>;
 }
+*/
 
 export default function SettingsPage() {
   const { user, logout } = useAuth();
   const [location] = useLocation();
 
   const [activeTab, setActiveTab] = useState("general");
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -119,12 +119,9 @@ export default function SettingsPage() {
         setTenantName("My Tenant");
         setTenantDomain("example.com");
         setUsername(user?.userId || "");
-        setLoading(false);
       } catch (err) {
         const apiError = err as ApiError;
         setError(apiError.message || "Failed to load settings");
-      } finally {
-        setLoading(false);
       }
     };
     loadData();

@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { MessageSquare, Phone, Clock, User, Send } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+// import { useAuth } from "@/hooks/useAuth";
 import {
   Select,
   SelectContent,
@@ -105,7 +105,7 @@ async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export default function ChatsPage() {
-  const { user } = useAuth();
+  // const { user } = useAuth();
   const [projects, setProjects] = useState<ProjectResponse[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
@@ -214,7 +214,7 @@ export default function ChatsPage() {
     }
   };
 
-  const selectedProject = projects.find((p) => p.id === selectedProjectId);
+  // const selectedProject = projects.find((p) => p.id === selectedProjectId);
 
   return (
     <AppLayout

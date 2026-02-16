@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { LifeBuoy, Send, Mail, MessageCircle, FileText, ExternalLink } from "lucide-react";
+import { Send, Mail, MessageCircle, FileText, ExternalLink } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Label } from "@/components/ui/label";
 
@@ -50,6 +50,7 @@ async function parseError(response: Response): Promise<ApiError> {
   };
 }
 
+/*
 async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, {
     ...init,
@@ -70,6 +71,7 @@ async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
 
   return response.json() as Promise<T>;
 }
+*/
 
 export default function SupportPage() {
   const { user } = useAuth();

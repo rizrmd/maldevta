@@ -7,11 +7,13 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const labelVariants = cva(
-  ["default", "error"],
+  "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
   {
     variants: {
-      default: "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
-      error: "text-sm font-medium leading-none text-destructive",
+      variant: {
+        default: "text-slate-900",
+        error: "text-destructive",
+      },
     },
     defaultVariants: {
       variant: "default",

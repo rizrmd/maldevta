@@ -1,6 +1,8 @@
 import { Route, Switch } from "wouter";
 import { useAuth } from "./contexts/AuthContext";
 import DashboardPage from "@/pages/Dashboard";
+import ProjectSelectorPage from "@/pages/ProjectSelector";
+import ChatPage from "@/pages/Chat";
 import ProjectsPage from "@/pages/Projects";
 import ChatsPage from "@/pages/Chats";
 import FilesPage from "@/pages/Files";
@@ -42,7 +44,9 @@ function App() {
       {/* Protected routes - require authentication */}
       {user ? (
         <>
-          <Route path="/" component={DashboardPage} />
+          <Route path="/" component={ProjectSelectorPage} />
+          <Route path="/projects-selector" component={ProjectSelectorPage} />
+          <Route path="/chat/:projectId" component={ChatPage} />
           <Route path="/dashboard" component={DashboardPage} />
           <Route path="/projects" component={ProjectsPage} />
           <Route path="/chats" component={ChatsPage} />
