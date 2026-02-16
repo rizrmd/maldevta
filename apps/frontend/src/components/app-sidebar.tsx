@@ -26,6 +26,8 @@ import {
 } from "@/components/ui/sidebar"
 import { useProjectStore, useAuthStore } from "@/stores";
 import { cn } from "@/lib/utils"
+// Import reusable icon
+import { WhatsAppIcon } from "@/components/icons/whatsapp-icon"
 
 interface MenuItem {
   title: string
@@ -172,7 +174,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     items.push({
       title: "WhatsApp",
       url: "/whatsapp",
-      icon: MessageSquare,
+      icon: WhatsAppIcon as LucideIcon,
     });
 
     // Sub Client (collapsible) - exact structure from AIBase
