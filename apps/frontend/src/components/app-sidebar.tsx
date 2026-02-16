@@ -7,20 +7,13 @@ import {
   MessageCircle,
   Library,
   History,
-  Puzzle,
   MessageSquare,
-  MessagesSquare,
   Folder,
   CreditCard,
   DollarSign,
   Building2,
-  Brain,
-  FolderTree,
-  Code2,
-  Settings,
 } from "lucide-react"
 import { NavMain } from "@/components/nav-main"
-import { NavSecondary } from "@/components/nav-secondary"
 import { NavUser } from "@/components/nav-user"
 import { TeamSwitcher } from "@/components/team-switcher"
 import {
@@ -223,19 +216,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     return items;
   }, [isInProjectPage, isAdmin]);
 
-  // Secondary nav (bottom) - Support & Feedback (selalu muncul)
-  const navSecondary = [
-    {
-      title: "Support",
-      url: "/support",
-      icon: Puzzle,
-    },
-    {
-      title: "Feedback",
-      url: "/feedback",
-      icon: MessagesSquare,
-    },
-  ];
+
 
   return (
     <Sidebar collapsible="offcanvas" className="border-r border-border bg-sidebar" {...props}>
@@ -271,8 +252,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         )}
       </SidebarContent>
 
-      {/* Secondary nav at bottom - Support & Feedback */}
-      <NavSecondary items={navSecondary} className="mt-auto" />
+
 
       <SidebarFooter className={cn("border-t border-border/50 transition-all duration-200", isCollapsed ? "p-2" : "p-4")}>
         {user && (

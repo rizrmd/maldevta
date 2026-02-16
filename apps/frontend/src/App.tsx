@@ -13,7 +13,7 @@ import MemoryPage from "@/pages/Memory";
 import ExtensionsPage from "@/pages/Extensions";
 import DeveloperPage from "@/pages/Developer";
 import SettingsPage from "@/pages/Settings";
-import SupportPage from "@/pages/Support";
+
 import BillingPage from "@/pages/Billing";
 import PaymentPage from "@/pages/Payment";
 import LicenseVerifyPage from "@/pages/LicenseVerify";
@@ -158,8 +158,7 @@ function App() {
             <Route path="/memory" component={MemoryPage} />
             <Route path="/extensions" component={ExtensionsPage} />
             <Route path="/developer" component={DeveloperPage} />
-            <Route path="/support" component={SupportPage} />
-            <Route path="/feedback" component={SupportPage} />
+
             <Route path="/billing" component={BillingPage} />
             <Route path="/payment" component={PaymentPage} />
           </Switch>
