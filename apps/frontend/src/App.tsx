@@ -1,5 +1,5 @@
 import { Route, Switch } from "wouter";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuthStore } from "@/stores/authStore";
 import DashboardPage from "@/pages/Dashboard";
 import ProjectSelectorPage from "@/pages/ProjectSelector";
@@ -20,6 +20,7 @@ import LicenseVerifyPage from "@/pages/LicenseVerify";
 import LicenseSetupPage from "@/pages/LicenseSetup";
 import NotFoundPage from "@/pages/NotFound";
 
+
 function LoadingScreen() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50">
@@ -32,30 +33,70 @@ function LoadingScreen() {
 }
 
 // Wrapper to check if license is installed
+// function LicenseCheck({ children }: { children: React.ReactNode }) {
+//   // In development mode with OPENAI_API_KEY, we assume license is "installed"
+//   // In production, this would check /auth/verify-license or similar
+//   // For now, we'll use a simple check - if we can reach the auth endpoints, assume setup is done
+
+//   // TODO: Add proper license check
+//   // const isLicensed = await checkLicenseStatus();
+
+//   // For development, always consider license as installed
+//   // The LicenseSetupPage itself handles the "first time" flow
+//   const isLicensed = true;
+
+//   if (!isLicensed) {
+//     return (
+//       <Switch>
+//         <Route path="/license/setup" component={LicenseSetupPage} />
+//         <Route path="/license/verify" component={LicenseVerifyPage} />
+//         <Route path="/*">
+//           <LicenseSetupPage />
+//         </Route>
+//       </Switch>
+//     );
+//   }
+
+//   return <>{children}</>;
+// }
+
 function LicenseCheck({ children }: { children: React.ReactNode }) {
-  // In development mode with OPENAI_API_KEY, we assume license is "installed"
-  // In production, this would check /auth/verify-license or similar
-  // For now, we'll use a simple check - if we can reach the auth endpoints, assume setup is done
+  const [isInstalled, setIsInstalled] = useState<boolean | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // TODO: Add proper license check
-  // const isLicensed = await checkLicenseStatus();
+  useEffect(() => {
+    const checkInstallStatus = async () => {
+      try {
+        const response = await fetch("/auth/install-status", {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setIsInstalled(data.installed === true);
+        } else {
+          setIsInstalled(false);
+        }
+      } catch (error) {
+        console.error("Failed to check install status:", error);
+        setIsInstalled(false);
+      } finally {
+        setLoading(false);
+      }
+    };
+    checkInstallStatus();
+  }, []);
 
-  // For development, always consider license as installed
-  // The LicenseSetupPage itself handles the "first time" flow
-  const isLicensed = true;
-
-  if (!isLicensed) {
+  if (loading) return <LoadingScreen />;
+  if (!isInstalled) {
     return (
       <Switch>
         <Route path="/license/setup" component={LicenseSetupPage} />
         <Route path="/license/verify" component={LicenseVerifyPage} />
-        <Route path="/*">
-          <LicenseSetupPage />
-        </Route>
+        <Route path="/*"><LicenseSetupPage /></Route>
       </Switch>
     );
   }
-
   return <>{children}</>;
 }
 
