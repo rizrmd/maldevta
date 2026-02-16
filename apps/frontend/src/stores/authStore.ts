@@ -96,7 +96,7 @@ export const useAuthStore = create<AuthStore>()(
 
       // Actions
       checkSession: async () => {
-        set({ checking: true, error: null });
+        set({ checking: true, loading: true, error: null });
         try {
           const response = await apiRequest<SessionStatus>("/auth/session");
           set({
@@ -109,9 +109,10 @@ export const useAuthStore = create<AuthStore>()(
               subclientId: response.subclient_id,
             },
             checking: false,
+            loading: false,
           });
         } catch {
-          set({ user: null, checking: false });
+          set({ user: null, checking: false, loading: false });
         }
       },
 

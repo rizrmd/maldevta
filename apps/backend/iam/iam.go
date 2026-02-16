@@ -198,6 +198,57 @@ type sessionStatusResponse struct {
 	SubclientID string `json:"subclient_id"`
 }
 
+// InstallStatus checks if the application has already been installed.
+// Frontend uses this to decide whether to show setup wizard or login page.
+//
+//encore:api public method=GET path=/auth/install-status
+func InstallStatus(ctx context.Context) (*installStatusResponse, error) {
+	installed, err := isInstalled(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &installStatusResponse{
+		Installed:   installed,
+		Environment: string(encore.Meta().Environment.Type),
+	}, nil
+}
+
+type installStatusResponse struct {
+	Installed   bool   `json:"installed"`
+	Environment string `json:"environment"`
+}
+
+// ResetInstall resets the entire install — drops all licenses, tenants, users, sessions.
+// WARNING: This is destructive and only works in development mode.
+//
+//encore:api public method=POST path=/auth/reset-install
+func ResetInstall(ctx context.Context) (*installStatusResponse, error) {
+	// Safety: only in development
+	if encore.Meta().Environment.Type != "development" {
+		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "reset only available in development mode"}
+	}
+
+	fmt.Println("[RESET] ── Resetting installation... ──")
+
+	tables := []string{"sessions", "users", "tenants", "licenses"}
+	for _, t := range tables {
+		_, err := db.ExecContext(ctx, "DELETE FROM "+t)
+		if err != nil {
+			fmt.Printf("[RESET] ✗ failed to clear table %s: %v\n", t, err)
+			// Continue even if one table fails (it might not exist yet)
+		} else {
+			fmt.Printf("[RESET] ✓ cleared table %s\n", t)
+		}
+	}
+
+	fmt.Println("[RESET] ── Installation reset complete ──")
+
+	return &installStatusResponse{
+		Installed:   false,
+		Environment: string(encore.Meta().Environment.Type),
+	}, nil
+}
+
 // Install verifies the license and bootstraps the default tenant + admin user.
 // This endpoint only works once.
 //

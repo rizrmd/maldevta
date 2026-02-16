@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import SetupLayout from "@/components/setup-layout";
 import { useAuth } from "@/hooks/useAuth";
@@ -107,13 +107,15 @@ type Step = 1 | 2 | 3;
 
 export default function LicenseSetupPage() {
   const [, setLocation] = useLocation();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, login, checkSession } = useAuth();
 
   // If already authenticated, redirect to dashboard
   if (user && !authLoading) {
     setLocation("/", { replace: true });
   }
 
+  const [checkingInstall, setCheckingInstall] = useState(true);
+  const [alreadyInstalled, setAlreadyInstalled] = useState(false);
   const [step, setStep] = useState<Step>(1);
   const [verifying, setVerifying] = useState(false);
   const [installing, setInstalling] = useState(false);
@@ -128,6 +130,138 @@ export default function LicenseSetupPage() {
   const [tenantDomain, setTenantDomain] = useState("*");
   const [adminUsername, setAdminUsername] = useState("admin");
   const [adminPassword, setAdminPassword] = useState("");
+
+  // Login form (when already installed)
+  const [loginUsername, setLoginUsername] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loggingIn, setLoggingIn] = useState(false);
+
+  // Check if app is already installed on mount
+  useEffect(() => {
+    async function checkInstallStatus() {
+      try {
+        const res = await fetch("/auth/install-status");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.installed) {
+            console.log("[LICENSE] App already installed, showing login form");
+            setAlreadyInstalled(true);
+          }
+        }
+      } catch (err) {
+        console.warn("[LICENSE] Could not check install status:", err);
+      }
+      setCheckingInstall(false);
+    }
+    checkInstallStatus();
+  }, []);
+
+  // Handle login for already-installed apps
+  const handleLogin = async () => {
+    if (!loginUsername.trim() || !loginPassword.trim()) {
+      setError("Username and password are required");
+      return;
+    }
+
+    setLoggingIn(true);
+    setError("");
+
+    try {
+      await login(loginUsername, loginPassword);
+      // Auth state will update, App.tsx will redirect to dashboard
+    } catch (err) {
+      const apiError = err as ApiError;
+      setError(apiError.message || "Login failed");
+    } finally {
+      setLoggingIn(false);
+    }
+  };
+
+  // Show loading while checking install status
+  if (checkingInstall) {
+    return (
+      <SetupLayout>
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-slate-200 border-t-slate-600" />
+            <p className="mt-3 text-sm text-muted-foreground">Checking installation status...</p>
+          </div>
+        </div>
+      </SetupLayout>
+    );
+  }
+
+  // Show login form if already installed
+  if (alreadyInstalled) {
+    return (
+      <SetupLayout>
+        <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-6">
+          <Card className="mx-auto w-full max-w-md border-slate-200 bg-white/80 backdrop-blur">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>Sign In</span>
+                <Badge variant="outline" className="bg-emerald-50 text-emerald-900 border-emerald-200">
+                  Installed
+                </Badge>
+              </CardTitle>
+              <CardDescription>
+                Your application is already set up. Sign in with your admin credentials.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4">
+              <label className="grid gap-2 text-sm text-slate-700">
+                Username
+                <Input
+                  value={loginUsername}
+                  onChange={(e) => setLoginUsername(e.target.value)}
+                  placeholder="admin"
+                  disabled={loggingIn}
+                  autoFocus
+                />
+              </label>
+              <label className="grid gap-2 text-sm text-slate-700">
+                Password
+                <Input
+                  type="password"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  disabled={loggingIn}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !loggingIn) {
+                      handleLogin();
+                    }
+                  }}
+                />
+              </label>
+
+              {error && (
+                <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                  <p className="font-medium mb-1">Error:</p>
+                  <p>{error}</p>
+                </div>
+              )}
+
+              <Button onClick={handleLogin} disabled={loggingIn || !loginUsername.trim() || !loginPassword.trim()} className="w-full">
+                {loggingIn ? "Signing in..." : "Sign In"}
+              </Button>
+
+              <p className="text-[10px] text-muted-foreground text-center">
+                Need a fresh install?{" "}
+                <button
+                  type="button"
+                  className="underline hover:text-foreground"
+                  onClick={() => setAlreadyInstalled(false)}
+                >
+                  Go to setup wizard
+                </button>
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </SetupLayout>
+    );
+  }
 
   const handleVerifyLicense = async () => {
     if (!licenseKey.trim()) {
@@ -193,22 +327,32 @@ export default function LicenseSetupPage() {
         }),
       });
 
-      // Installation successful - user is now logged in
+      // Installation successful - session cookie already set by Install endpoint
       setStep(3);
 
-      // Redirect to dashboard after short delay
-      setTimeout(() => {
-        setLocation("/", { replace: true });
-      }, 1500);
+      try {
+        // Try checkSession first — Install already set a session cookie
+        await checkSession();
+        // If checkSession doesn't throw but user state isn't set, try login
+        // (The auth redirect check at top of component will handle the redirect)
+      } catch {
+        // Fallback: explicitly login with the credentials just created
+        try {
+          await login(adminUsername, adminPassword);
+        } catch {
+          console.warn("[LICENSE] Auto-login after install failed, showing login form");
+          setAlreadyInstalled(true);
+        }
+      }
     } catch (err) {
       const apiError = err as ApiError;
       setError(apiError.message || "Installation failed");
-      // If already installed, go to login step
+      // If already installed, show login form instead of broken step 3
       if (
         apiError.code === "failed_precondition" ||
         apiError.message.toLowerCase().includes("already installed")
       ) {
-        setStep(3);
+        setAlreadyInstalled(true);
       }
     } finally {
       setInstalling(false);

@@ -25,7 +25,7 @@ import {
   Check,
   LayoutGrid,
 } from "lucide-react";
-import { useAuthStore, useChatStore, useFileStore, useUIStore, useProjectStore } from "@/stores";
+import { useChatStore, useFileStore, useUIStore, useProjectStore } from "@/stores";
 import type { Message } from "@/stores/chatStore";
 import { clsx } from "clsx";
 
@@ -182,7 +182,7 @@ function FileAttachmentPreview() {
 
 export default function ChatPage() {
   const [location] = useLocation();
-  const { user } = useAuthStore();
+
   const {
     currentConversation,
     input,
@@ -304,15 +304,7 @@ export default function ChatPage() {
       });
   };
 
-  if (!user) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center text-sm text-muted-foreground">
-          Please log in to continue
-        </div>
-      </div>
-    );
-  }
+
 
   return (
     <AppLayout

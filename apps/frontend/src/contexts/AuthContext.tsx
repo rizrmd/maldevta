@@ -1,72 +1,6 @@
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
-
-type ApiError = {
-  message: string;
-  status?: number;
-  code?: string;
-};
-
-async function parseError(response: Response): Promise<ApiError> {
-  let payload: unknown = null;
-  try {
-    payload = await response.json();
-  } catch {
-    payload = null;
-  }
-
-  if (payload && typeof payload === "object") {
-    const record = payload as { message?: string; code?: string };
-    return {
-      message: record.message || `${response.status} ${response.statusText}`,
-      status: response.status,
-      code: record.code,
-    };
-  }
-
-  return {
-    message: `${response.status} ${response.statusText}`,
-    status: response.status,
-  };
-}
-
-async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(path, {
-    ...init,
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers || {}),
-    },
-  });
-
-  if (!response.ok) {
-    throw await parseError(response);
-  }
-
-  if (response.status === 204) {
-    return undefined as T;
-  }
-
-  return response.json() as Promise<T>;
-}
-
-export type SessionStatus = {
-  user_id: string;
-  role: string;
-  scope_type: string;
-  tenant_id?: string;
-  project_id?: string;
-  subclient_id?: string;
-};
-
-export type AuthData = {
-  userId: string;
-  role: string;
-  scopeType: string;
-  tenantId?: string;
-  projectId?: string;
-  subclientId?: string;
-};
+import { createContext, useContext, useEffect } from "react";
+import { useAuthStore } from "@/stores/authStore";
+import type { AuthData } from "@/stores/authStore";
 
 type AuthValue = {
   user: AuthData | null;
@@ -82,132 +16,32 @@ type AuthValue = {
 const AuthContext = createContext<AuthValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<AuthData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [checking, setChecking] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const checkSession = useCallback(async () => {
-    setChecking(true);
-    setError(null);
-
-    try {
-      const response = await apiRequest<{ user_id: string; role: string; scope_type: string; tenant_id?: string; project_id?: string; subclient_id?: string }>(
-        "/auth/session",
-      );
-
-      setUser({
-        userId: response.user_id,
-        role: response.role,
-        scopeType: response.scope_type,
-        tenantId: response.tenant_id,
-        projectId: response.project_id,
-        subclientId: response.subclient_id,
-      });
-    } catch (err) {
-      // Silently fail - user not authenticated
-      setUser(null);
-    } finally {
-      setChecking(false);
-    }
-  }, []);
-
-  const login = useCallback(async (username: string, password: string) => {
-    setError(null);
-    setLoading(true);
-
-    try {
-      const response = await apiRequest<{ user_id: string; role: string; scope_type: string; scope_id: string }>(
-        "/auth/tenant/login",
-        {
-          method: "POST",
-          body: JSON.stringify({ username, password }),
-        },
-      );
-
-      setUser({
-        userId: response.user_id,
-        role: response.role,
-        scopeType: response.scope_type,
-        tenantId: response.scope_type === "tenant" ? response.scope_id : undefined,
-      });
-
-      setLoading(false);
-    } catch (err) {
-      const apiError = err as ApiError;
-      setError(apiError.message || "Login failed");
-      setLoading(false);
-      throw err;
-    }
-  }, []);
-
-  const logout = useCallback(async () => {
-    setError(null);
-    setLoading(true);
-
-    try {
-      await apiRequest("/auth/logout", {
-        method: "POST",
-      });
-    } catch {
-      // Ignore logout errors
-    } finally {
-      setUser(null);
-      setLoading(false);
-    }
-  }, []);
-
-  const clearError = useCallback(() => {
-    setError(null);
-  }, []);
+  // Use Zustand store state
+  const user = useAuthStore((state) => state.user);
+  const loading = useAuthStore((state) => state.loading);
+  const checking = useAuthStore((state) => state.checking);
+  const error = useAuthStore((state) => state.error);
+  
+  // Get actions
+  const checkSessionStore = useAuthStore((state) => state.checkSession);
+  const loginStore = useAuthStore((state) => state.login);
+  const logoutStore = useAuthStore((state) => state.logout);
+  const clearErrorStore = useAuthStore((state) => state.clearError);
 
   // Check session on mount
   useEffect(() => {
-    let mounted = true;
-
-    const initialCheck = async () => {
-      try {
-        const response = await apiRequest<{ user_id: string; role: string; scope_type: string; tenant_id?: string; project_id?: string; subclient_id?: string }>(
-          "/auth/session",
-        );
-
-        if (mounted) {
-          setUser({
-            userId: response.user_id,
-            role: response.role,
-            scopeType: response.scope_type,
-            tenantId: response.tenant_id,
-            projectId: response.project_id,
-            subclientId: response.subclient_id,
-          });
-        }
-      } catch {
-        if (mounted) {
-          setUser(null);
-        }
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    initialCheck();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
+    checkSessionStore();
+  }, [checkSessionStore]);
 
   const value: AuthValue = {
     user,
     loading,
     checking,
     error,
-    checkSession,
-    login,
-    logout,
-    clearError,
+    checkSession: checkSessionStore,
+    login: loginStore,
+    logout: logoutStore,
+    clearError: clearErrorStore,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
