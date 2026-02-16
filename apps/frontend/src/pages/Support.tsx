@@ -21,35 +21,6 @@ import { Send, Mail, MessageCircle, FileText, ExternalLink } from "lucide-react"
 import { useAuth } from "@/hooks/useAuth";
 import { Label } from "@/components/ui/label";
 
-type ApiError = {
-  message: string;
-  status?: number;
-  code?: string;
-};
-
-async function parseError(response: Response): Promise<ApiError> {
-  let payload: unknown = null;
-  try {
-    payload = await response.json();
-  } catch {
-    payload = null;
-  }
-
-  if (payload && typeof payload === "object") {
-    const record = payload as { message?: string; code?: string };
-    return {
-      message: record.message || `${response.status} ${response.statusText}`,
-      status: response.status,
-      code: record.code,
-    };
-  }
-
-  return {
-    message: `${response.status} ${response.statusText}`,
-    status: response.status,
-  };
-}
-
 /*
 async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, {
@@ -106,8 +77,7 @@ export default function SupportPage() {
       setSubject("");
       setMessage("");
     } catch (err) {
-      const apiError = err as ApiError;
-      setError(apiError.message || "Failed to submit");
+      setError((err as { message?: string })?.message || "Failed to submit");
     } finally {
       setSending(false);
     }

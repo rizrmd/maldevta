@@ -33,6 +33,8 @@ type Querier interface {
 	ListProjects(ctx context.Context, tenantID string) ([]Project, error)
 	ListSubclients(ctx context.Context, projectID string) ([]ListSubclientsRow, error)
 	UpsertWhatsappUser(ctx context.Context, arg UpsertWhatsappUserParams) error
+	UpdateProject(ctx context.Context, arg UpdateProjectParams) error
+	DeleteProject(ctx context.Context, arg DeleteProjectParams) error
 }
 
 var _ Querier = (*Queries)(nil)

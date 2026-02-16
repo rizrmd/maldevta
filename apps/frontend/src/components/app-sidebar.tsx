@@ -9,6 +9,7 @@ import {
   History,
   Puzzle,
   MessageSquare,
+  MessagesSquare,
   Folder,
   CreditCard,
   DollarSign,
@@ -25,8 +26,7 @@ import {
   SidebarRail,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { useProjectStore } from "@/stores";
-import { useAuth } from "@/hooks/useAuth"
+import { useProjectStore, useAuthStore } from "@/stores";
 import { cn } from "@/lib/utils"
 
 interface MenuItem {
@@ -38,8 +38,8 @@ interface MenuItem {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { currentProject } = useProjectStore();
-  const { user } = useAuth();
+  const { currentProject, projects } = useProjectStore();
+  const user = useAuthStore((state) => state.user);
   const isAdmin = user?.role === "admin";
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
@@ -47,18 +47,45 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const appName = React.useState<string>("Maldevta")[0];
   const logoUrl = React.useState<string | null>(null)[0];
 
-  // Check if we're on project selector page (no active project)
-  const hasActiveProject = !!currentProject;
+  // === URL-BASED PROJECT DETECTION ===
+  // Determine if we're on a project page based on URL, not Zustand store
+  const [isInProjectPage, setIsInProjectPage] = React.useState(false);
 
-  // Generate the URL for the current project
-  const getUrl = React.useCallback((_path: string) => {
-    if (!currentProject?.id) return "#";
-    return `/chat/${currentProject.id}`;
-  }, [currentProject]);
+  // Effect to detect project pages from URL
+  React.useEffect(() => {
+    const pathname = window.location.pathname;
 
-  // === MENU SAAT TIDAK ADA PROJECT YANG DIPILIH (Project Selector) ===
+    // Project pages: /chat/:id, /files, /memory, /settings/context
+    // Non-project pages: /, /projects, /dashboard, /chats, /billing, /payment
+    const projectPagePatterns = [
+      /^\/chat\//,
+      /^\/files/,
+      /^\/memory/,
+      /^\/history/,
+      /^\/settings\/context/,
+    ];
+
+    const onProjectPage = projectPagePatterns.some(pattern => pattern.test(pathname));
+    setIsInProjectPage(onProjectPage);
+
+    // Also sync project with Zustand if URL contains project ID
+    if (onProjectPage) {
+      const pathMatch = pathname.match(/^\/chat\/([^\/]+)/);
+      if (pathMatch && pathMatch[1]) {
+        const projectId = pathMatch[1];
+        const project = projects.find(p => p.id === projectId);
+        if (project && currentProject?.id !== projectId) {
+          useProjectStore.getState().selectProject(projectId);
+        }
+      }
+    }
+  }, [projects, currentProject]);
+
+  // === MENU SAAT TIDAK ADA PROJECT (Project Selector) ===
   // Hanya muncul: Projects, Billing, Payment (admin only)
   const projectSelectorItems = React.useMemo(() => {
+    if (isInProjectPage) return [];
+
     const items: MenuItem[] = [
       {
         title: "Projects",
@@ -83,17 +110,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     }
 
     return items;
-  }, [isAdmin]);
+  }, [isAdmin, isInProjectPage]);
 
-  // === PLATFORM MENU (SAAT ADA PROJECT YANG DIPILIH) ===
+  // === PLATFORM MENU (SAAT DI PROJECT PAGE) ===
   // Chat, History, Workspace (admin only - collapsible)
   const platformItems = React.useMemo(() => {
-    if (!hasActiveProject) return [];
+    if (!isInProjectPage) return [];
 
     const items: MenuItem[] = [
       {
         title: "Chat",
-        url: getUrl("chat"),
+        url: currentProject ? `/chat/${currentProject.id}` : "/chat",
         icon: MessageCircle,
       },
       {
@@ -127,12 +154,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     }
 
     return items;
-  }, [hasActiveProject, getUrl, isAdmin]);
+  }, [isInProjectPage, currentProject, isAdmin]);
 
-  // === MANAGEMENT MENU (SAAT ADA PROJECT YANG DIPILIH - ADMIN ONLY) ===
+  // === MANAGEMENT MENU (SAAT DI PROJECT PAGE - ADMIN ONLY) ===
   // Items khusus untuk project yang sedang aktif
   const managementItems = React.useMemo(() => {
-    if (!hasActiveProject) return [];
+    if (!isInProjectPage) return [];
     if (!isAdmin) return [];
 
     const items: MenuItem[] = [];
@@ -169,7 +196,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     });
 
     return items;
-  }, [hasActiveProject, isAdmin]);
+  }, [isInProjectPage, isAdmin]);
 
   // Secondary nav (bottom) - Support & Feedback (selalu muncul)
   const navSecondary = [
@@ -181,7 +208,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     {
       title: "Feedback",
       url: "/feedback",
-      icon: MessageCircle,
+      icon: MessagesSquare,
     },
   ];
 
@@ -190,28 +217,29 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarHeader className={cn("border-b border-border/50 transition-all duration-200", isCollapsed ? "p-2" : "p-4")}>
         <TeamSwitcher
           appName={appName}
-          currentProjectName={currentProject?.name || "Select Project"}
+          currentProjectName={currentProject?.name}
           logoUrl={logoUrl}
+          isSelectable={isInProjectPage}
         />
       </SidebarHeader>
 
       <SidebarContent className="gap-0 py-2">
         {/* Saat tidak ada project: Menu sederhana (Projects, Billing, Payment) */}
-        {!hasActiveProject && (
+        {!isInProjectPage && projectSelectorItems.length > 0 && (
           <div className="px-3">
             <NavMain label="Platform" items={projectSelectorItems} />
           </div>
         )}
 
         {/* Saat ada project: Platform menu (Chat, History, Workspace) */}
-        {hasActiveProject && platformItems.length > 0 && (
+        {isInProjectPage && platformItems.length > 0 && (
           <div className="px-3">
             <NavMain label="Platform" items={platformItems} />
           </div>
         )}
 
         {/* Saat ada project: Management menu (admin only, project-specific) */}
-        {hasActiveProject && managementItems.length > 0 && (
+        {isInProjectPage && managementItems.length > 0 && (
           <div className="mt-4 px-3">
             <NavMain label="Management" items={managementItems} />
           </div>
@@ -225,7 +253,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         {user && (
           <NavUser
             user={{
-              name: user.userId || "User",
+              name: user.username || user.userId || "User",
               email: user.role || "member",
               avatar: "",
             }}

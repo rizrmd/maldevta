@@ -4,7 +4,7 @@ FROM sessions
 WHERE token_hash = ?;
 
 -- name: GetUserByID :one
-SELECT role, IFNULL(tenant_id, '') as tenant_id, IFNULL(project_id, '') as project_id, IFNULL(subclient_id, '') as subclient_id
+SELECT username, role, IFNULL(tenant_id, '') as tenant_id, IFNULL(project_id, '') as project_id, IFNULL(subclient_id, '') as subclient_id
 FROM users
 WHERE id = ?;
 
@@ -99,3 +99,12 @@ SELECT domain FROM subclients WHERE id = ?;
 SELECT subclients.id, subclients.project_id, (SELECT tenant_id FROM projects WHERE id = subclients.project_id) as tenant_id
 FROM subclients
 WHERE subclients.id = ?;
+
+-- name: UpdateProject :exec
+UPDATE projects
+SET name = ?
+WHERE id = ? AND tenant_id = ?;
+
+-- name: DeleteProject :exec
+DELETE FROM projects
+WHERE id = ? AND tenant_id = ?;

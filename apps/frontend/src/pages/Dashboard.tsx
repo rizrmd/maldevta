@@ -36,17 +36,6 @@ type ListProjectsResponse = {
   projects: ProjectResponse[];
 };
 
-type StatusResponse = {
-  connected: boolean;
-  logged_in: boolean;
-  project_id: string;
-  last_qr: string;
-  last_qr_at: string;
-  llm_ready: boolean;
-  llm_error: string;
-  last_error: string;
-};
-
 async function parseError(response: Response): Promise<ApiError> {
   let payload: unknown = null;
   try {
@@ -100,7 +89,6 @@ export default function DashboardPage() {
   const [qrUpdatedAt, setQrUpdatedAt] = useState("");
   const [connected, setConnected] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [uiStatus, setUiStatus] = useState("Idle");
   const [error, setError] = useState("");
   const [polling, setPolling] = useState(false);
 
@@ -187,7 +175,6 @@ export default function DashboardPage() {
         setConnected(Boolean(response.connected));
 
         if (response.connected && !response.code) {
-          setUiStatus("WhatsApp connected.");
           setPolling(false);
           return;
         }
@@ -221,7 +208,6 @@ export default function DashboardPage() {
 
     setBusy(true);
     setError("");
-    setUiStatus("Creating project...");
 
     try {
       const project = await apiRequest<ProjectResponse>("/projects", {
@@ -234,17 +220,14 @@ export default function DashboardPage() {
       });
 
       setProjectID(project.id);
-      setUiStatus(`Project ready: ${project.name}`);
 
       await apiRequest(`/projects/${project.id}/wa/start`, {
         method: "POST",
       });
-      setUiStatus("Waiting for QR code...");
       setPolling(true);
     } catch (err) {
       const apiError = err as ApiError;
       setError(apiError.message || "Failed to create project");
-      setUiStatus("Idle");
     } finally {
       setBusy(false);
     }
@@ -260,7 +243,6 @@ export default function DashboardPage() {
         const project = response.projects[0];
         setProjectID(project.id);
         setProjectName(project.name);
-        setUiStatus(`Project ready: ${project.name}`);
       }
     } catch (err) {
       const apiError = err as ApiError;

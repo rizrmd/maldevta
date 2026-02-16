@@ -21,10 +21,12 @@ export function TeamSwitcher({
   appName,
   currentProjectName,
   logoUrl,
+  isSelectable = true,
 }: {
   appName: string
-  currentProjectName: string
+  currentProjectName?: string
   logoUrl?: string | null
+  isSelectable?: boolean
 }) {
   const { isMobile, state } = useSidebar()
   const isCollapsed = state === "collapsed"
@@ -42,11 +44,11 @@ export function TeamSwitcher({
     <SidebarMenu>
       <SidebarMenuItem>
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+          <DropdownMenuTrigger asChild disabled={!isSelectable}>
             <SidebarMenuButton
               size="lg"
               className={cn(
-                "data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground transition-all duration-200",
+                "data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground transition-all duration-200 disabled:opacity-100",
                 isCollapsed ? "justify-center items-center p-0" : ""
               )}
             >
@@ -63,9 +65,11 @@ export function TeamSwitcher({
                     <span className="truncate font-semibold">
                       {appName}
                     </span>
-                    <span className="truncate text-xs text-muted-foreground">{currentProjectName}</span>
+                    {currentProjectName && (
+                      <span className="truncate text-xs text-muted-foreground">{currentProjectName}</span>
+                    )}
                   </div>
-                  <ChevronsUpDown className="ml-auto size-4" />
+                  {isSelectable && <ChevronsUpDown className="ml-auto size-4" />}
                 </>
               )}
             </SidebarMenuButton>

@@ -68,3 +68,14 @@ type User struct {
 	Source       string         `json:"source"`
 	CreatedAt    time.Time      `json:"created_at"`
 }
+
+type UpdateProjectParams struct {
+	Name     string `json:"name"`
+	ID       string `json:"id"`
+	TenantID string `json:"tenant_id"`
+}
+
+type DeleteProjectParams struct {
+	ID       string `json:"id"`
+	TenantID string `json:"tenant_id"`
+}

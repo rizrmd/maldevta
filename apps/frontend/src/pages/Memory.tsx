@@ -96,7 +96,6 @@ async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
 export default function MemoryPage() {
   const { user } = useAuth();
   const [location] = useLocation();
-  const [, setLocation] = useLocation();
 
   const [projects, setProjects] = useState<ProjectResponse[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState("");
@@ -128,8 +127,7 @@ export default function MemoryPage() {
           setSelectedProjectId(projectList[0].id);
         }
       } catch (err) {
-        const apiError = err as ApiError;
-        setError(apiError.message || "Failed to load projects");
+        setError((err as { message?: string })?.message || "Failed to load projects");
       }
     };
     loadProjects();
@@ -192,8 +190,7 @@ export default function MemoryPage() {
       setNewValue("");
       setShowAddForm(false);
     } catch (err) {
-      const apiError = err as ApiError;
-      setError(apiError.message || "Failed to add memory");
+      setError((err as { message?: string })?.message || "Failed to add memory");
     } finally {
       setBusy(false);
     }
@@ -212,8 +209,7 @@ export default function MemoryPage() {
 
       setMemories(memories.filter((m) => m.key !== key));
     } catch (err) {
-      const apiError = err as ApiError;
-      setError(apiError.message || "Failed to delete memory");
+      setError((err as { message?: string })?.message || "Failed to delete memory");
     }
   };
 

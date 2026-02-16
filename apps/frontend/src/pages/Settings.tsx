@@ -21,42 +21,6 @@ import { User, Building, Key, Save, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
-type ApiError = {
-  message: string;
-  status?: number;
-  code?: string;
-};
-
-async function parseError(response: Response): Promise<ApiError> {
-  let payload: unknown = null;
-  try {
-    payload = await response.json();
-  } catch {
-    payload = null;
-  }
-
-  if (payload && typeof payload === "object") {
-    const record = payload as { message?: string; code?: string };
-    return {
-      message: record.message || `${response.status} ${response.statusText}`,
-      status: response.status,
-      code: record.code,
-    };
-  }
-
-  return {
-    message: `${response.status} ${response.statusText}`,
-    status: response.status,
-  };
-}
 
 /*
 async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
@@ -120,8 +84,7 @@ export default function SettingsPage() {
         setTenantDomain("example.com");
         setUsername(user?.userId || "");
       } catch (err) {
-        const apiError = err as ApiError;
-        setError(apiError.message || "Failed to load settings");
+        setError((err as { message?: string })?.message || "Failed to load settings");
       }
     };
     loadData();
@@ -147,8 +110,7 @@ export default function SettingsPage() {
       setNewPassword("");
       setConfirmPassword("");
     } catch (err) {
-      const apiError = err as ApiError;
-      setError(apiError.message || "Failed to save settings");
+      setError((err as { message?: string })?.message || "Failed to save settings");
     } finally {
       setSaving(false);
     }

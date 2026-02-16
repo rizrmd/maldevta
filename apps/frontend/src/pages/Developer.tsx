@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useLocation } from "wouter";
 import AppLayout from "@/components/app-layout";
 import {
   Breadcrumb,
@@ -83,7 +82,6 @@ async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
 
 export default function DeveloperPage() {
   const { user } = useAuth();
-  const [, setLocation] = useLocation();
 
   const [projects, setProjects] = useState<ProjectResponse[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState("");

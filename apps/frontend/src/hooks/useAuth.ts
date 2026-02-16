@@ -1,2 +1,2 @@
-export { useAuth, AuthProvider } from "../contexts/AuthContext";
-export type { AuthData, SessionStatus } from "../contexts/AuthContext";
+export { useAuthStore as useAuth } from "@/stores/authStore";
+export type { AuthData, SessionStatus } from "@/stores/authStore";

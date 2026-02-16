@@ -100,6 +100,7 @@ type AuthData struct {
 	SubclientID string
 	ScopeType   scopeType
 	ScopeID     string
+	Username    string
 }
 
 type authParams struct {
@@ -167,6 +168,7 @@ func AuthHandler(ctx context.Context, p *authParams) (auth.UID, *AuthData, error
 		SubclientID: toString(user.SubclientID),
 		ScopeType:   scopeType(session.ScopeType),
 		ScopeID:     session.ScopeID,
+		Username:    user.Username,
 	}
 
 	return auth.UID(session.UserID), data, nil
@@ -187,6 +189,7 @@ type authResponse struct {
 	Role      string `json:"role"`
 	ScopeType string `json:"scope_type"`
 	ScopeID   string `json:"scope_id"`
+	Username  string `json:"username"`
 }
 
 type sessionStatusResponse struct {
@@ -196,6 +199,7 @@ type sessionStatusResponse struct {
 	TenantID    string `json:"tenant_id"`
 	ProjectID   string `json:"project_id"`
 	SubclientID string `json:"subclient_id"`
+	Username    string `json:"username"`
 }
 
 // InstallStatus checks if the application has already been installed.
@@ -457,6 +461,7 @@ func TenantLogin(ctx context.Context, p *tenantLoginParams) (*authResponse, erro
 		Role:      userRole,
 		ScopeType: string(scopeTenant),
 		ScopeID:   tenantID,
+		Username:  p.Username,
 	}, nil
 }
 
@@ -478,6 +483,10 @@ type projectResponse struct {
 
 type listProjectsResponse struct {
 	Projects []*projectResponse `json:"projects"`
+}
+
+type RenameProjectParams struct {
+	Name string `json:"name" validate:"min=1"`
 }
 
 // CreateProject creates a tenant-level shared project (admin only).
@@ -556,6 +565,65 @@ func CreateProject(ctx context.Context, p *createProjectParams) (*projectRespons
 		CreatedByUserID:  data.UserID,
 		CreatedAt:        now.Format(time.RFC3339),
 	}, nil
+}
+
+// RenameProject updates the name of a project.
+//
+//encore:api auth method=PATCH path=/projects/:projectID
+func RenameProject(ctx context.Context, projectID string, p *RenameProjectParams) error {
+	fmt.Printf("RenameProject: ID=%s payload=%+v\n", projectID, p)
+	if p == nil || strings.TrimSpace(p.Name) == "" {
+		return &errs.Error{Code: errs.InvalidArgument, Message: "project name is required"}
+	}
+
+	raw := auth.Data()
+	data, _ := raw.(*AuthData)
+	if data == nil || data.ScopeType != scopeTenant {
+		return &errs.Error{Code: errs.PermissionDenied, Message: "tenant session required"}
+	}
+
+	// Verify project exists and belongs to tenant
+	ok, _, _, err := projectOwnedByTenant(ctx, projectID, data.TenantID)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return &errs.Error{Code: errs.PermissionDenied, Message: "project not found"}
+	}
+
+	return q().UpdateProject(ctx, iamdb.UpdateProjectParams{
+		ID:       projectID,
+		TenantID: data.TenantID,
+		Name:     strings.TrimSpace(p.Name),
+	})
+}
+
+// DeleteProject deletes a project and all its sub-resources (admin only).
+//
+//encore:api auth method=DELETE path=/projects/:projectID
+func DeleteProject(ctx context.Context, projectID string) error {
+	raw := auth.Data()
+	data, _ := raw.(*AuthData)
+	if data == nil || data.ScopeType != scopeTenant {
+		return &errs.Error{Code: errs.PermissionDenied, Message: "tenant session required"}
+	}
+	if data.Role != roleAdmin {
+		return &errs.Error{Code: errs.PermissionDenied, Message: "only tenant admin can delete projects"}
+	}
+
+	// Verify project exists and belongs to tenant
+	ok, _, _, err := projectOwnedByTenant(ctx, projectID, data.TenantID)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return &errs.Error{Code: errs.PermissionDenied, Message: "project not found"}
+	}
+
+	return q().DeleteProject(ctx, iamdb.DeleteProjectParams{
+		ID:       projectID,
+		TenantID: data.TenantID,
+	})
 }
 
 type createSubclientParams struct {
@@ -722,6 +790,7 @@ func SubclientLogin(ctx context.Context, p *subclientLoginParams) (*authResponse
 		Role:      userRole,
 		ScopeType: string(scopeSubclient),
 		ScopeID:   subclient.ID,
+		Username:  p.Username,
 	}, nil
 }
 
@@ -742,6 +811,7 @@ func SessionStatus(ctx context.Context) (*sessionStatusResponse, error) {
 		TenantID:    data.TenantID,
 		ProjectID:   data.ProjectID,
 		SubclientID: data.SubclientID,
+		Username:    data.Username,
 	}, nil
 }
 

@@ -58,6 +58,7 @@ export type SessionStatus = {
   tenant_id?: string;
   project_id?: string;
   subclient_id?: string;
+  username: string;
 };
 
 export type AuthData = {
@@ -67,6 +68,7 @@ export type AuthData = {
   tenantId?: string;
   projectId?: string;
   subclientId?: string;
+  username: string;
 };
 
 interface AuthStore {
@@ -107,6 +109,7 @@ export const useAuthStore = create<AuthStore>()(
               tenantId: response.tenant_id,
               projectId: response.project_id,
               subclientId: response.subclient_id,
+              username: response.username,
             },
             checking: false,
             loading: false,
@@ -124,6 +127,7 @@ export const useAuthStore = create<AuthStore>()(
             role: string;
             scope_type: string;
             scope_id: string;
+            username: string;
           }>("/auth/tenant/login", {
             method: "POST",
             body: JSON.stringify({ username, password }),
@@ -135,6 +139,7 @@ export const useAuthStore = create<AuthStore>()(
               role: response.role,
               scopeType: response.scope_type,
               tenantId: response.scope_type === "tenant" ? response.scope_id : undefined,
+              username: response.username,
             },
             loading: false,
           });

@@ -240,12 +240,13 @@ func (q *Queries) GetTenantUser(ctx context.Context, arg GetTenantUserParams) (G
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT role, IFNULL(tenant_id, '') as tenant_id, IFNULL(project_id, '') as project_id, IFNULL(subclient_id, '') as subclient_id
+SELECT username, role, IFNULL(tenant_id, '') as tenant_id, IFNULL(project_id, '') as project_id, IFNULL(subclient_id, '') as subclient_id
 FROM users
 WHERE id = ?
 `
 
 type GetUserByIDRow struct {
+	Username    string      `json:"username"`
 	Role        string      `json:"role"`
 	TenantID    interface{} `json:"tenant_id"`
 	ProjectID   interface{} `json:"project_id"`
@@ -256,6 +257,7 @@ func (q *Queries) GetUserByID(ctx context.Context, id string) (GetUserByIDRow, e
 	row := q.db.QueryRowContext(ctx, getUserByID, id)
 	var i GetUserByIDRow
 	err := row.Scan(
+		&i.Username,
 		&i.Role,
 		&i.TenantID,
 		&i.ProjectID,
@@ -516,5 +518,26 @@ func (q *Queries) UpsertWhatsappUser(ctx context.Context, arg UpsertWhatsappUser
 		arg.Role,
 		arg.Source,
 	)
+	return err
+}
+
+const updateProject = `-- name: UpdateProject :exec
+UPDATE projects
+SET name = ?
+WHERE id = ? AND tenant_id = ?
+`
+
+func (q *Queries) UpdateProject(ctx context.Context, arg UpdateProjectParams) error {
+	_, err := q.db.ExecContext(ctx, updateProject, arg.Name, arg.ID, arg.TenantID)
+	return err
+}
+
+const deleteProject = `-- name: DeleteProject :exec
+DELETE FROM projects
+WHERE id = ? AND tenant_id = ?
+`
+
+func (q *Queries) DeleteProject(ctx context.Context, arg DeleteProjectParams) error {
+	_, err := q.db.ExecContext(ctx, deleteProject, arg.ID, arg.TenantID)
 	return err
 }
