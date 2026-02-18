@@ -33,12 +33,115 @@ func (q *Queries) CountProjectsForTenant(ctx context.Context, tenantID string) (
 	return count, err
 }
 
+const countTenants = `-- name: CountTenants :one
+SELECT COUNT(*) FROM tenants
+`
+
+func (q *Queries) CountTenants(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countTenants)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countUsersByTenant = `-- name: CountUsersByTenant :one
+SELECT COUNT(*) FROM users WHERE tenant_id = ? AND subclient_id IS NULL
+`
+
+func (q *Queries) CountUsersByTenant(ctx context.Context, tenantID sql.NullString) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countUsersByTenant, tenantID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const createUser = `-- name: CreateUser :exec
+INSERT INTO users (id, tenant_id, username, email, password_hash, role, source, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+`
+
+type CreateUserParams struct {
+	ID           string         `json:"id"`
+	TenantID     sql.NullString `json:"tenant_id"`
+	Username     string         `json:"username"`
+	Email        sql.NullString `json:"email"`
+	PasswordHash sql.NullString `json:"password_hash"`
+	Role         string         `json:"role"`
+	Source       string         `json:"source"`
+	CreatedAt    time.Time      `json:"created_at"`
+	UpdatedAt    int64          `json:"updated_at"`
+}
+
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
+	_, err := q.db.ExecContext(ctx, createUser,
+		arg.ID,
+		arg.TenantID,
+		arg.Username,
+		arg.Email,
+		arg.PasswordHash,
+		arg.Role,
+		arg.Source,
+		arg.CreatedAt,
+		arg.UpdatedAt,
+	)
+	return err
+}
+
+const deleteProject = `-- name: DeleteProject :exec
+DELETE FROM projects
+WHERE id = ? AND tenant_id = ?
+`
+
+type DeleteProjectParams struct {
+	ID       string `json:"id"`
+	TenantID string `json:"tenant_id"`
+}
+
+func (q *Queries) DeleteProject(ctx context.Context, arg DeleteProjectParams) error {
+	_, err := q.db.ExecContext(ctx, deleteProject, arg.ID, arg.TenantID)
+	return err
+}
+
 const deleteSession = `-- name: DeleteSession :exec
 DELETE FROM sessions WHERE token_hash = ?
 `
 
 func (q *Queries) DeleteSession(ctx context.Context, tokenHash string) error {
 	_, err := q.db.ExecContext(ctx, deleteSession, tokenHash)
+	return err
+}
+
+const deleteTenant = `-- name: DeleteTenant :exec
+DELETE FROM tenants WHERE id = ?
+`
+
+func (q *Queries) DeleteTenant(ctx context.Context, id string) error {
+	_, err := q.db.ExecContext(ctx, deleteTenant, id)
+	return err
+}
+
+const deleteTenantLogo = `-- name: DeleteTenantLogo :exec
+UPDATE tenants
+SET has_logo = 0, updated_at = ?
+WHERE id = ?
+`
+
+type DeleteTenantLogoParams struct {
+	UpdatedAt int64  `json:"updated_at"`
+	ID        string `json:"id"`
+}
+
+func (q *Queries) DeleteTenantLogo(ctx context.Context, arg DeleteTenantLogoParams) error {
+	_, err := q.db.ExecContext(ctx, deleteTenantLogo, arg.UpdatedAt, arg.ID)
+	return err
+}
+
+const deleteUser = `-- name: DeleteUser :exec
+DELETE FROM users WHERE id = ?
+`
+
+func (q *Queries) DeleteUser(ctx context.Context, id string) error {
+	_, err := q.db.ExecContext(ctx, deleteUser, id)
 	return err
 }
 
@@ -51,6 +154,18 @@ func (q *Queries) GetDefaultTenant(ctx context.Context) (string, error) {
 	var id string
 	err := row.Scan(&id)
 	return id, err
+}
+
+const getEmbedCSS = `-- name: GetEmbedCSS :one
+SELECT custom_css FROM embed_css
+WHERE project_id = ?
+`
+
+func (q *Queries) GetEmbedCSS(ctx context.Context, projectID string) (string, error) {
+	row := q.db.QueryRowContext(ctx, getEmbedCSS, projectID)
+	var custom_css string
+	err := row.Scan(&custom_css)
+	return custom_css, err
 }
 
 const getLicense = `-- name: GetLicense :one
@@ -69,6 +184,34 @@ func (q *Queries) GetLicense(ctx context.Context) (GetLicenseRow, error) {
 	row := q.db.QueryRowContext(ctx, getLicense)
 	var i GetLicenseRow
 	err := row.Scan(&i.MaxProjectsPerTenant, &i.WhatsappEnabled, &i.SubclientEnabled)
+	return i, err
+}
+
+const getProject = `-- name: GetProject :one
+SELECT id, tenant_id, name, whatsapp_enabled, subclient_enabled, created_by_user_id, created_at, show_history, use_client_uid, allowed_origins FROM projects
+WHERE id = ? AND tenant_id = ?
+`
+
+type GetProjectParams struct {
+	ID       string `json:"id"`
+	TenantID string `json:"tenant_id"`
+}
+
+func (q *Queries) GetProject(ctx context.Context, arg GetProjectParams) (Project, error) {
+	row := q.db.QueryRowContext(ctx, getProject, arg.ID, arg.TenantID)
+	var i Project
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.Name,
+		&i.WhatsappEnabled,
+		&i.SubclientEnabled,
+		&i.CreatedByUserID,
+		&i.CreatedAt,
+		&i.ShowHistory,
+		&i.UseClientUid,
+		&i.AllowedOrigins,
+	)
 	return i, err
 }
 
@@ -215,6 +358,37 @@ func (q *Queries) GetTenantByID(ctx context.Context, id string) (string, error) 
 	return domain, err
 }
 
+const getTenantDetail = `-- name: GetTenantDetail :one
+SELECT id, name, domain, is_default, has_logo, created_at, updated_at
+FROM tenants
+WHERE id = ?
+`
+
+type GetTenantDetailRow struct {
+	ID        string    `json:"id"`
+	Name      string    `json:"name"`
+	Domain    string    `json:"domain"`
+	IsDefault int64     `json:"is_default"`
+	HasLogo   int64     `json:"has_logo"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt int64     `json:"updated_at"`
+}
+
+func (q *Queries) GetTenantDetail(ctx context.Context, id string) (GetTenantDetailRow, error) {
+	row := q.db.QueryRowContext(ctx, getTenantDetail, id)
+	var i GetTenantDetailRow
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Domain,
+		&i.IsDefault,
+		&i.HasLogo,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getTenantUser = `-- name: GetTenantUser :one
 SELECT id, role, password_hash
 FROM users
@@ -236,6 +410,41 @@ func (q *Queries) GetTenantUser(ctx context.Context, arg GetTenantUserParams) (G
 	row := q.db.QueryRowContext(ctx, getTenantUser, arg.TenantID, arg.Username)
 	var i GetTenantUserRow
 	err := row.Scan(&i.ID, &i.Role, &i.PasswordHash)
+	return i, err
+}
+
+const getUserByEmail = `-- name: GetUserByEmail :one
+SELECT id, tenant_id, username, email, password_hash, role, source, created_at, updated_at
+FROM users
+WHERE email = ?
+`
+
+type GetUserByEmailRow struct {
+	ID           string         `json:"id"`
+	TenantID     sql.NullString `json:"tenant_id"`
+	Username     string         `json:"username"`
+	Email        sql.NullString `json:"email"`
+	PasswordHash sql.NullString `json:"password_hash"`
+	Role         string         `json:"role"`
+	Source       string         `json:"source"`
+	CreatedAt    time.Time      `json:"created_at"`
+	UpdatedAt    int64          `json:"updated_at"`
+}
+
+func (q *Queries) GetUserByEmail(ctx context.Context, email sql.NullString) (GetUserByEmailRow, error) {
+	row := q.db.QueryRowContext(ctx, getUserByEmail, email)
+	var i GetUserByEmailRow
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.Username,
+		&i.Email,
+		&i.PasswordHash,
+		&i.Role,
+		&i.Source,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
 	return i, err
 }
 
@@ -262,6 +471,41 @@ func (q *Queries) GetUserByID(ctx context.Context, id string) (GetUserByIDRow, e
 		&i.TenantID,
 		&i.ProjectID,
 		&i.SubclientID,
+	)
+	return i, err
+}
+
+const getUserDetail = `-- name: GetUserDetail :one
+SELECT id, tenant_id, username, email, password_hash, role, source, created_at, updated_at
+FROM users
+WHERE id = ?
+`
+
+type GetUserDetailRow struct {
+	ID           string         `json:"id"`
+	TenantID     sql.NullString `json:"tenant_id"`
+	Username     string         `json:"username"`
+	Email        sql.NullString `json:"email"`
+	PasswordHash sql.NullString `json:"password_hash"`
+	Role         string         `json:"role"`
+	Source       string         `json:"source"`
+	CreatedAt    time.Time      `json:"created_at"`
+	UpdatedAt    int64          `json:"updated_at"`
+}
+
+func (q *Queries) GetUserDetail(ctx context.Context, id string) (GetUserDetailRow, error) {
+	row := q.db.QueryRowContext(ctx, getUserDetail, id)
+	var i GetUserDetailRow
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.Username,
+		&i.Email,
+		&i.PasswordHash,
+		&i.Role,
+		&i.Source,
+		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
@@ -415,21 +659,31 @@ func (q *Queries) InsertUser(ctx context.Context, arg InsertUserParams) error {
 }
 
 const listProjects = `-- name: ListProjects :many
-SELECT id, tenant_id, name, whatsapp_enabled, subclient_enabled, created_by_user_id, created_at, show_history, use_client_uid, allowed_origins
+SELECT id, tenant_id, name, whatsapp_enabled, subclient_enabled, created_by_user_id, created_at
 FROM projects
 WHERE tenant_id = ?
 ORDER BY created_at DESC
 `
 
-func (q *Queries) ListProjects(ctx context.Context, tenantID string) ([]Project, error) {
+type ListProjectsRow struct {
+	ID               string    `json:"id"`
+	TenantID         string    `json:"tenant_id"`
+	Name             string    `json:"name"`
+	WhatsappEnabled  int64     `json:"whatsapp_enabled"`
+	SubclientEnabled int64     `json:"subclient_enabled"`
+	CreatedByUserID  string    `json:"created_by_user_id"`
+	CreatedAt        time.Time `json:"created_at"`
+}
+
+func (q *Queries) ListProjects(ctx context.Context, tenantID string) ([]ListProjectsRow, error) {
 	rows, err := q.db.QueryContext(ctx, listProjects, tenantID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Project
+	var items []ListProjectsRow
 	for rows.Next() {
-		var i Project
+		var i ListProjectsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.TenantID,
@@ -438,9 +692,6 @@ func (q *Queries) ListProjects(ctx context.Context, tenantID string) ([]Project,
 			&i.SubclientEnabled,
 			&i.CreatedByUserID,
 			&i.CreatedAt,
-			&i.ShowHistory,
-			&i.UseClientUID,
-			&i.AllowedOrigins,
 		); err != nil {
 			return nil, err
 		}
@@ -497,6 +748,230 @@ func (q *Queries) ListSubclients(ctx context.Context, projectID string) ([]ListS
 	return items, nil
 }
 
+const listTenants = `-- name: ListTenants :many
+
+SELECT id, name, domain, is_default, has_logo, created_at, updated_at
+FROM tenants
+ORDER BY created_at DESC
+`
+
+type ListTenantsRow struct {
+	ID        string    `json:"id"`
+	Name      string    `json:"name"`
+	Domain    string    `json:"domain"`
+	IsDefault int64     `json:"is_default"`
+	HasLogo   int64     `json:"has_logo"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt int64     `json:"updated_at"`
+}
+
+// ============================================================================
+// TENANT MANAGEMENT QUERIES
+// ============================================================================
+func (q *Queries) ListTenants(ctx context.Context) ([]ListTenantsRow, error) {
+	rows, err := q.db.QueryContext(ctx, listTenants)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListTenantsRow
+	for rows.Next() {
+		var i ListTenantsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Domain,
+			&i.IsDefault,
+			&i.HasLogo,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listUsersByTenant = `-- name: ListUsersByTenant :many
+
+SELECT id, tenant_id, username, email, role, source, created_at, updated_at
+FROM users
+WHERE tenant_id = ? AND subclient_id IS NULL
+ORDER BY created_at DESC
+`
+
+type ListUsersByTenantRow struct {
+	ID        string         `json:"id"`
+	TenantID  sql.NullString `json:"tenant_id"`
+	Username  string         `json:"username"`
+	Email     sql.NullString `json:"email"`
+	Role      string         `json:"role"`
+	Source    string         `json:"source"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt int64          `json:"updated_at"`
+}
+
+// ============================================================================
+// USER MANAGEMENT QUERIES
+// ============================================================================
+func (q *Queries) ListUsersByTenant(ctx context.Context, tenantID sql.NullString) ([]ListUsersByTenantRow, error) {
+	rows, err := q.db.QueryContext(ctx, listUsersByTenant, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListUsersByTenantRow
+	for rows.Next() {
+		var i ListUsersByTenantRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.Username,
+			&i.Email,
+			&i.Role,
+			&i.Source,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const updateProject = `-- name: UpdateProject :exec
+UPDATE projects
+SET name = ?
+WHERE id = ? AND tenant_id = ?
+`
+
+type UpdateProjectParams struct {
+	Name     string `json:"name"`
+	ID       string `json:"id"`
+	TenantID string `json:"tenant_id"`
+}
+
+func (q *Queries) UpdateProject(ctx context.Context, arg UpdateProjectParams) error {
+	_, err := q.db.ExecContext(ctx, updateProject, arg.Name, arg.ID, arg.TenantID)
+	return err
+}
+
+const updateTenant = `-- name: UpdateTenant :exec
+UPDATE tenants
+SET name = ?, domain = ?, updated_at = ?
+WHERE id = ?
+`
+
+type UpdateTenantParams struct {
+	Name      string `json:"name"`
+	Domain    string `json:"domain"`
+	UpdatedAt int64  `json:"updated_at"`
+	ID        string `json:"id"`
+}
+
+func (q *Queries) UpdateTenant(ctx context.Context, arg UpdateTenantParams) error {
+	_, err := q.db.ExecContext(ctx, updateTenant,
+		arg.Name,
+		arg.Domain,
+		arg.UpdatedAt,
+		arg.ID,
+	)
+	return err
+}
+
+const updateTenantLogo = `-- name: UpdateTenantLogo :exec
+UPDATE tenants
+SET has_logo = 1, updated_at = ?
+WHERE id = ?
+`
+
+type UpdateTenantLogoParams struct {
+	UpdatedAt int64  `json:"updated_at"`
+	ID        string `json:"id"`
+}
+
+func (q *Queries) UpdateTenantLogo(ctx context.Context, arg UpdateTenantLogoParams) error {
+	_, err := q.db.ExecContext(ctx, updateTenantLogo, arg.UpdatedAt, arg.ID)
+	return err
+}
+
+const updateUser = `-- name: UpdateUser :exec
+UPDATE users
+SET username = ?, email = ?, role = ?, updated_at = ?
+WHERE id = ?
+`
+
+type UpdateUserParams struct {
+	Username  string         `json:"username"`
+	Email     sql.NullString `json:"email"`
+	Role      string         `json:"role"`
+	UpdatedAt int64          `json:"updated_at"`
+	ID        string         `json:"id"`
+}
+
+func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
+	_, err := q.db.ExecContext(ctx, updateUser,
+		arg.Username,
+		arg.Email,
+		arg.Role,
+		arg.UpdatedAt,
+		arg.ID,
+	)
+	return err
+}
+
+const updateUserPassword = `-- name: UpdateUserPassword :exec
+UPDATE users
+SET password_hash = ?, updated_at = ?
+WHERE id = ?
+`
+
+type UpdateUserPasswordParams struct {
+	PasswordHash sql.NullString `json:"password_hash"`
+	UpdatedAt    int64          `json:"updated_at"`
+	ID           string         `json:"id"`
+}
+
+func (q *Queries) UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) error {
+	_, err := q.db.ExecContext(ctx, updateUserPassword, arg.PasswordHash, arg.UpdatedAt, arg.ID)
+	return err
+}
+
+const upsertEmbedCSS = `-- name: UpsertEmbedCSS :one
+INSERT INTO embed_css (project_id, custom_css, updated_at)
+VALUES (?, ?, CURRENT_TIMESTAMP)
+ON CONFLICT(project_id) DO UPDATE SET
+  custom_css = excluded.custom_css,
+  updated_at = excluded.updated_at
+RETURNING project_id
+`
+
+type UpsertEmbedCSSParams struct {
+	ProjectID string `json:"project_id"`
+	CustomCss string `json:"custom_css"`
+}
+
+func (q *Queries) UpsertEmbedCSS(ctx context.Context, arg UpsertEmbedCSSParams) (string, error) {
+	row := q.db.QueryRowContext(ctx, upsertEmbedCSS, arg.ProjectID, arg.CustomCss)
+	var project_id string
+	err := row.Scan(&project_id)
+	return project_id, err
+}
+
 const upsertWhatsappUser = `-- name: UpsertWhatsappUser :exec
 INSERT INTO users (id, tenant_id, project_id, username, role, source)
 VALUES (?, ?, ?, ?, ?, ?)
@@ -521,75 +996,5 @@ func (q *Queries) UpsertWhatsappUser(ctx context.Context, arg UpsertWhatsappUser
 		arg.Role,
 		arg.Source,
 	)
-	return err
-}
-
-const updateProject = `-- name: UpdateProject :exec
-UPDATE projects
-SET name = ?
-WHERE id = ? AND tenant_id = ?
-`
-
-func (q *Queries) UpdateProject(ctx context.Context, arg UpdateProjectParams) error {
-	_, err := q.db.ExecContext(ctx, updateProject, arg.Name, arg.ID, arg.TenantID)
-	return err
-}
-
-const deleteProject = `-- name: DeleteProject :exec
-DELETE FROM projects
-WHERE id = ? AND tenant_id = ?
-`
-
-func (q *Queries) DeleteProject(ctx context.Context, arg DeleteProjectParams) error {
-	_, err := q.db.ExecContext(ctx, deleteProject, arg.ID, arg.TenantID)
-	return err
-}
-
-const getProject = `-- name: GetProject :one
-SELECT id, tenant_id, name, whatsapp_enabled, subclient_enabled, created_by_user_id, created_at, show_history, use_client_uid, allowed_origins
-FROM projects
-WHERE id = ? AND tenant_id = ?
-`
-
-func (q *Queries) GetProject(ctx context.Context, arg GetProjectParams) (Project, error) {
-	row := q.db.QueryRowContext(ctx, getProject, arg.ID, arg.TenantID)
-	var i Project
-	err := row.Scan(
-		&i.ID,
-		&i.TenantID,
-		&i.Name,
-		&i.WhatsappEnabled,
-		&i.SubclientEnabled,
-		&i.CreatedByUserID,
-		&i.CreatedAt,
-		&i.ShowHistory,
-		&i.UseClientUID,
-		&i.AllowedOrigins,
-	)
-	return i, err
-}
-
-const getEmbedCSS = `-- name: GetEmbedCSS :one
-SELECT custom_css FROM embed_css
-WHERE project_id = ?
-`
-
-func (q *Queries) GetEmbedCSS(ctx context.Context, projectID string) (GetEmbedCSSRow, error) {
-	row := q.db.QueryRowContext(ctx, getEmbedCSS, projectID)
-	var i GetEmbedCSSRow
-	err := row.Scan(&i.CustomCSS)
-	return i, err
-}
-
-const upsertEmbedCSS = `-- name: UpsertEmbedCSS :exec
-INSERT INTO embed_css (project_id, custom_css, updated_at)
-VALUES (?, ?, CURRENT_TIMESTAMP)
-ON CONFLICT(project_id) DO UPDATE SET
-  custom_css = excluded.custom_css,
-  updated_at = excluded.updated_at
-`
-
-func (q *Queries) UpsertEmbedCSS(ctx context.Context, arg UpsertEmbedCSSParams) error {
-	_, err := q.db.ExecContext(ctx, upsertEmbedCSS, arg.ProjectID, arg.CustomCSS)
 	return err
 }

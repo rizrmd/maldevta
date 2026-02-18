@@ -123,6 +123,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     // Admin-only items when no project selected
     if (isAdmin) {
       items.push({
+        title: "Tenants",
+        url: "/admin/tenants",
+        icon: Building2,
+      });
+
+      items.push({
         title: "Billing",
         url: "/billing",
         icon: CreditCard,

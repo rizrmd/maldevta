@@ -23,6 +23,7 @@ import PaymentPage from "@/pages/Payment";
 import LicenseVerifyPage from "@/pages/LicenseVerify";
 import LicenseSetupPage from "@/pages/LicenseSetup";
 import NotFoundPage from "@/pages/NotFound";
+import { AdminTenantsPage } from "@/pages/AdminTenants";
 
 //take out hardcode license true
 function LoadingScreen() {
@@ -147,6 +148,7 @@ function App() {
             {/* <Route path="/feedback" component={SupportPage} /> */}
             <Route path="/billing" component={BillingPage} />
             <Route path="/payment" component={PaymentPage} />
+            <Route path="/admin/tenants" component={AdminTenantsPage} />
           </Switch>
         </ProtectedRoute>
 

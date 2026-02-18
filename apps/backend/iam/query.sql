@@ -108,3 +108,93 @@ WHERE id = ? AND tenant_id = ?;
 -- name: DeleteProject :exec
 DELETE FROM projects
 WHERE id = ? AND tenant_id = ?;
+
+-- ============================================================================
+-- TENANT MANAGEMENT QUERIES
+-- ============================================================================
+
+-- name: ListTenants :many
+SELECT id, name, domain, is_default, has_logo, created_at, updated_at
+FROM tenants
+ORDER BY created_at DESC;
+
+-- name: GetTenantDetail :one
+SELECT id, name, domain, is_default, has_logo, created_at, updated_at
+FROM tenants
+WHERE id = ?;
+
+-- name: UpdateTenant :exec
+UPDATE tenants
+SET name = ?, domain = ?, updated_at = ?
+WHERE id = ?;
+
+-- name: UpdateTenantLogo :exec
+UPDATE tenants
+SET has_logo = 1, updated_at = ?
+WHERE id = ?;
+
+-- name: DeleteTenantLogo :exec
+UPDATE tenants
+SET has_logo = 0, updated_at = ?
+WHERE id = ?;
+
+-- name: DeleteTenant :exec
+DELETE FROM tenants WHERE id = ?;
+
+-- name: CountTenants :one
+SELECT COUNT(*) FROM tenants;
+
+-- ============================================================================
+-- USER MANAGEMENT QUERIES
+-- ============================================================================
+
+-- name: ListUsersByTenant :many
+SELECT id, tenant_id, username, email, role, source, created_at, updated_at
+FROM users
+WHERE tenant_id = ? AND subclient_id IS NULL
+ORDER BY created_at DESC;
+
+-- name: GetUserDetail :one
+SELECT id, tenant_id, username, email, password_hash, role, source, created_at, updated_at
+FROM users
+WHERE id = ?;
+
+-- name: GetUserByEmail :one
+SELECT id, tenant_id, username, email, password_hash, role, source, created_at, updated_at
+FROM users
+WHERE email = ?;
+
+-- name: CreateUser :exec
+INSERT INTO users (id, tenant_id, username, email, password_hash, role, source, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+-- name: UpdateUser :exec
+UPDATE users
+SET username = ?, email = ?, role = ?, updated_at = ?
+WHERE id = ?;
+
+-- name: UpdateUserPassword :exec
+UPDATE users
+SET password_hash = ?, updated_at = ?
+WHERE id = ?;
+
+-- name: DeleteUser :exec
+DELETE FROM users WHERE id = ?;
+
+-- name: CountUsersByTenant :one
+SELECT COUNT(*) FROM users WHERE tenant_id = ? AND subclient_id IS NULL;
+-- name: GetProject :one
+SELECT * FROM projects
+WHERE id = ? AND tenant_id = ?;
+
+-- name: GetEmbedCSS :one
+SELECT custom_css FROM embed_css
+WHERE project_id = ?;
+
+-- name: UpsertEmbedCSS :one
+INSERT INTO embed_css (project_id, custom_css, updated_at)
+VALUES (?, ?, CURRENT_TIMESTAMP)
+ON CONFLICT(project_id) DO UPDATE SET
+  custom_css = excluded.custom_css,
+  updated_at = excluded.updated_at
+RETURNING project_id;

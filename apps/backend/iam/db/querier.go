@@ -6,14 +6,24 @@ package db
 
 import (
 	"context"
+	"database/sql"
 )
 
 type Querier interface {
 	CountLicenses(ctx context.Context) (int64, error)
 	CountProjectsForTenant(ctx context.Context, tenantID string) (int64, error)
+	CountTenants(ctx context.Context) (int64, error)
+	CountUsersByTenant(ctx context.Context, tenantID sql.NullString) (int64, error)
+	CreateUser(ctx context.Context, arg CreateUserParams) error
+	DeleteProject(ctx context.Context, arg DeleteProjectParams) error
 	DeleteSession(ctx context.Context, tokenHash string) error
+	DeleteTenant(ctx context.Context, id string) error
+	DeleteTenantLogo(ctx context.Context, arg DeleteTenantLogoParams) error
+	DeleteUser(ctx context.Context, id string) error
 	GetDefaultTenant(ctx context.Context) (string, error)
+	GetEmbedCSS(ctx context.Context, projectID string) (string, error)
 	GetLicense(ctx context.Context) (GetLicenseRow, error)
+	GetProject(ctx context.Context, arg GetProjectParams) (Project, error)
 	GetProjectByTenant(ctx context.Context, arg GetProjectByTenantParams) (GetProjectByTenantRow, error)
 	GetSession(ctx context.Context, tokenHash string) (GetSessionRow, error)
 	GetSubclientByDomain(ctx context.Context, domain string) (GetSubclientByDomainRow, error)
@@ -22,22 +32,34 @@ type Querier interface {
 	GetSubclientUser(ctx context.Context, arg GetSubclientUserParams) (GetSubclientUserRow, error)
 	GetTenantByDomain(ctx context.Context, domain string) (string, error)
 	GetTenantByID(ctx context.Context, id string) (string, error)
+	GetTenantDetail(ctx context.Context, id string) (GetTenantDetailRow, error)
 	GetTenantUser(ctx context.Context, arg GetTenantUserParams) (GetTenantUserRow, error)
+	GetUserByEmail(ctx context.Context, email sql.NullString) (GetUserByEmailRow, error)
 	GetUserByID(ctx context.Context, id string) (GetUserByIDRow, error)
+	GetUserDetail(ctx context.Context, id string) (GetUserDetailRow, error)
 	InsertLicense(ctx context.Context, arg InsertLicenseParams) error
 	InsertProject(ctx context.Context, arg InsertProjectParams) error
 	InsertSession(ctx context.Context, arg InsertSessionParams) error
 	InsertSubclient(ctx context.Context, arg InsertSubclientParams) error
 	InsertTenant(ctx context.Context, arg InsertTenantParams) error
 	InsertUser(ctx context.Context, arg InsertUserParams) error
-	ListProjects(ctx context.Context, tenantID string) ([]Project, error)
+	ListProjects(ctx context.Context, tenantID string) ([]ListProjectsRow, error)
 	ListSubclients(ctx context.Context, projectID string) ([]ListSubclientsRow, error)
-	UpsertWhatsappUser(ctx context.Context, arg UpsertWhatsappUserParams) error
+	// ============================================================================
+	// TENANT MANAGEMENT QUERIES
+	// ============================================================================
+	ListTenants(ctx context.Context) ([]ListTenantsRow, error)
+	// ============================================================================
+	// USER MANAGEMENT QUERIES
+	// ============================================================================
+	ListUsersByTenant(ctx context.Context, tenantID sql.NullString) ([]ListUsersByTenantRow, error)
 	UpdateProject(ctx context.Context, arg UpdateProjectParams) error
-	DeleteProject(ctx context.Context, arg DeleteProjectParams) error
-	GetProject(ctx context.Context, arg GetProjectParams) (Project, error)
-	GetEmbedCSS(ctx context.Context, projectID string) (GetEmbedCSSRow, error)
-	UpsertEmbedCSS(ctx context.Context, arg UpsertEmbedCSSParams) error
+	UpdateTenant(ctx context.Context, arg UpdateTenantParams) error
+	UpdateTenantLogo(ctx context.Context, arg UpdateTenantLogoParams) error
+	UpdateUser(ctx context.Context, arg UpdateUserParams) error
+	UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) error
+	UpsertEmbedCSS(ctx context.Context, arg UpsertEmbedCSSParams) (string, error)
+	UpsertWhatsappUser(ctx context.Context, arg UpsertWhatsappUserParams) error
 }
 
 var _ Querier = (*Queries)(nil)

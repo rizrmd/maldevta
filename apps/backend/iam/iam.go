@@ -59,6 +59,11 @@ func setupSQLite(ctx context.Context) (*sql.DB, error) {
 
 var db *sql.DB
 
+// GetDB exports the database instance for other services to use
+func GetDB() (*sql.DB, error) {
+	return db, nil
+}
+
 func init() {
 	var err error
 	db, err = setupSQLite(context.Background())

@@ -64,3 +64,33 @@ CREATE TABLE sessions (
 
 CREATE INDEX sessions_user_idx ON sessions(user_id);
 CREATE INDEX sessions_expires_idx ON sessions(expires_at);
+
+-- Add embed settings fields to projects table
+ALTER TABLE projects ADD COLUMN show_history INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE projects ADD COLUMN use_client_uid INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE projects ADD COLUMN allowed_origins TEXT;
+
+-- Create table for embed CSS storage
+CREATE TABLE IF NOT EXISTS embed_css (
+  project_id TEXT PRIMARY KEY REFERENCES projects(id) ON DELETE CASCADE,
+  custom_css TEXT NOT NULL DEFAULT '',
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create index for faster lookups
+CREATE INDEX IF NOT EXISTS embed_css_project_idx ON embed_css(project_id);
+
+-- Add has_logo column to tenants table
+ALTER TABLE tenants ADD COLUMN has_logo INTEGER NOT NULL DEFAULT 0;
+
+-- Add updated_at column to tenants table (use 0 as default, will be updated on first write)
+ALTER TABLE tenants ADD COLUMN updated_at INTEGER NOT NULL DEFAULT 0;
+
+-- Add updated_at column to users table (use 0 as default, will be updated on first write)
+ALTER TABLE users ADD COLUMN updated_at INTEGER NOT NULL DEFAULT 0;
+
+-- Add email column to users table for admin management
+ALTER TABLE users ADD COLUMN email TEXT;
+
+-- Create index for email lookups
+CREATE INDEX IF NOT EXISTS users_email_idx ON users(email);

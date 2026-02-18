@@ -9,6 +9,12 @@ import (
 	"time"
 )
 
+type EmbedCss struct {
+	ProjectID string    `json:"project_id"`
+	CustomCss string    `json:"custom_css"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
 type License struct {
 	ID                   string    `json:"id"`
 	LicenseKey           string    `json:"license_key"`
@@ -28,7 +34,7 @@ type Project struct {
 	CreatedByUserID  string         `json:"created_by_user_id"`
 	CreatedAt        time.Time      `json:"created_at"`
 	ShowHistory      int64          `json:"show_history"`
-	UseClientUID     int64          `json:"use_client_uid"`
+	UseClientUid     int64          `json:"use_client_uid"`
 	AllowedOrigins   sql.NullString `json:"allowed_origins"`
 }
 
@@ -58,6 +64,8 @@ type Tenant struct {
 	Domain    string    `json:"domain"`
 	IsDefault int64     `json:"is_default"`
 	CreatedAt time.Time `json:"created_at"`
+	HasLogo   int64     `json:"has_logo"`
+	UpdatedAt int64     `json:"updated_at"`
 }
 
 type User struct {
@@ -70,29 +78,6 @@ type User struct {
 	Role         string         `json:"role"`
 	Source       string         `json:"source"`
 	CreatedAt    time.Time      `json:"created_at"`
-}
-
-type UpdateProjectParams struct {
-	Name     string `json:"name"`
-	ID       string `json:"id"`
-	TenantID string `json:"tenant_id"`
-}
-
-type DeleteProjectParams struct {
-	ID       string `json:"id"`
-	TenantID string `json:"tenant_id"`
-}
-
-type GetEmbedCSSRow struct {
-	CustomCSS string `json:"custom_css"`
-}
-
-type UpsertEmbedCSSParams struct {
-	ProjectID string `json:"project_id"`
-	CustomCSS string `json:"custom_css"`
-}
-
-type GetProjectParams struct {
-	ID       string `json:"id"`
-	TenantID string `json:"tenant_id"`
+	UpdatedAt    int64          `json:"updated_at"`
+	Email        sql.NullString `json:"email"`
 }
