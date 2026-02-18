@@ -24,7 +24,24 @@ import {
   Copy,
   Check,
   LayoutGrid,
+  Upload,
+  MoreHorizontal,
+  Link as LinkIcon, FileJson, FileText, Download, Share
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useChatStore, useFileStore, useUIStore, useProjectStore } from "@/stores";
 import type { Message } from "@/stores/chatStore";
 import { clsx } from "clsx";
@@ -229,6 +246,17 @@ export default function ChatPage() {
     setShouldAutoScroll(isNearBottom);
   };
 
+  // New chat handler
+  const handleNewChat = async () => {
+    if (projectId) {
+      await createConversation(
+        projectId,
+        `Chat ${new Date().toLocaleString()}`
+      );
+    }
+  };
+
+
   const handleSubmit = async () => {
     if (!input.trim() || isGenerating) return;
 
@@ -304,138 +332,243 @@ export default function ChatPage() {
       });
   };
 
-
-
   return (
     <AppLayout
       containerClassName=""
       header={
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/">
-                <LayoutGrid className="h-4 w-4" />
-                Projects
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>
-                {currentProject?.name || "AI Chat"}
-              </BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-      }
-    >
-        <div className="flex h-full">
-          {/* Messages area */}
-          <div className="flex-1 flex flex-col">
-            {/* Messages list */}
-            <div
-              ref={containerRef}
-              onScroll={handleScroll}
-              className="flex-1 overflow-y-auto p-6"
-              onDrop={handleDrop}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-            >
-              <div className="mx-auto max-w-3xl space-y-6">
-                {currentConversation?.messages.length === 0 ? (
-                  <div className="flex h-[50vh] flex-col items-center justify-center text-center">
-                    <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-[#ffd7a8] to-[#9fe7d4]">
-                      <span className="text-2xl">💬</span>
-                    </div>
-                    <h2 className="text-xl font-semibold text-slate-900">
-                      Start a conversation
-                    </h2>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      Ask anything and I'll do my best to help.
-                    </p>
+        <div className="flex flex-1 items-center justify-between gap-4 w-full">
+          {/* Sisi Kiri: Breadcrumb tetap di tempatnya */}
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink href="/" className="flex items-center gap-2">
+                  <LayoutGrid className="h-4 w-4" />
+                  Projects
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>
+                  {currentProject?.name || "AI Chat"}
+                </BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+
+          {/* Sisi Kanan: Grup Button */}
+          <div className="flex items-center gap-2 ml-auto">
+            {/* Button Share */}
+
+            {/* MODAL SHARE CHAT */}
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="gap-2 h-8">
+                  <Share className="h-4 w-4" />
+                  <span>Share</span>
+                </Button>
+              </DialogTrigger>
+              {/* Lebar dinaikkan sedikit agar 3 tombol sejajar tidak terlalu sesak */}
+              <DialogContent className="sm:max-w-[550px]">
+                <DialogHeader className="text-center">
+                  <DialogTitle className="text-xl font-bold">Share Chat</DialogTitle>
+                  <DialogDescription>Export or share this conversation</DialogDescription>
+                </DialogHeader>
+
+                {/* Chat Preview (Dummy) */}
+                <div className="bg-muted/50 rounded-lg p-4 my-4 border text-sm space-y-3">
+                  <p className="text-center text-xs text-muted-foreground font-medium mb-2">
+                    Chat Preview (4 messages)
+                  </p>
+                  <div>
+                    <span className="font-bold">You:</span> hallo
                   </div>
-                ) : (
-                  currentConversation?.messages.map((message) => (
-                    <div key={message.id} className="group">
-                      <ChatMessage message={message} />
-                    </div>
-                  ))
-                )}
-                <div ref={messagesEndRef} />
-              </div>
+                  <div>
+                    <span className="font-bold">Assistant:</span> Hello! 👋 How can I help you today?
+                  </div>
+                  <div>
+                    <span className="font-bold">You:</span> please explain about you
+                  </div>
+                  <p className="text-center text-[10px] text-muted-foreground italic">
+                    and 1 more messages...
+                  </p>
+                </div>
+
+                {/* Grid Buttons: Diubah menjadi 3 kolom agar sejajar */}
+                <div className="grid grid-cols-3 gap-3">
+                  {/* 1. Copy Link */}
+                  <Button variant="outline" className="h-24 flex-col gap-2 border-muted-foreground/20 hover:bg-muted">
+                    <LinkIcon className="h-5 w-5" />
+                    <span className="text-[11px] font-semibold text-center leading-tight">Copy Link</span>
+                  </Button>
+
+                  {/* 2. Dropdown Copy As... */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" className="h-24 flex-col gap-2 border-muted-foreground/20 hover:bg-muted">
+                        <FileText className="h-5 w-5" />
+                        <span className="text-[11px] font-semibold text-center leading-tight">Copy As...</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="center" className="w-40">
+                      <DropdownMenuItem className="gap-2">
+                        <FileText className="h-4 w-4" /> Markdown
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="gap-2">
+                        <FileJson className="h-4 w-4" /> JSON
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+
+                  {/* 3. Dropdown Download... */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" className="h-24 flex-col gap-2 border-muted-foreground/20 hover:bg-muted">
+                        <Download className="h-5 w-5" />
+                        <span className="text-[11px] font-semibold text-center leading-tight">Download Chat</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="center" className="w-40">
+                      <DropdownMenuItem className="gap-2">
+                        <FileText className="h-4 w-4" /> As Markdown
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="gap-2">
+                        <FileJson className="h-4 w-4" /> As JSON
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Button New Chat */}
+            <Button
+              onClick={handleNewChat}
+              variant="outline"
+              size="sm"
+              className="gap-1 h-8 shadow-sm"
+            >
+              <Plus className="h-4 w-4" />
+              New Chat
+            </Button>
+
+            {/* Icon More (Titik Tiga) jika diperlukan seperti di gambar referensi */}
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      }
+
+
+    >
+      <div className="flex h-full">
+        {/* Messages area */}
+        <div className="flex-1 flex flex-col">
+          {/* Messages list */}
+          <div
+            ref={containerRef}
+            onScroll={handleScroll}
+            className="flex-1 overflow-y-auto p-6"
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+          >
+            <div className="mx-auto max-w-3xl space-y-6">
+              {currentConversation?.messages.length === 0 ? (
+                <div className="flex h-[50vh] flex-col items-center justify-center text-center">
+                  <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-[#ffd7a8] to-[#9fe7d4]">
+                    <span className="text-2xl">💬</span>
+                  </div>
+                  <h2 className="text-xl font-semibold text-slate-900">
+                    Start a conversation
+                  </h2>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Ask anything and I'll do my best to help.
+                  </p>
+                </div>
+              ) : (
+                currentConversation?.messages.map((message) => (
+                  <div key={message.id} className="group">
+                    <ChatMessage message={message} />
+                  </div>
+                ))
+              )}
+              <div ref={messagesEndRef} />
             </div>
+          </div>
 
-            {/* Input area */}
-            <div className="border-t border-slate-200 bg-white/80 backdrop-blur p-4">
-              <div className="mx-auto max-w-3xl">
-                <Card className="border-slate-200 bg-white">
-                  <CardContent className="p-3">
-                    <FileAttachmentPreview />
+          {/* Input area */}
+          <div className="border-t border-slate-200 bg-white/80 backdrop-blur p-4">
+            <div className="mx-auto max-w-3xl">
+              <Card className="border-slate-200 bg-white">
+                <CardContent className="p-3">
+                  <FileAttachmentPreview />
 
-                    <div className="flex items-end gap-2">
-                      <div className="flex-1">
-                        <Textarea
-                          ref={textareaRef}
-                          value={input}
-                          onChange={(e) => setInput(e.target.value)}
-                          onKeyDown={handleKeyDown}
-                          onPaste={handlePaste}
-                          placeholder="Message AI..."
-                          className="min-h-[60px] max-h-[200px] resize-none border-none px-3 py-2 text-sm focus-visible:ring-0"
+                  <div className="flex items-end gap-2">
+                    <div className="flex-1">
+                      <Textarea
+                        ref={textareaRef}
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        onPaste={handlePaste}
+                        placeholder="Message AI..."
+                        className="min-h-[60px] max-h-[200px] resize-none border-none px-3 py-2 text-sm focus-visible:ring-0"
+                        disabled={isGenerating}
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      <label className="cursor-pointer">
+                        <input
+                          type="file"
+                          multiple
+                          className="hidden"
+                          onChange={handleFileSelect}
                           disabled={isGenerating}
                         />
-                      </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-9 w-9 p-0"
+                          type="button"
+                          disabled={isGenerating}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </label>
 
-                      <div className="flex items-center gap-1">
-                        <label className="cursor-pointer">
-                          <input
-                            type="file"
-                            multiple
-                            className="hidden"
-                            onChange={handleFileSelect}
-                            disabled={isGenerating}
-                          />
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-9 w-9 p-0"
-                            type="button"
-                            disabled={isGenerating}
-                          >
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                        </label>
-
-                        {isGenerating ? (
-                          <Button
-                            onClick={() => setIsGenerating(false)}
-                            variant="destructive"
-                            size="sm"
-                            className="h-9 px-3"
-                          >
-                            <Square className="mr-1 h-4 w-4" />
-                            Stop
-                          </Button>
-                        ) : (
-                          <Button
-                            onClick={handleSubmit}
-                            disabled={!input.trim()}
-                            size="sm"
-                            className="h-9 px-3"
-                          >
-                            <Send className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
+                      {isGenerating ? (
+                        <Button
+                          onClick={() => setIsGenerating(false)}
+                          variant="destructive"
+                          size="sm"
+                          className="h-9 px-3"
+                        >
+                          <Square className="mr-1 h-4 w-4" />
+                          Stop
+                        </Button>
+                      ) : (
+                        <Button
+                          onClick={handleSubmit}
+                          disabled={!input.trim()}
+                          size="sm"
+                          className="h-9 px-3"
+                        >
+                          <Send className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
-                  </CardContent>
-                </Card>
-                <p className="mt-2 text-center text-xs text-muted-foreground">
-                  AI can make mistakes. Consider checking important information.
-                </p>
-              </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <p className="mt-2 text-center text-xs text-muted-foreground">
+                AI can make mistakes. Consider checking important information.
+              </p>
             </div>
           </div>
         </div>
+      </div>
     </AppLayout>
   );
 }

@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node:*)",
+      "Bash(powershell -Command \"Get-Content ''apps\\\\frontend\\\\src\\\\pages\\\\Chat.tsx'' | Select-Object -First 460 | Select-Object -Last 20\")"
+    ]
+  }
+}
