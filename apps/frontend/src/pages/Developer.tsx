@@ -52,7 +52,7 @@ export default function DeveloperPage() {
 
         if (projectList.length > 0) {
           // Redirect to first project's API page
-          setLocation(`/projects/${projectList[0].id}/api`);
+          setLocation(`/api/${projectList[0].id}`);
         } else {
           setLoading(false);
           setError("No projects found. Please create a project first.");

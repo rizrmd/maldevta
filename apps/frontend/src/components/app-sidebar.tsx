@@ -7,13 +7,13 @@ import {
   MessageCircle,
   Library,
   History,
-  MessageSquare,
   Folder,
   CreditCard,
   DollarSign,
   Building2,
   Settings2,
 } from "lucide-react"
+import { useLocation } from "wouter"
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
 import { TeamSwitcher } from "@/components/team-switcher"
@@ -39,11 +39,12 @@ interface MenuItem {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { currentProject, projects } = useProjectStore();
+  const { currentProject, projects, loadProjects, hasInitialized } = useProjectStore();
   const user = useAuthStore((state) => state.user);
   const isAdmin = user?.role === "admin";
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
+  const [pathname] = useLocation();
 
   const appName = React.useState<string>("Maldevta")[0];
   const logoUrl = React.useState<string | null>(null)[0];
@@ -54,9 +55,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   // Effect to detect project pages from URL
   React.useEffect(() => {
-    const pathname = window.location.pathname;
+    const init = async () => {
+      // Load projects if not yet initialized
+      if (!hasInitialized) {
+        await loadProjects();
+      }
+    };
 
-    // Project pages: /chat/:id, /files, /memory, /history, /settings/context, /whatsapp, /extensions, /developer, /projects/:id/api, /projects/:id/embed
+    init();
+
+    // Project pages: /chat/:id, /files, /memory, /history, /settings/context, /whatsapp, /extensions, /developer, /api/:id, /embed/:id
     // Non-project pages: /, /projects, /dashboard, /chats, /billing, /payment
     const projectPagePatterns = [
       /^\/chat(\/|$)/,
@@ -67,8 +75,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       /^\/whatsapp/,
       /^\/extensions/,
       /^\/developer/,
-      /^\/projects\/([^/]+)\/api/,  // /projects/:projectId/api
-      /^\/projects\/([^/]+)\/embed/, // /projects/:projectId/embed
+      /^\/api\/([^/]+)/,  // /api/:projectId
+      /^\/embed\/([^/]+)/,  // /embed/:projectId
       /^\/sub-clients/,
     ];
 
@@ -79,19 +87,25 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     if (onProjectPage) {
       // Check for /chat/:projectId pattern
       const chatPathMatch = pathname.match(/^\/chat\/([^\/]+)/);
-      // Check for /projects/:projectId/* pattern
-      const projectPathMatch = pathname.match(/^\/projects\/([^\/]+)/);
+      // Check for /api/:projectId pattern
+      const apiPathMatch = pathname.match(/^\/api\/([^\/]+)/);
+      // Check for /embed/:projectId pattern
+      const embedPathMatch = pathname.match(/^\/embed\/([^\/]+)/);
 
-      const projectId = chatPathMatch?.[1] || projectPathMatch?.[1];
+      const projectId = chatPathMatch?.[1] || apiPathMatch?.[1] || embedPathMatch?.[1];
 
       if (projectId) {
         const project = projects.find(p => p.id === projectId);
-        if (project && currentProject?.id !== projectId) {
+        // Get current project fresh from store to avoid stale closure
+        const storeCurrentProject = useProjectStore.getState().currentProject;
+        console.log('[AppSidebar] Path:', pathname, 'URL projectId:', projectId, 'storeCurrentProject:', storeCurrentProject?.id, 'project found:', !!project, 'projects count:', projects.length);
+        if (project && storeCurrentProject?.id !== projectId) {
+          console.log('[AppSidebar] Syncing project:', projectId);
           useProjectStore.getState().selectProject(projectId);
         }
       }
     }
-  }, [projects, currentProject]);
+  }, [pathname, projects, hasInitialized]); // Added hasInitialized to trigger re-run after projects load
 
   // === MENU SAAT TIDAK ADA PROJECT (Project Selector) ===
   // Hanya muncul: Projects, Billing, Payment (admin only)
@@ -208,11 +222,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       items: [
         {
           title: "API",
-          url: currentProject ? `/projects/${currentProject.id}/api` : "/developer",
+          url: currentProject ? `/api/${currentProject.id}` : "/api",
         },
         {
           title: "Embed",
-          url: currentProject ? `/projects/${currentProject.id}/embed` : "/embed",
+          url: currentProject ? `/embed/${currentProject.id}` : "/embed",
         },
         {
           title: "Extensions",

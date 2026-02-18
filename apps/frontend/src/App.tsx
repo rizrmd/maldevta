@@ -127,8 +127,8 @@ function App() {
             <Route path="/chat/:projectId" component={ChatPage} />
 
             <Route path="/projects" component={ProjectsPage} />
-            <Route path="/projects/:projectId/api" component={DeveloperAPIPage} />
-            <Route path="/projects/:projectId/embed" component={EmbedSettings} />
+            <Route path="/api/:projectId" component={DeveloperAPIPage} />
+            <Route path="/embed/:projectId" component={EmbedSettings} />
             <Route path="/whatsapp" component={ChatsPage} />
             <Route path="/chats" component={ChatsPage} />
             <Route path="/files" component={FilesPage} />

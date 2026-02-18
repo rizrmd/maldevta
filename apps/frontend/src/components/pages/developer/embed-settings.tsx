@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "wouter";
 import AppLayout from "@/components/app-layout";
+import { useProjectStore } from "@/stores";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -95,11 +96,35 @@ function showToast(message: string, type: "success" | "error" = "success") {
 export function EmbedSettings() {
   const params = useParams<{ projectId: string }>();
   const projectId = params?.projectId || "";
+  const { currentProject, projects, selectProject, loadProjects, hasInitialized } = useProjectStore();
   const API_BASE_URL = typeof window !== 'undefined' ? window.location.origin : '';
 
   const [embedToken, setEmbedToken] = useState<string | null>(null);
   const [customCss, setCustomCss] = useState("");
   const [project, setProject] = useState<ProjectResponse | null>(null);
+
+  // Load projects and sync with URL
+  useEffect(() => {
+    const init = async () => {
+      if (!hasInitialized) {
+        await loadProjects();
+      }
+    };
+
+    init();
+
+    // Sync project with URL only if different - get fresh state from store
+    if (projectId) {
+      const storeCurrentProject = useProjectStore.getState().currentProject;
+      if (storeCurrentProject?.id !== projectId) {
+        const project = projects.find(p => p.id === projectId);
+        if (project) {
+          selectProject(projectId);
+        }
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId, projects, hasInitialized]); // currentProject accessed from getState() to prevent dependency cycle
 
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -294,21 +319,20 @@ export function EmbedSettings() {
         </Breadcrumb>
       }
     >
-      <div className="flex-1 overflow-hidden">
-        <div className="h-full px-4 pt-4 md:px-6 pb-4 overflow-y-auto">
-          {error && (
-            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-              {error}
-            </div>
-          )}
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 py-6">
+        {error && (
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
 
-          {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              <p className="ml-4 text-sm text-slate-600">Loading embed settings...</p>
-            </div>
-          ) : (
-            <div className="max-w-4xl mx-auto">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <p className="ml-4 text-sm text-slate-600">Loading embed settings...</p>
+          </div>
+        ) : (
+          <div className="w-full">
               <Tabs defaultValue="config" className="w-full">
                 <TabsList className="grid w-full grid-cols-3">
                   <TabsTrigger value="config">Config</TabsTrigger>
@@ -547,7 +571,6 @@ export function EmbedSettings() {
               </Tabs>
             </div>
           )}
-        </div>
       </div>
     </AppLayout>
   );

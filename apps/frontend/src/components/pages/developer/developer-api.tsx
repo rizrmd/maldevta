@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -28,6 +28,7 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
 } from "@/components/ui/breadcrumb";
+import { useProjectStore } from "@/stores";
 
 type ApiError = {
   message: string;
@@ -103,6 +104,7 @@ function showToast(message: string, type: "success" | "error" = "success") {
 export function DeveloperAPIPage() {
   const params = useParams<{ projectId: string }>();
   const projectId = params?.projectId || "";
+  const { currentProject, projects, selectProject, loadProjects, hasInitialized } = useProjectStore();
   const API_BASE_URL = typeof window !== 'undefined' ? window.location.origin : '';
 
   const [context, setContext] = useState("");
@@ -110,6 +112,29 @@ export function DeveloperAPIPage() {
   const [response, setResponse] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
+
+  // Load projects and sync with URL
+  useEffect(() => {
+    const init = async () => {
+      if (!hasInitialized) {
+        await loadProjects();
+      }
+    };
+
+    init();
+
+    // Sync project with URL only if different - get fresh state from store
+    if (projectId) {
+      const storeCurrentProject = useProjectStore.getState().currentProject;
+      if (storeCurrentProject?.id !== projectId) {
+        const project = projects.find(p => p.id === projectId);
+        if (project) {
+          selectProject(projectId);
+        }
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId, projects, hasInitialized]); // currentProject accessed from getState() to prevent dependency cycle
 
   const handleTest = async () => {
     if (!prompt) {
@@ -177,6 +202,29 @@ export function DeveloperAPIPage() {
 const data = await response.json();
 console.log(data.response);`;
 
+  if (!projectId) {
+    return (
+      <AppLayout
+        header={
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbPage>API</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        }
+      >
+        <div className="flex h-full items-center justify-center">
+          <div className="text-center">
+            <Code2 className="mx-auto h-12 w-12 text-slate-400" />
+            <p className="mt-4 text-sm text-slate-600">No project selected. Please select a project first.</p>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
   return (
     <AppLayout
       header={
@@ -189,14 +237,12 @@ console.log(data.response);`;
         </Breadcrumb>
       }
     >
-      <div className="flex-1 overflow-hidden">
-        <div className="h-full px-4 pt-4 md:px-6 pb-4 overflow-y-auto bg-slate-50/50 dark:bg-slate-950/50">
-          <div className="container max-w-5xl mx-auto space-y-8">
-            <p className="text-muted-foreground text-lg">
-              Integrate AI capabilities into your own applications using our one-shot LLM endpoint.
-            </p>
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 py-6">
+        <p className="text-muted-foreground text-lg">
+          Integrate AI capabilities into your own applications using our one-shot LLM endpoint.
+        </p>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
               {/* Left Column: API Documentation */}
               <div className="lg:col-span-7 space-y-6">
                 <Card className="border-none shadow-sm overflow-hidden bg-white dark:bg-slate-900">
@@ -356,8 +402,6 @@ console.log(data.response);`;
                 </Card>
               </div>
             </div>
-          </div>
-        </div>
       </div>
     </AppLayout>
   );

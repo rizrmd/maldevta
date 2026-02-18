@@ -52,7 +52,7 @@ export default function EmbedRedirectorPage() {
 
         if (projectList.length > 0) {
           // Redirect to first project's Embed page
-          setLocation(`/projects/${projectList[0].id}/embed`);
+          setLocation(`/embed/${projectList[0].id}`);
         } else {
           setLoading(false);
           setError("No projects found. Please create a project first.");
