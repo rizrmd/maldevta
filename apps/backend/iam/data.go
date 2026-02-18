@@ -118,17 +118,17 @@ func ensureSubclientDirs(tenantID, projectID, subclientID string) error {
 // Chat and conversation types
 type ChatMessage struct {
 	ID        string    `json:"id"`
-	Role      string    `json:"role"`       // user, assistant, system
+	Role      string    `json:"role"` // user, assistant, system
 	Content   string    `json:"content"`
 	Timestamp time.Time `json:"timestamp"`
 }
 
 type Conversation struct {
-	ID       string         `json:"id"`
-	Title    string         `json:"title"`
-	CreatedAt time.Time    `json:"created_at"`
-	UpdatedAt time.Time    `json:"updated_at"`
-	Messages []ChatMessage `json:"messages"`
+	ID        string        `json:"id"`
+	Title     string        `json:"title"`
+	CreatedAt time.Time     `json:"created_at"`
+	UpdatedAt time.Time     `json:"updated_at"`
+	Messages  []ChatMessage `json:"messages"`
 }
 
 // File types
@@ -156,11 +156,11 @@ type AddMessageRequest struct {
 }
 
 type GetConversationResponse struct {
-	ID        string         `json:"id"`
-	Title     string         `json:"title"`
-	CreatedAt string         `json:"created_at"`
-	UpdatedAt string         `json:"updated_at"`
-	Messages  []ChatMessage  `json:"messages"`
+	ID        string        `json:"id"`
+	Title     string        `json:"title"`
+	CreatedAt string        `json:"created_at"`
+	UpdatedAt string        `json:"updated_at"`
+	Messages  []ChatMessage `json:"messages"`
 }
 
 type ListConversationsResponse struct {

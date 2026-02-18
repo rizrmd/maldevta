@@ -11,10 +11,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   Send,
   Square,
@@ -24,9 +21,14 @@ import {
   Copy,
   Check,
   LayoutGrid,
-  Upload,
   MoreHorizontal,
-  Link as LinkIcon, FileJson, FileText, Download, Share
+  Link as LinkIcon,
+  FileJson,
+  FileText,
+  Download,
+  Share,
+  MessageSquare,
+  Coins,
 } from "lucide-react";
 import {
   Dialog,
@@ -199,37 +201,66 @@ function FileAttachmentPreview() {
 
 export default function ChatPage() {
   const [location] = useLocation();
+  const [copiedFormat, setCopiedFormat] = useState<string | null>(null);
 
   const {
     currentConversation,
+    conversations,
     input,
     isGenerating,
     shouldAutoScroll,
     setInput,
     addMessage,
     createConversation,
+    setCurrentConversation,
     setIsGenerating,
     setShouldAutoScroll,
   } = useChatStore();
   const { addFile, clearFiles, setIsDragging } = useFileStore();
   const { projects } = useProjectStore();
+  const { addToast } = useUIStore();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Get project ID from URL
-  const projectId = location.split("/").pop() || "";
+  // Parse URL to get projectId and conversationId
+  // Support both: /chat/:projectId and /projects/:projectId/chat/:conversationId
+  const pathParts = location.split("/").filter(Boolean);
+
+  let projectId = "";
+  let conversationId = "";
+
+  if (pathParts[0] === "chat" && pathParts[1]) {
+    // Format: /chat/:projectId
+    projectId = pathParts[1];
+  } else if (pathParts[0] === "projects" && pathParts[2] === "chat") {
+    // Format: /projects/:projectId/chat or /projects/:projectId/chat/:conversationId
+    projectId = pathParts[1];
+    conversationId = pathParts[3] || "";
+  }
+
   const currentProject = projects.find((p) => p.id === projectId);
 
-  // Initialize conversation
+  // Initialize or load conversation
   useEffect(() => {
-    if (!currentConversation || currentConversation.projectId !== projectId) {
-      if (projectId) {
-        createConversation(projectId, "New Chat");
+    if (!projectId) return;
+
+    if (conversationId) {
+      // Try to find the conversation in the store
+      const conversation = conversations.find(c => c.id === conversationId);
+      if (conversation) {
+        setCurrentConversation(conversation);
+      } else {
+        // If not found in store, create a new one with the given ID
+        // TODO: Fetch conversation from API
+        createConversation(projectId, "Chat");
       }
+    } else if (!currentConversation || currentConversation.projectId !== projectId) {
+      // Create new conversation for this project
+      createConversation(projectId, "New Chat");
     }
-  }, [projectId]);
+  }, [projectId, conversationId, conversations]);
 
   // Auto-scroll
   useEffect(() => {
@@ -332,6 +363,98 @@ export default function ChatPage() {
       });
   };
 
+  // Helper functions for share functionality
+  const generateMarkdown = () => {
+    if (!currentConversation?.messages) return "";
+    return currentConversation.messages
+      .map((msg) => {
+        const role = msg.role === "user" ? "You" : "AI";
+        return `## ${role}\n\n${msg.content}\n`;
+      })
+      .join("\n---\n\n");
+  };
+
+  const generateJSON = () => {
+    if (!currentConversation?.messages) return "";
+    return JSON.stringify(
+      {
+        title: currentConversation.title || "Untitled Chat",
+        createdAt: currentConversation.createdAt,
+        messages: currentConversation.messages.map((msg) => ({
+          role: msg.role,
+          content: msg.content,
+          timestamp: msg.createdAt,
+        })),
+      },
+      null,
+      2
+    );
+  };
+
+  const handleCopyLink = async () => {
+    const url = window.location.href;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedFormat("link");
+      addToast({ type: "success", title: "Link copied to clipboard!", duration: 2000 });
+      setTimeout(() => setCopiedFormat(null), 2000);
+    } catch {
+      addToast({ type: "error", title: "Failed to copy link" });
+    }
+  };
+
+  const handleCopyAsMarkdown = async () => {
+    const markdown = generateMarkdown();
+    try {
+      await navigator.clipboard.writeText(markdown);
+      setCopiedFormat("markdown");
+      addToast({ type: "success", title: "Copied as Markdown!", duration: 2000 });
+      setTimeout(() => setCopiedFormat(null), 2000);
+    } catch {
+      addToast({ type: "error", title: "Failed to copy as Markdown" });
+    }
+  };
+
+  const handleCopyAsJSON = async () => {
+    const json = generateJSON();
+    try {
+      await navigator.clipboard.writeText(json);
+      setCopiedFormat("json");
+      addToast({ type: "success", title: "Copied as JSON!", duration: 2000 });
+      setTimeout(() => setCopiedFormat(null), 2000);
+    } catch {
+      addToast({ type: "error", title: "Failed to copy as JSON" });
+    }
+  };
+
+  const handleDownloadAsMarkdown = () => {
+    const markdown = generateMarkdown();
+    const blob = new Blob([markdown], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${currentConversation?.title || "chat"}-${Date.now()}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    addToast({ type: "success", title: "Downloaded as Markdown!", duration: 2000 });
+  };
+
+  const handleDownloadAsJSON = () => {
+    const json = generateJSON();
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${currentConversation?.title || "chat"}-${Date.now()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    addToast({ type: "success", title: "Downloaded as JSON!", duration: 2000 });
+  };
+
   return (
     <AppLayout
       containerClassName=""
@@ -357,6 +480,129 @@ export default function ChatPage() {
 
           {/* Sisi Kanan: Grup Button */}
           <div className="flex items-center gap-2 ml-auto">
+            {/* Button Token Usage */}
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="gap-2 h-8">
+                  <Coins className="h-4 w-4" />
+                  <span>Token Usage</span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[500px] gap-0 p-0 overflow-hidden">
+                {/* Header dengan gradient */}
+                <div className="bg-gradient-to-br from-amber-50 to-orange-50 border-b px-6 py-4">
+                  <DialogHeader className="text-center space-y-1">
+                    <DialogTitle className="text-xl font-semibold text-foreground">Token Usage</DialogTitle>
+                    <DialogDescription className="text-sm">
+                      View token usage statistics for this conversation
+                    </DialogDescription>
+                  </DialogHeader>
+                </div>
+
+                {/* Token Usage Content */}
+                <div className="px-6 py-6 space-y-4">
+                  {currentConversation?.messages && currentConversation.messages.length > 0 ? (
+                    <>
+                      {/* Summary Stats */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="rounded-lg border border-slate-200 bg-white p-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <MessageSquare className="h-4 w-4 text-slate-500" />
+                            <span className="text-xs font-medium text-muted-foreground">Total Messages</span>
+                          </div>
+                          <p className="text-2xl font-semibold text-slate-900">
+                            {currentConversation.messages.length}
+                          </p>
+                        </div>
+                        <div className="rounded-lg border border-slate-200 bg-white p-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Coins className="h-4 w-4 text-amber-500" />
+                            <span className="text-xs font-medium text-muted-foreground">Est. Tokens</span>
+                          </div>
+                          <p className="text-2xl font-semibold text-slate-900">
+                            {currentConversation.messages.reduce((acc, msg) => acc + Math.ceil(msg.content.length / 4), 0).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Per Message Breakdown */}
+                      <div className="space-y-2">
+                        <h3 className="text-sm font-semibold text-foreground">Message Breakdown</h3>
+                        <div className="max-h-[240px] overflow-y-auto space-y-2">
+                          {currentConversation.messages.map((message) => {
+                            const isUser = message.role === "user";
+                            const estimatedTokens = Math.ceil(message.content.length / 4);
+                            return (
+                              <div
+                                key={message.id}
+                                className={`flex items-center justify-between gap-3 p-3 rounded-lg border ${
+                                  isUser
+                                    ? "bg-emerald-50 border-emerald-100"
+                                    : "bg-white border-slate-200"
+                                }`}
+                              >
+                                <div className="flex items-center gap-3 flex-1 min-w-0">
+                                  <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
+                                    isUser
+                                      ? "bg-emerald-200 text-emerald-700"
+                                      : "bg-gradient-to-br from-[#ffd7a8] to-[#9fe7d4] text-slate-700"
+                                  }`}>
+                                    {isUser ? "U" : "AI"}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-xs font-medium text-slate-900 truncate">
+                                      {isUser ? "You" : "AI Assistant"}
+                                    </p>
+                                    <p className="text-[10px] text-muted-foreground truncate">
+                                      {message.content.slice(0, 50)}{message.content.length > 50 ? "..." : ""}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-1 shrink-0">
+                                  <Coins className="h-3 w-3 text-amber-500" />
+                                  <span className="text-xs font-medium text-slate-700">
+                                    {estimatedTokens.toLocaleString()}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Total Usage */}
+                      <div className="rounded-lg bg-slate-50 border border-slate-200 p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-xs font-medium text-muted-foreground">Total Estimated Tokens</p>
+                            <p className="text-[10px] text-muted-foreground mt-0.5">
+                              Based on ~4 characters per token approximation
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Coins className="h-5 w-5 text-amber-500" />
+                            <span className="text-xl font-bold text-slate-900">
+                              {currentConversation.messages.reduce((acc, msg) => acc + Math.ceil(msg.content.length / 4), 0).toLocaleString()}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="py-12 text-center">
+                      <Coins className="mx-auto h-12 w-12 text-muted-foreground/50" />
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        No messages in this conversation yet
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Token usage will appear here once you start chatting
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </DialogContent>
+            </Dialog>
+
             {/* Button Share */}
 
             {/* MODAL SHARE CHAT */}
@@ -367,75 +613,197 @@ export default function ChatPage() {
                   <span>Share</span>
                 </Button>
               </DialogTrigger>
-              {/* Lebar dinaikkan sedikit agar 3 tombol sejajar tidak terlalu sesak */}
-              <DialogContent className="sm:max-w-[550px]">
-                <DialogHeader className="text-center">
-                  <DialogTitle className="text-xl font-bold">Share Chat</DialogTitle>
-                  <DialogDescription>Export or share this conversation</DialogDescription>
-                </DialogHeader>
-
-                {/* Chat Preview (Dummy) */}
-                <div className="bg-muted/50 rounded-lg p-4 my-4 border text-sm space-y-3">
-                  <p className="text-center text-xs text-muted-foreground font-medium mb-2">
-                    Chat Preview (4 messages)
-                  </p>
-                  <div>
-                    <span className="font-bold">You:</span> hallo
-                  </div>
-                  <div>
-                    <span className="font-bold">Assistant:</span> Hello! 👋 How can I help you today?
-                  </div>
-                  <div>
-                    <span className="font-bold">You:</span> please explain about you
-                  </div>
-                  <p className="text-center text-[10px] text-muted-foreground italic">
-                    and 1 more messages...
-                  </p>
+              <DialogContent className="sm:max-w-[600px] gap-0 p-0 overflow-hidden">
+                {/* Header dengan gradient */}
+                <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border-b px-6 py-4">
+                  <DialogHeader className="text-center space-y-1">
+                    <DialogTitle className="text-xl font-semibold text-foreground">Share Chat</DialogTitle>
+                    <DialogDescription className="text-sm">
+                      Export or share this conversation with others
+                    </DialogDescription>
+                  </DialogHeader>
                 </div>
 
-                {/* Grid Buttons: Diubah menjadi 3 kolom agar sejajar */}
-                <div className="grid grid-cols-3 gap-3">
-                  {/* 1. Copy Link */}
-                  <Button variant="outline" className="h-24 flex-col gap-2 border-muted-foreground/20 hover:bg-muted">
-                    <LinkIcon className="h-5 w-5" />
-                    <span className="text-[11px] font-semibold text-center leading-tight">Copy Link</span>
-                  </Button>
+                {/* Chat Preview dari conversation yang aktif */}
+                <div className="px-6 py-4 space-y-4">
+                  {currentConversation?.messages && currentConversation.messages.length > 0 ? (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-sm font-semibold text-foreground">
+                          Chat Preview ({currentConversation.messages.length} {currentConversation.messages.length === 1 ? 'message' : 'messages'})
+                        </h3>
+                        <Badge variant="secondary" className="text-xs">
+                          {currentConversation.title || "Untitled Chat"}
+                        </Badge>
+                      </div>
 
-                  {/* 2. Dropdown Copy As... */}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" className="h-24 flex-col gap-2 border-muted-foreground/20 hover:bg-muted">
-                        <FileText className="h-5 w-5" />
-                        <span className="text-[11px] font-semibold text-center leading-tight">Copy As...</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="center" className="w-40">
-                      <DropdownMenuItem className="gap-2">
-                        <FileText className="h-4 w-4" /> Markdown
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="gap-2">
-                        <FileJson className="h-4 w-4" /> JSON
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                      <div className="space-y-3 max-h-[280px] overflow-y-auto">
+                        {currentConversation.messages.slice(0, 4).map((message) => {
+                          const isUser = message.role === "user";
+                          return (
+                            <div
+                              key={message.id}
+                              className={`flex gap-3 ${isUser ? "justify-end" : "justify-start"}`}
+                            >
+                              {!isUser && (
+                                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#ffd7a8] to-[#9fe7d4] text-xs font-semibold text-slate-700">
+                                  AI
+                                </div>
+                              )}
+                              <div
+                                className={`max-w-[85%] rounded-xl px-4 py-2.5 ${
+                                  isUser
+                                    ? "bg-emerald-100 text-emerald-900 rounded-br-sm"
+                                    : "bg-white text-slate-900 border border-slate-200 rounded-bl-sm"
+                                }`}
+                              >
+                                <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+                                  {message.content}
+                                </p>
+                              </div>
+                              {isUser && (
+                                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-200 text-xs font-semibold text-slate-700">
+                                  U
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
 
-                  {/* 3. Dropdown Download... */}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" className="h-24 flex-col gap-2 border-muted-foreground/20 hover:bg-muted">
-                        <Download className="h-5 w-5" />
-                        <span className="text-[11px] font-semibold text-center leading-tight">Download Chat</span>
+                        {currentConversation.messages.length > 4 && (
+                          <div className="text-center">
+                            <p className="text-xs text-muted-foreground italic">
+                              and {currentConversation.messages.length - 4} more message{currentConversation.messages.length - 4 > 1 ? 's' : ''}...
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="py-8 text-center">
+                      <MessageSquare className="mx-auto h-12 w-12 text-muted-foreground/50" />
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        No messages in this conversation yet
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="pt-4 border-t">
+                    <p className="text-xs text-center text-muted-foreground mb-4">
+                      Choose how you want to share this conversation
+                    </p>
+
+                    {/* Action Buttons */}
+                    <div className="grid grid-cols-3 gap-3">
+                      {/* Copy Link */}
+                      <Button
+                        onClick={handleCopyLink}
+                        variant="outline"
+                        className={clsx(
+                          "h-auto flex-col gap-2 py-4 border-2 transition-all relative overflow-hidden",
+                          copiedFormat === "link"
+                            ? "bg-emerald-50 border-emerald-500 hover:bg-emerald-100"
+                            : "hover:border-emerald-400 hover:bg-emerald-50/50"
+                        )}
+                      >
+                        {copiedFormat === "link" && (
+                          <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/10 to-teal-400/10 animate-pulse" />
+                        )}
+                        <LinkIcon className={clsx(
+                          "h-5 w-5 relative z-10",
+                          copiedFormat === "link" ? "text-emerald-600" : "text-emerald-500"
+                        )} />
+                        <div className="flex flex-col items-center gap-0.5 relative z-10">
+                          <span className="text-xs font-semibold">Copy Link</span>
+                          <span className="text-[10px] text-muted-foreground">
+                            {copiedFormat === "link" ? "Copied!" : "Share via URL"}
+                          </span>
+                        </div>
                       </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="center" className="w-40">
-                      <DropdownMenuItem className="gap-2">
-                        <FileText className="h-4 w-4" /> As Markdown
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="gap-2">
-                        <FileJson className="h-4 w-4" /> As JSON
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+
+                      {/* Copy As Dropdown */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={clsx(
+                              "h-auto flex-col gap-2 py-4 border-2 transition-all relative overflow-hidden",
+                              "hover:border-blue-400 hover:bg-blue-50/50"
+                            )}
+                          >
+                            <FileText className="h-5 w-5 text-blue-500" />
+                            <div className="flex flex-col items-center gap-0.5">
+                              <span className="text-xs font-semibold">Copy As</span>
+                              <span className="text-[10px] text-muted-foreground">Markdown / JSON</span>
+                            </div>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="center" className="w-44">
+                          <DropdownMenuItem
+                            onClick={handleCopyAsMarkdown}
+                            className="gap-2 cursor-pointer hover:bg-blue-50 hover:text-blue-700"
+                          >
+                            <FileText className="h-4 w-4 text-blue-500" />
+                            <div className="flex flex-col">
+                              <span className="font-medium">Markdown</span>
+                              <span className="text-[10px] text-muted-foreground">.md format</span>
+                            </div>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={handleCopyAsJSON}
+                            className="gap-2 cursor-pointer hover:bg-blue-50 hover:text-blue-700"
+                          >
+                            <FileJson className="h-4 w-4 text-blue-500" />
+                            <div className="flex flex-col">
+                              <span className="font-medium">JSON</span>
+                              <span className="text-[10px] text-muted-foreground">Structured data</span>
+                            </div>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+
+                      {/* Download Dropdown */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={clsx(
+                              "h-auto flex-col gap-2 py-4 border-2 transition-all relative overflow-hidden",
+                              "hover:border-purple-400 hover:bg-purple-50/50"
+                            )}
+                          >
+                            <Download className="h-5 w-5 text-purple-500" />
+                            <div className="flex flex-col items-center gap-0.5">
+                              <span className="text-xs font-semibold">Download</span>
+                              <span className="text-[10px] text-muted-foreground">Save to file</span>
+                            </div>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="center" className="w-44">
+                          <DropdownMenuItem
+                            onClick={handleDownloadAsMarkdown}
+                            className="gap-2 cursor-pointer hover:bg-purple-50 hover:text-purple-700"
+                          >
+                            <FileText className="h-4 w-4 text-purple-500" />
+                            <div className="flex flex-col">
+                              <span className="font-medium">Markdown</span>
+                              <span className="text-[10px] text-muted-foreground">.md file</span>
+                            </div>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={handleDownloadAsJSON}
+                            className="gap-2 cursor-pointer hover:bg-purple-50 hover:text-purple-700"
+                          >
+                            <FileJson className="h-4 w-4 text-purple-500" />
+                            <div className="flex flex-col">
+                              <span className="font-medium">JSON</span>
+                              <span className="text-[10px] text-muted-foreground">.json file</span>
+                            </div>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
                 </div>
               </DialogContent>
             </Dialog>
@@ -461,8 +829,8 @@ export default function ChatPage() {
 
 
     >
-      <div className="flex h-full">
-        {/* Messages area */}
+      <div className="flex h-full p-6">
+        {/* Chat area without card wrapper */}
         <div className="flex-1 flex flex-col">
           {/* Messages list */}
           <div
@@ -498,74 +866,68 @@ export default function ChatPage() {
           </div>
 
           {/* Input area */}
-          <div className="border-t border-slate-200 bg-white/80 backdrop-blur p-4">
-            <div className="mx-auto max-w-3xl">
-              <Card className="border-slate-200 bg-white">
-                <CardContent className="p-3">
-                  <FileAttachmentPreview />
+          <div className="p-4">
+            <FileAttachmentPreview />
 
-                  <div className="flex items-end gap-2">
-                    <div className="flex-1">
-                      <Textarea
-                        ref={textareaRef}
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        onPaste={handlePaste}
-                        placeholder="Message AI..."
-                        className="min-h-[60px] max-h-[200px] resize-none border-none px-3 py-2 text-sm focus-visible:ring-0"
-                        disabled={isGenerating}
-                      />
-                    </div>
+            <div className="flex items-end gap-2">
+              <div className="flex-1">
+                <Textarea
+                  ref={textareaRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  onPaste={handlePaste}
+                  placeholder="Message AI..."
+                  className="min-h-[60px] max-h-[200px] resize-none border-slate-200 bg-white px-4 py-3 text-sm focus-visible:ring-1 focus-visible:ring-slate-400 focus-visible:border-slate-400 rounded-lg shadow-sm"
+                  disabled={isGenerating}
+                />
+              </div>
 
-                    <div className="flex items-center gap-1">
-                      <label className="cursor-pointer">
-                        <input
-                          type="file"
-                          multiple
-                          className="hidden"
-                          onChange={handleFileSelect}
-                          disabled={isGenerating}
-                        />
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-9 w-9 p-0"
-                          type="button"
-                          disabled={isGenerating}
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </label>
+              <div className="flex items-center gap-1">
+                <label className="cursor-pointer">
+                  <input
+                    type="file"
+                    multiple
+                    className="hidden"
+                    onChange={handleFileSelect}
+                    disabled={isGenerating}
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-10 w-10 p-0"
+                    type="button"
+                    disabled={isGenerating}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </label>
 
-                      {isGenerating ? (
-                        <Button
-                          onClick={() => setIsGenerating(false)}
-                          variant="destructive"
-                          size="sm"
-                          className="h-9 px-3"
-                        >
-                          <Square className="mr-1 h-4 w-4" />
-                          Stop
-                        </Button>
-                      ) : (
-                        <Button
-                          onClick={handleSubmit}
-                          disabled={!input.trim()}
-                          size="sm"
-                          className="h-9 px-3"
-                        >
-                          <Send className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <p className="mt-2 text-center text-xs text-muted-foreground">
-                AI can make mistakes. Consider checking important information.
-              </p>
+                {isGenerating ? (
+                  <Button
+                    onClick={() => setIsGenerating(false)}
+                    variant="destructive"
+                    size="sm"
+                    className="h-10 px-4"
+                  >
+                    <Square className="mr-1 h-4 w-4" />
+                    Stop
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleSubmit}
+                    disabled={!input.trim()}
+                    size="sm"
+                    className="h-10 px-4"
+                  >
+                    <Send className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
             </div>
+            <p className="mt-2 text-center text-xs text-muted-foreground">
+              AI can make mistakes. Consider checking important information.
+            </p>
           </div>
         </div>
       </div>

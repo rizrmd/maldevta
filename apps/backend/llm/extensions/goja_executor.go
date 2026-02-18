@@ -35,12 +35,12 @@ func newVMPool(size int) *vmPool {
 		pool: make(chan *goja.Runtime, size),
 		size: size,
 	}
-	
+
 	// Pre-create VMs
 	for i := 0; i < size; i++ {
 		pool.pool <- goja.New()
 	}
-	
+
 	return pool
 }
 
@@ -84,7 +84,7 @@ func (e *GojaExecutor) Execute(ctx context.Context, req *ExecuteRequest) (*Execu
 	e.mu.RLock()
 	loaded, ok := e.extensions[req.ExtensionID]
 	e.mu.RUnlock()
-	
+
 	if !ok {
 		return nil, fmt.Errorf("extension not loaded: %s", req.ExtensionID)
 	}
@@ -132,7 +132,7 @@ func (e *GojaExecutor) Execute(ctx context.Context, req *ExecuteRequest) (*Execu
 func (e *GojaExecutor) executeInVM(vm *goja.Runtime, loaded *loadedExtension, req *ExecuteRequest) (*ExecuteResponse, error) {
 	// Set up the execution environment
 	obj := vm.NewObject()
-	
+
 	// Convert request to JavaScript object
 	reqData := map[string]interface{}{
 		"extensionId": req.ExtensionID,
@@ -141,7 +141,7 @@ func (e *GojaExecutor) executeInVM(vm *goja.Runtime, loaded *loadedExtension, re
 		"projectId":   req.ProjectID,
 		"context":     req.Context,
 	}
-	
+
 	if err := obj.Set("request", reqData); err != nil {
 		return nil, fmt.Errorf("set request: %w", err)
 	}
@@ -158,7 +158,7 @@ func (e *GojaExecutor) executeInVM(vm *goja.Runtime, loaded *loadedExtension, re
 		return goja.Undefined()
 	})
 	vm.Set("console", console)
-	
+
 	vm.Set("__extension", obj)
 
 	// Run the extension script
@@ -239,7 +239,7 @@ func (e *GojaExecutor) supportsHook(ext *Extension, hook string) bool {
 func (e *GojaExecutor) LoadExtension(ctx context.Context, ext *Extension) error {
 	// Build script path
 	scriptPath := filepath.Join(e.basePath, ext.ID, "index.js")
-	
+
 	// Check if file exists
 	if _, err := os.Stat(scriptPath); os.IsNotExist(err) {
 		return fmt.Errorf("extension script not found: %s", scriptPath)
@@ -280,11 +280,11 @@ func (e *GojaExecutor) Health(ctx context.Context) (bool, error) {
 func (e *GojaExecutor) UnloadExtension(extensionID string) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
-	
+
 	if _, ok := e.extensions[extensionID]; !ok {
 		return fmt.Errorf("extension not loaded: %s", extensionID)
 	}
-	
+
 	delete(e.extensions, extensionID)
 	return nil
 }
@@ -293,7 +293,7 @@ func (e *GojaExecutor) UnloadExtension(extensionID string) error {
 func (e *GojaExecutor) ListLoaded() []string {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
-	
+
 	ids := make([]string, 0, len(e.extensions))
 	for id := range e.extensions {
 		ids = append(ids, id)

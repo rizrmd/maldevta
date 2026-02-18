@@ -126,6 +126,8 @@ function App() {
             <Route path="/projects-selector" component={ProjectSelectorPage} />
             <Route path="/chat" component={ChatPage} />
             <Route path="/chat/:projectId" component={ChatPage} />
+            <Route path="/projects/:projectId/chat/:conversationId" component={ChatPage} />
+            <Route path="/projects/:projectId/chat" component={ChatPage} />
 
             <Route path="/projects" component={ProjectsPage} />
             <Route path="/api/:projectId" component={DeveloperAPIPage} />

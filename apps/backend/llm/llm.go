@@ -41,9 +41,9 @@ func initModel(ctx context.Context) (*openai.ChatModel, error) {
 	}
 
 	chatModel, err := openai.NewChatModel(ctx, &openai.ChatModelConfig{
-		APIKey:     apiKey,
-		Model:      model,
-		BaseURL:    strings.TrimSpace(os.Getenv("OPENAI_BASE_URL")),
+		APIKey:  apiKey,
+		Model:   model,
+		BaseURL: strings.TrimSpace(os.Getenv("OPENAI_BASE_URL")),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("init llm: %w", err)

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import AppLayout from "@/components/app-layout";
 import {
@@ -9,22 +9,8 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { MessageSquare, Clock, Trash2, Search, ChevronRight } from "lucide-react";
+import { MessageSquare, Trash2, Search } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 
 type ApiError = {
@@ -51,6 +37,7 @@ type ConversationResponse = {
   created_at: string;
   updated_at: string;
   message_count: number;
+  last_message?: string;
 };
 
 type ListConversationsResponse = {
@@ -102,7 +89,6 @@ async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export default function HistoryPage() {
-  const { user } = useAuth();
   const [location] = useLocation();
   const [, setLocation] = useLocation();
 
@@ -165,8 +151,54 @@ export default function HistoryPage() {
 
   // Filter conversations by search
   const filteredConversations = conversations.filter((conv) =>
-    conv.title.toLowerCase().includes(searchQuery.toLowerCase())
+    conv.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (conv.last_message && conv.last_message.toLowerCase().includes(searchQuery.toLowerCase()))
   );
+
+  // Sort conversations by updated_at (newest first)
+  const sortedConversations = useMemo(() => {
+    return [...filteredConversations].sort((a, b) =>
+      new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+    );
+  }, [filteredConversations]);
+
+  // Group conversations by date
+  const groupedConversations = useMemo(() => {
+    const groups: Record<string, typeof sortedConversations> = {};
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const thisWeek = new Date(today);
+    thisWeek.setDate(thisWeek.getDate() - 7);
+
+    sortedConversations.forEach((conv) => {
+      const convDate = new Date(conv.updated_at);
+      convDate.setHours(0, 0, 0, 0);
+
+      let groupKey = "Older";
+      if (convDate.getTime() === today.getTime()) {
+        groupKey = "Today";
+      } else if (convDate.getTime() === yesterday.getTime()) {
+        groupKey = "Yesterday";
+      } else if (convDate >= thisWeek) {
+        groupKey = "This Week";
+      } else if (convDate.getMonth() === today.getMonth() && convDate.getFullYear() === today.getFullYear()) {
+        groupKey = "This Month";
+      }
+
+      if (!groups[groupKey]) {
+        groups[groupKey] = [];
+      }
+      groups[groupKey].push(conv);
+    });
+
+    return groups;
+  }, [sortedConversations]);
+
+  const groupOrder = ["Today", "Yesterday", "This Week", "This Month", "Older"];
 
   const handleDeleteConversation = async (convId: string) => {
     if (!confirm("Are you sure you want to delete this conversation?")) {
@@ -202,158 +234,135 @@ export default function HistoryPage() {
         </Breadcrumb>
       }
     >
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+        <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
           {/* Header */}
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-xs uppercase tracking-[0.28em] text-muted-foreground">
-                Conversation History
-              </p>
-              <h1 className="font-display text-3xl text-slate-900 md:text-4xl">
-                Chat History
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                View and manage your conversation history
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Project:</span>
-              <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Select project" />
-                </SelectTrigger>
-                <SelectContent>
-                  {projects.map((project) => (
-                    <SelectItem key={project.id} value={project.id}>
-                      {project.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="space-y-1">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+              Chat History
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              View and manage your conversation history
+            </p>
           </div>
 
           {error && (
-            <div className="w-full rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <div className="w-full rounded-lg border border-destructive/200 bg-destructive/10 px-4 py-3 text-sm text-destructive">
               {error}
             </div>
           )}
 
           {!selectedProjectId ? (
-            <div className="w-full rounded-lg border border-slate-200 bg-white/80 p-8 text-center">
-              <MessageSquare className="mx-auto h-12 w-12 text-slate-400" />
+            <div className="w-full rounded-lg border border-border bg-card p-8 text-center">
+              <MessageSquare className="mx-auto h-12 w-12 text-muted-foreground" />
               <p className="mt-4 text-sm text-muted-foreground">
                 {loading ? "Loading projects..." : "No projects available. Create a project first."}
               </p>
             </div>
           ) : (
             <>
-              {/* Search Bar */}
-              <Card className="border-[#e6dccc] bg-white/80 backdrop-blur">
-                <CardContent className="pt-6">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 h-4 w-4 text-slate-400" />
-                    <Input
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search conversations..."
-                      className="pl-10"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
+              {/* Search Conversations */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search conversations..."
+                  className="pl-9"
+                />
+              </div>
 
               {/* Conversations List */}
-              <Card className="border-[#e6dccc] bg-white/80 backdrop-blur">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>All Conversations</CardTitle>
-                      <CardDescription>
-                        {filteredConversations.length} conversation{filteredConversations.length !== 1 ? "s" : ""}
-                      </CardDescription>
-                    </div>
-                    {selectedProject && (
-                      <Badge variant="outline" className="text-xs">
-                        {selectedProject.name}
-                      </Badge>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {loading ? (
-                    <div className="flex h-32 items-center justify-center">
-                      <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600" />
-                    </div>
-                  ) : filteredConversations.length === 0 ? (
-                    <div className="py-12 text-center">
-                      <MessageSquare className="mx-auto mb-4 h-12 w-12 text-slate-400" />
-                      <h3 className="mb-2 text-lg font-semibold text-slate-900">No conversations found</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {searchQuery ? "Try a different search term" : "Start chatting to see your conversation history here"}
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="grid gap-3">
-                      {filteredConversations.map((conv) => (
-                        <div
-                          key={conv.id}
-                          className="group flex items-center gap-4 rounded-lg border border-slate-200 bg-white p-4 transition-all hover:shadow-md hover:border-slate-300 cursor-pointer"
-                          onClick={() => openConversation(conv.id)}
-                        >
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <MessageSquare className="h-5 w-5 text-slate-600" />
-                              <h3 className="truncate font-semibold text-slate-900">
-                                {conv.title || "Untitled Conversation"}
-                              </h3>
-                              <Badge variant="secondary" className="text-xs">
-                                {conv.message_count} messages
-                              </Badge>
-                            </div>
-                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                              <div className="flex items-center gap-1">
-                                <Clock className="h-3 w-3" />
-                                <span>
-                                  {new Date(conv.created_at).toLocaleDateString()}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Clock className="h-3 w-3" />
-                                <span>
-                                  {new Date(conv.updated_at).toLocaleDateString()}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                          <ChevronRight className="h-5 w-5 text-slate-400 transition-colors group-hover:text-slate-600" />
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteConversation(conv.id);
-                            }}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </>
-          )}
+              <div className="space-y-4">
+                {/* Header Info */}
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-semibold text-slate-900">
+                    {filteredConversations.length} conversation{filteredConversations.length !== 1 ? "s" : ""}
+                  </h2>
+                </div>
 
-          {user && (
-            <div className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">
-              <div className="flex items-center justify-between">
-                <span>Signed in as: <span className="font-medium">{user.role}</span></span>
-                <span className="font-mono">{user.userId?.slice(0, 8)}...</span>
+                {loading ? (
+                  <div className="flex h-48 items-center justify-center">
+                    <div className="h-8 w-8 animate-spin rounded-full border-3 border-slate-200 border-t-slate-600" />
+                  </div>
+                ) : filteredConversations.length === 0 ? (
+                  <div className="py-16 text-center">
+                    <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-[#ffd7a8] to-[#9fe7d4]">
+                      <MessageSquare className="h-10 w-10 text-slate-600" />
+                    </div>
+                    <h3 className="mb-2 text-xl font-semibold text-slate-900 font-display">No conversations found</h3>
+                    <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                      {searchQuery
+                        ? "Try adjusting your search terms to find what you're looking for"
+                        : "Start a new chat to see your conversation history here"}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    {groupOrder.map((groupName) => {
+                      const groupConversations = groupedConversations[groupName];
+                      if (!groupConversations || groupConversations.length === 0) return null;
+
+                      return (
+                        <div key={groupName}>
+                          {/* Group Header */}
+                          <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-2">
+                            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                              {groupName}
+                            </h3>
+                          </div>
+
+                          {/* Conversations in this group */}
+                          <div className="divide-y divide-border/50">
+                            {groupConversations.map((conv) => (
+                              <div
+                                key={conv.id}
+                                className="group relative flex items-center gap-3 py-3 px-2 -mx-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                                onClick={() => openConversation(conv.id)}
+                              >
+                                {/* Content */}
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="text-sm font-medium text-foreground truncate">
+                                    {conv.title || "Untitled Conversation"}
+                                  </h4>
+
+                                  {/* Last message preview */}
+                                  {conv.last_message && (
+                                    <p className="text-xs text-muted-foreground truncate mt-0.5">
+                                      {conv.last_message}
+                                    </p>
+                                  )}
+                                </div>
+
+                                {/* Metadata & Actions */}
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <span className="text-xs text-muted-foreground">
+                                    {new Date(conv.updated_at).toLocaleDateString('en-US', {
+                                      month: 'short',
+                                      day: 'numeric'
+                                    })}
+                                  </span>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteConversation(conv.id);
+                                    }}
+                                    className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-            </div>
+            </>
           )}
         </div>
     </AppLayout>

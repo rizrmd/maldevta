@@ -10,13 +10,13 @@ import (
 	"sync"
 	"time"
 
-	"encore.dev/beta/auth"
-	"encore.dev/beta/errs"
 	"encore.app/backend/iam"
 	"encore.app/backend/llm"
+	"encore.dev/beta/auth"
+	"encore.dev/beta/errs"
 
-	waProto "go.mau.fi/whatsmeow/binary/proto"
 	"go.mau.fi/whatsmeow"
+	waProto "go.mau.fi/whatsmeow/binary/proto"
 	"go.mau.fi/whatsmeow/store/sqlstore"
 	"go.mau.fi/whatsmeow/types"
 	waevents "go.mau.fi/whatsmeow/types/events"
@@ -198,7 +198,7 @@ func (s *Service) loadProjectContext(ctx context.Context, tenantID, projectID st
 			Tone:         "professional",
 			Language:     "english",
 			Extensions:   []string{},
-		Metadata:     map[string]string{"tenant_id": tenantID},
+			Metadata:     map[string]string{"tenant_id": tenantID},
 		}, nil
 	}
 

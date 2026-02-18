@@ -11,7 +11,6 @@ import {
   CreditCard,
   DollarSign,
   Building2,
-  Settings2,
 } from "lucide-react"
 import { useLocation } from "wouter"
 import { NavMain } from "@/components/nav-main"
@@ -239,31 +238,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           url: "/extensions",
         },
       ]
-    });
-
-    // Settings (collapsible)
-    items.push({
-      title: "Settings",
-      url: "/settings",
-      icon: Settings2,
-      items: [
-        {
-          title: "General",
-          url: "/settings/general",
-        },
-        {
-          title: "Context",
-          url: "/settings/context",
-        },
-        {
-          title: "Projects",
-          url: "/settings/projects",
-        },
-        {
-          title: "Profile",
-          url: "/settings/profile",
-        },
-      ],
     });
 
     return items;
