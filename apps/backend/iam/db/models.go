@@ -20,13 +20,16 @@ type License struct {
 }
 
 type Project struct {
-	ID               string    `json:"id"`
-	TenantID         string    `json:"tenant_id"`
-	Name             string    `json:"name"`
-	WhatsappEnabled  int64     `json:"whatsapp_enabled"`
-	SubclientEnabled int64     `json:"subclient_enabled"`
-	CreatedByUserID  string    `json:"created_by_user_id"`
-	CreatedAt        time.Time `json:"created_at"`
+	ID               string         `json:"id"`
+	TenantID         string         `json:"tenant_id"`
+	Name             string         `json:"name"`
+	WhatsappEnabled  int64          `json:"whatsapp_enabled"`
+	SubclientEnabled int64          `json:"subclient_enabled"`
+	CreatedByUserID  string         `json:"created_by_user_id"`
+	CreatedAt        time.Time      `json:"created_at"`
+	ShowHistory      int64          `json:"show_history"`
+	UseClientUID     int64          `json:"use_client_uid"`
+	AllowedOrigins   sql.NullString `json:"allowed_origins"`
 }
 
 type Session struct {
@@ -76,6 +79,20 @@ type UpdateProjectParams struct {
 }
 
 type DeleteProjectParams struct {
+	ID       string `json:"id"`
+	TenantID string `json:"tenant_id"`
+}
+
+type GetEmbedCSSRow struct {
+	CustomCSS string `json:"custom_css"`
+}
+
+type UpsertEmbedCSSParams struct {
+	ProjectID string `json:"project_id"`
+	CustomCSS string `json:"custom_css"`
+}
+
+type GetProjectParams struct {
 	ID       string `json:"id"`
 	TenantID string `json:"tenant_id"`
 }

@@ -415,7 +415,7 @@ func (q *Queries) InsertUser(ctx context.Context, arg InsertUserParams) error {
 }
 
 const listProjects = `-- name: ListProjects :many
-SELECT id, tenant_id, name, whatsapp_enabled, subclient_enabled, created_by_user_id, created_at
+SELECT id, tenant_id, name, whatsapp_enabled, subclient_enabled, created_by_user_id, created_at, show_history, use_client_uid, allowed_origins
 FROM projects
 WHERE tenant_id = ?
 ORDER BY created_at DESC
@@ -438,6 +438,9 @@ func (q *Queries) ListProjects(ctx context.Context, tenantID string) ([]Project,
 			&i.SubclientEnabled,
 			&i.CreatedByUserID,
 			&i.CreatedAt,
+			&i.ShowHistory,
+			&i.UseClientUID,
+			&i.AllowedOrigins,
 		); err != nil {
 			return nil, err
 		}
@@ -539,5 +542,54 @@ WHERE id = ? AND tenant_id = ?
 
 func (q *Queries) DeleteProject(ctx context.Context, arg DeleteProjectParams) error {
 	_, err := q.db.ExecContext(ctx, deleteProject, arg.ID, arg.TenantID)
+	return err
+}
+
+const getProject = `-- name: GetProject :one
+SELECT id, tenant_id, name, whatsapp_enabled, subclient_enabled, created_by_user_id, created_at, show_history, use_client_uid, allowed_origins
+FROM projects
+WHERE id = ? AND tenant_id = ?
+`
+
+func (q *Queries) GetProject(ctx context.Context, arg GetProjectParams) (Project, error) {
+	row := q.db.QueryRowContext(ctx, getProject, arg.ID, arg.TenantID)
+	var i Project
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.Name,
+		&i.WhatsappEnabled,
+		&i.SubclientEnabled,
+		&i.CreatedByUserID,
+		&i.CreatedAt,
+		&i.ShowHistory,
+		&i.UseClientUID,
+		&i.AllowedOrigins,
+	)
+	return i, err
+}
+
+const getEmbedCSS = `-- name: GetEmbedCSS :one
+SELECT custom_css FROM embed_css
+WHERE project_id = ?
+`
+
+func (q *Queries) GetEmbedCSS(ctx context.Context, projectID string) (GetEmbedCSSRow, error) {
+	row := q.db.QueryRowContext(ctx, getEmbedCSS, projectID)
+	var i GetEmbedCSSRow
+	err := row.Scan(&i.CustomCSS)
+	return i, err
+}
+
+const upsertEmbedCSS = `-- name: UpsertEmbedCSS :exec
+INSERT INTO embed_css (project_id, custom_css, updated_at)
+VALUES (?, ?, CURRENT_TIMESTAMP)
+ON CONFLICT(project_id) DO UPDATE SET
+  custom_css = excluded.custom_css,
+  updated_at = excluded.updated_at
+`
+
+func (q *Queries) UpsertEmbedCSS(ctx context.Context, arg UpsertEmbedCSSParams) error {
+	_, err := q.db.ExecContext(ctx, upsertEmbedCSS, arg.ProjectID, arg.CustomCSS)
 	return err
 }

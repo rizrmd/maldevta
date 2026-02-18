@@ -35,6 +35,9 @@ type Querier interface {
 	UpsertWhatsappUser(ctx context.Context, arg UpsertWhatsappUserParams) error
 	UpdateProject(ctx context.Context, arg UpdateProjectParams) error
 	DeleteProject(ctx context.Context, arg DeleteProjectParams) error
+	GetProject(ctx context.Context, arg GetProjectParams) (Project, error)
+	GetEmbedCSS(ctx context.Context, projectID string) (GetEmbedCSSRow, error)
+	UpsertEmbedCSS(ctx context.Context, arg UpsertEmbedCSSParams) error
 }
 
 var _ Querier = (*Queries)(nil)

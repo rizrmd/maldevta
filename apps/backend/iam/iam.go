@@ -472,13 +472,16 @@ type createProjectParams struct {
 }
 
 type projectResponse struct {
-	ID               string `json:"id"`
-	TenantID         string `json:"tenant_id"`
-	Name             string `json:"name"`
-	WhatsappEnabled  bool   `json:"whatsapp_enabled"`
-	SubclientEnabled bool   `json:"subclient_enabled"`
-	CreatedByUserID  string `json:"created_by_user_id"`
-	CreatedAt        string `json:"created_at"`
+	ID               string    `json:"id"`
+	TenantID         string    `json:"tenant_id"`
+	Name             string    `json:"name"`
+	WhatsappEnabled  bool      `json:"whatsapp_enabled"`
+	SubclientEnabled bool      `json:"subclient_enabled"`
+	CreatedByUserID  string    `json:"created_by_user_id"`
+	CreatedAt        string    `json:"created_at"`
+	ShowHistory      bool      `json:"show_history"`
+	UseClientUID     bool      `json:"use_client_uid"`
+	AllowedOrigins   []string  `json:"allowed_origins"`
 }
 
 type listProjectsResponse struct {
@@ -860,6 +863,18 @@ func ListProjects(ctx context.Context) (*listProjectsResponse, error) {
 
 	out := make([]*projectResponse, len(projects))
 	for i, p := range projects {
+		// Parse allowed_origins from comma-separated string
+		var allowedOrigins []string
+		if p.AllowedOrigins.Valid {
+			origins := strings.Split(p.AllowedOrigins.String, ",")
+			for _, origin := range origins {
+				trimmed := strings.TrimSpace(origin)
+				if trimmed != "" {
+					allowedOrigins = append(allowedOrigins, trimmed)
+				}
+			}
+		}
+
 		out[i] = &projectResponse{
 			ID:               p.ID,
 			TenantID:         p.TenantID,
@@ -868,10 +883,215 @@ func ListProjects(ctx context.Context) (*listProjectsResponse, error) {
 			SubclientEnabled: p.SubclientEnabled == 1,
 			CreatedByUserID:  p.CreatedByUserID,
 			CreatedAt:        p.CreatedAt.Format(time.RFC3339),
+			ShowHistory:      p.ShowHistory == 1,
+			UseClientUID:     p.UseClientUID == 1,
+			AllowedOrigins:   allowedOrigins,
 		}
 	}
 
 	return &listProjectsResponse{Projects: out}, nil
+}
+
+// GetProject retrieves a single project by ID.
+//
+//encore:api auth method=GET path=/projects/:projectID
+func GetProject(ctx context.Context, projectID string) (*projectResponseWrapper, error) {
+	raw := auth.Data()
+	data, _ := raw.(*AuthData)
+	if data == nil || data.ScopeType != scopeTenant {
+		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "tenant session required"}
+	}
+
+	project, err := q().GetProject(ctx, iamdb.GetProjectParams{
+		ID:       projectID,
+		TenantID: data.TenantID,
+	})
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, &errs.Error{Code: errs.NotFound, Message: "project not found"}
+		}
+		return nil, err
+	}
+
+	// Parse allowed_origins from comma-separated string
+	var allowedOrigins []string
+	if project.AllowedOrigins.Valid {
+		origins := strings.Split(project.AllowedOrigins.String, ",")
+		for _, origin := range origins {
+			trimmed := strings.TrimSpace(origin)
+			if trimmed != "" {
+				allowedOrigins = append(allowedOrigins, trimmed)
+			}
+		}
+	}
+
+	return &projectResponseWrapper{
+		Success: true,
+		Data: &projectResponse{
+			ID:               project.ID,
+			TenantID:         project.TenantID,
+			Name:             project.Name,
+			WhatsappEnabled:  project.WhatsappEnabled == 1,
+			SubclientEnabled: project.SubclientEnabled == 1,
+			CreatedByUserID:  project.CreatedByUserID,
+			CreatedAt:        project.CreatedAt.Format(time.RFC3339),
+			ShowHistory:      project.ShowHistory == 1,
+			UseClientUID:     project.UseClientUID == 1,
+			AllowedOrigins:   allowedOrigins,
+		},
+	}, nil
+}
+
+type projectResponseWrapper struct {
+	Success bool             `json:"success"`
+	Data    *projectResponse `json:"data"`
+}
+
+type updateProjectParams struct {
+	ShowHistory    bool     `json:"show_history"`
+	UseClientUID   bool     `json:"use_client_uid"`
+	AllowedOrigins []string `json:"allowed_origins"`
+}
+
+// UpdateProjectSettings updates project embed settings.
+//
+//encore:api auth method=PUT path=/projects/:projectID
+func UpdateProjectSettings(ctx context.Context, projectID string, p *updateProjectParams) (*successResponse, error) {
+	raw := auth.Data()
+	data, _ := raw.(*AuthData)
+	if data == nil || data.ScopeType != scopeTenant {
+		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "tenant session required"}
+	}
+
+	// Verify project exists and belongs to tenant
+	ok, _, _, err := projectOwnedByTenant(ctx, projectID, data.TenantID)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "project not found"}
+	}
+
+	// Convert allowed_origins array to comma-separated string
+	allowedOriginsStr := ""
+	if len(p.AllowedOrigins) > 0 {
+		allowedOriginsStr = strings.Join(p.AllowedOrigins, ",")
+	}
+
+	showHistory := int64(0)
+	if p.ShowHistory {
+		showHistory = 1
+	}
+
+	useClientUID := int64(0)
+	if p.UseClientUID {
+		useClientUID = 1
+	}
+
+	// Update project embed settings
+	_, err = db.ExecContext(ctx, `
+		UPDATE projects
+		SET show_history = ?, use_client_uid = ?, allowed_origins = ?
+		WHERE id = ? AND tenant_id = ?
+	`, showHistory, useClientUID, allowedOriginsStr, projectID, data.TenantID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &successResponse{Success: true}, nil
+}
+
+type successResponse struct {
+	Success bool `json:"success"`
+}
+
+// GetEmbedCSS retrieves custom CSS for a project.
+//
+//encore:api auth method=GET path=/projects/:projectID/embed/css
+func GetEmbedCSS(ctx context.Context, projectID string) (*embedCSSResponse, error) {
+	raw := auth.Data()
+	data, _ := raw.(*AuthData)
+	if data == nil || data.ScopeType != scopeTenant {
+		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "tenant session required"}
+	}
+
+	// Verify project exists and belongs to tenant
+	ok, _, _, err := projectOwnedByTenant(ctx, projectID, data.TenantID)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "project not found"}
+	}
+
+	css, err := q().GetEmbedCSS(ctx, projectID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			// No CSS saved yet, return empty
+			return &embedCSSResponse{
+				Success: true,
+				Data: &embedCSSData{
+					CustomCSS: "",
+				},
+			}, nil
+		}
+		return nil, err
+	}
+
+	return &embedCSSResponse{
+		Success: true,
+		Data: &embedCSSData{
+			CustomCSS: css.CustomCSS,
+		},
+	}, nil
+}
+
+type embedCSSResponse struct {
+	Success bool         `json:"success"`
+	Data    *embedCSSData `json:"data"`
+}
+
+type embedCSSData struct {
+	CustomCSS string `json:"customCss"`
+}
+
+type saveEmbedCSSParams struct {
+	CustomCSS string `json:"customCss"`
+}
+
+// SaveEmbedCSS saves custom CSS for a project.
+//
+//encore:api auth method=POST path=/projects/:projectID/embed/css
+func SaveEmbedCSS(ctx context.Context, projectID string, p *saveEmbedCSSParams) (*successResponse, error) {
+	raw := auth.Data()
+	data, _ := raw.(*AuthData)
+	if data == nil || data.ScopeType != scopeTenant {
+		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "tenant session required"}
+	}
+
+	// Verify project exists and belongs to tenant
+	ok, _, _, err := projectOwnedByTenant(ctx, projectID, data.TenantID)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "project not found"}
+	}
+
+	// Validate CSS size (max 10KB)
+	if len(p.CustomCSS) > 10240 {
+		return nil, &errs.Error{Code: errs.InvalidArgument, Message: "custom CSS exceeds maximum size of 10KB"}
+	}
+
+	err = q().UpsertEmbedCSS(ctx, iamdb.UpsertEmbedCSSParams{
+		ProjectID: projectID,
+		CustomCSS: p.CustomCSS,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &successResponse{Success: true}, nil
 }
 
 type listSubclientsParams struct {
@@ -1300,6 +1520,12 @@ func runMigrations(ctx context.Context, db *sql.DB) error {
 	// Run pending migrations
 	if currentVersion < 1 {
 		if err := applyMigration(ctx, db, 1); err != nil {
+			return err
+		}
+	}
+
+	if currentVersion < 2 {
+		if err := applyMigration(ctx, db, 2); err != nil {
 			return err
 		}
 	}
