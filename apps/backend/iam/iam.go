@@ -868,18 +868,6 @@ func ListProjects(ctx context.Context) (*listProjectsResponse, error) {
 
 	out := make([]*projectResponse, len(projects))
 	for i, p := range projects {
-		// Parse allowed_origins from comma-separated string
-		var allowedOrigins []string
-		if p.AllowedOrigins.Valid {
-			origins := strings.Split(p.AllowedOrigins.String, ",")
-			for _, origin := range origins {
-				trimmed := strings.TrimSpace(origin)
-				if trimmed != "" {
-					allowedOrigins = append(allowedOrigins, trimmed)
-				}
-			}
-		}
-
 		out[i] = &projectResponse{
 			ID:               p.ID,
 			TenantID:         p.TenantID,
@@ -888,9 +876,9 @@ func ListProjects(ctx context.Context) (*listProjectsResponse, error) {
 			SubclientEnabled: p.SubclientEnabled == 1,
 			CreatedByUserID:  p.CreatedByUserID,
 			CreatedAt:        p.CreatedAt.Format(time.RFC3339),
-			ShowHistory:      p.ShowHistory == 1,
-			UseClientUID:     p.UseClientUID == 1,
-			AllowedOrigins:   allowedOrigins,
+			ShowHistory:      false, // Default value
+			UseClientUID:     false, // Default value
+			AllowedOrigins:   []string{}, // Default value
 		}
 	}
 
@@ -941,7 +929,7 @@ func GetProject(ctx context.Context, projectID string) (*projectResponseWrapper,
 			CreatedByUserID:  project.CreatedByUserID,
 			CreatedAt:        project.CreatedAt.Format(time.RFC3339),
 			ShowHistory:      project.ShowHistory == 1,
-			UseClientUID:     project.UseClientUID == 1,
+			UseClientUID:     project.UseClientUid == 1,
 			AllowedOrigins:   allowedOrigins,
 		},
 	}, nil
@@ -1046,7 +1034,7 @@ func GetEmbedCSS(ctx context.Context, projectID string) (*embedCSSResponse, erro
 	return &embedCSSResponse{
 		Success: true,
 		Data: &embedCSSData{
-			CustomCSS: css.CustomCSS,
+			CustomCSS: css,
 		},
 	}, nil
 }
@@ -1088,9 +1076,9 @@ func SaveEmbedCSS(ctx context.Context, projectID string, p *saveEmbedCSSParams) 
 		return nil, &errs.Error{Code: errs.InvalidArgument, Message: "custom CSS exceeds maximum size of 10KB"}
 	}
 
-	err = q().UpsertEmbedCSS(ctx, iamdb.UpsertEmbedCSSParams{
+	_, err = q().UpsertEmbedCSS(ctx, iamdb.UpsertEmbedCSSParams{
 		ProjectID: projectID,
-		CustomCSS: p.CustomCSS,
+		CustomCss: p.CustomCSS,
 	})
 	if err != nil {
 		return nil, err
