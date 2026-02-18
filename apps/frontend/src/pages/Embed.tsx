@@ -7,7 +7,7 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
 } from "@/components/ui/breadcrumb";
-import { Code } from "lucide-react";
+import { Globe } from "lucide-react";
 
 type ProjectResponse = {
   id: string;
@@ -39,7 +39,7 @@ async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-export default function DeveloperPage() {
+export default function EmbedRedirectorPage() {
   const [, setLocation] = useLocation();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -51,8 +51,8 @@ export default function DeveloperPage() {
         const projectList = response.projects || [];
 
         if (projectList.length > 0) {
-          // Redirect to first project's API page
-          setLocation(`/projects/${projectList[0].id}/api`);
+          // Redirect to first project's Embed page
+          setLocation(`/projects/${projectList[0].id}/embed`);
         } else {
           setLoading(false);
           setError("No projects found. Please create a project first.");
@@ -74,7 +74,7 @@ export default function DeveloperPage() {
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
-                <BreadcrumbPage>Developer</BreadcrumbPage>
+                <BreadcrumbPage>Embed</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
@@ -97,7 +97,7 @@ export default function DeveloperPage() {
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
-                <BreadcrumbPage>Developer</BreadcrumbPage>
+                <BreadcrumbPage>Embed</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
@@ -105,7 +105,7 @@ export default function DeveloperPage() {
       >
         <div className="flex items-center justify-center h-full">
           <div className="text-center max-w-md">
-            <Code className="mx-auto h-12 w-12 text-slate-400" />
+            <Globe className="mx-auto h-12 w-12 text-slate-400" />
             <h3 className="mt-4 text-lg font-semibold text-slate-900">No Projects Found</h3>
             <p className="mt-2 text-sm text-slate-600">{error}</p>
             <button

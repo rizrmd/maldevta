@@ -121,6 +121,60 @@ func (s *Service) Health(ctx context.Context) (*HealthResponse, error) {
 	return &HealthResponse{Status: "ok"}, nil
 }
 
+// Completion handles POST /api/llm/completion - One-shot LLM completion
+// This is a simplified API for external applications that don't require
+// full project context management.
+//
+//encore:api public method=POST path=/api/llm/completion
+func (s *Service) Completion(ctx context.Context, p *CompletionParams) (*CompletionResult, error) {
+	if p == nil || strings.TrimSpace(p.Prompt) == "" {
+		return nil, badRequest("prompt is required")
+	}
+	if s.err != nil || s.model == nil {
+		return &CompletionResult{Success: false, Error: "LLM service not available"}, nil
+	}
+
+	// Build system prompt from context if provided
+	systemPrompt := "You are a helpful AI assistant."
+	if p.Context != "" {
+		systemPrompt = p.Context
+	}
+
+	// Generate the completion
+	resp, err := s.model.Generate(ctx, []*schema.Message{
+		{
+			Role:    schema.System,
+			Content: systemPrompt,
+		},
+		{
+			Role:    schema.User,
+			Content: p.Prompt,
+		},
+	})
+	if err != nil {
+		return &CompletionResult{
+			Success: false,
+			Error:   fmt.Sprintf("Generation failed: %v", err),
+		}, nil
+	}
+
+	return &CompletionResult{
+		Success:  true,
+		Response: strings.TrimSpace(resp.Content),
+	}, nil
+}
+
+type CompletionParams struct {
+	Prompt  string `json:"prompt"`
+	Context string `json:"context,omitempty"`
+}
+
+type CompletionResult struct {
+	Success  bool   `json:"success"`
+	Response string `json:"response,omitempty"`
+	Error    string `json:"error,omitempty"`
+}
+
 type GenerateParams struct {
 	Prompt         string          `json:"prompt"`
 	ProjectContext *ProjectContext `json:"project_context"`
