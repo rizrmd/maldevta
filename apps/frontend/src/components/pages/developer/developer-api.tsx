@@ -237,11 +237,12 @@ console.log(data.response);`;
         </Breadcrumb>
       }
     >
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 py-6">
-        <p className="text-muted-foreground text-lg">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 py-6">
+        <p className="text-base text-slate-600 dark:text-slate-400">
           Integrate AI capabilities into your own applications using our one-shot LLM endpoint.
         </p>
 
+        {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
               {/* Left Column: API Documentation */}
               <div className="lg:col-span-7 space-y-6">
