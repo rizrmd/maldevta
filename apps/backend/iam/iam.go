@@ -1607,9 +1607,21 @@ func applyMigration(ctx context.Context, db *sql.DB, version int) error {
 		return fmt.Errorf("failed to enable foreign keys: %w", err)
 	}
 
-	// Execute migration
-	if _, err := db.ExecContext(ctx, sqlStr); err != nil {
-		return fmt.Errorf("failed to apply migration %d: %w", version, err)
+	// Execute migration statements
+	statements := strings.Split(sqlStr, ";")
+	for _, stmt := range statements {
+		stmt = strings.TrimSpace(stmt)
+		if stmt == "" {
+			continue
+		}
+		if _, err := db.ExecContext(ctx, stmt); err != nil {
+			// Ignore duplicate column errors (common in dev when restoring DBs)
+			if strings.Contains(err.Error(), "duplicate column name") {
+				fmt.Printf("Warning: Migration %d encountered duplicate column error, ignoring: %v\n", version, err)
+				continue
+			}
+			return fmt.Errorf("failed to apply migration %d statement '%s': %w", version, stmt, err)
+		}
 	}
 
 	// Record migration
