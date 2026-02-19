@@ -25,6 +25,7 @@ import LicenseSetupPage from "@/pages/LicenseSetup";
 import NotFoundPage from "@/pages/NotFound";
 import { AdminTenantsPage } from "@/pages/AdminTenants";
 import LLMEndpointsPage from "@/pages/LLMEndpoints";
+import WhatsAppPage from "@/pages/WhatsApp";
 
 //take out hardcode license true
 function LoadingScreen() {
@@ -157,6 +158,7 @@ function App() {
             <Route path="/extensions" component={ExtensionsPage} />
             <Route path="/developer" component={DeveloperPage} />
             <Route path="/embed" component={EmbedRedirectorPage} />
+            <Route path="/projects/:projectId/whatsapp" component={WhatsAppPage} />
             {/* <Route path="/support" component={SupportPage} /> */}
             {/* <Route path="/feedback" component={SupportPage} /> */}
             <Route path="/billing" component={BillingPage} />
