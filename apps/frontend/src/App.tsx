@@ -26,6 +26,8 @@ import NotFoundPage from "@/pages/NotFound";
 import { AdminTenantsPage } from "@/pages/AdminTenants";
 import LLMEndpointsPage from "@/pages/LLMEndpoints";
 import WhatsAppPage from "@/pages/WhatsApp";
+import { SetupRequired } from "@/components/setup-required";
+import AdminSetupPage from "@/pages/AdminSetup";
 
 //take out hardcode license true
 function LoadingScreen() {
@@ -70,9 +72,11 @@ function LicenseCheck({ children }: { children: React.ReactNode }) {
   if (!isInstalled) {
     return (
       <Switch>
-        <Route path="/license/setup" component={LicenseSetupPage} />
+        <Route path="/admin-setup" component={AdminSetupPage} />
+        {/* Legacy routes redirect to setup or show setup required */}
+        <Route path="/license/setup" component={SetupRequired} />
         <Route path="/license/verify" component={LicenseVerifyPage} />
-        <Route path="/*"><LicenseSetupPage /></Route>
+        <Route path="/*"><SetupRequired /></Route>
       </Switch>
     );
   }
@@ -117,6 +121,7 @@ function App() {
         {/* Public routes - license setup */}
         <Route path="/license/setup" component={LicenseSetupPage} />
         <Route path="/license/verify" component={LicenseVerifyPage} />
+        <Route path="/admin-setup" component={AdminSetupPage} />
 
         {/* Login route - accessible when licensed but not authenticated */}
         <Route path="/login" component={LoginPage} />

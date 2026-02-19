@@ -86,8 +86,8 @@ type role string
 
 const (
 	roleSystem role = "system"
-	roleAdmin role = "admin"
-	roleUser  role = "user"
+	roleAdmin  role = "admin"
+	roleUser   role = "user"
 )
 
 type scopeType string
@@ -182,14 +182,14 @@ func AuthHandler(ctx context.Context, p *authParams) (auth.UID, *AuthData, error
 }
 
 type installParams struct {
-	LicenseKey    string `json:"license_key"`
-	TenantName    string `json:"tenant_name"`
-	TenantDomain  string `json:"tenant_domain"`
-	AdminUsername string `json:"admin_username"`
-	AdminPassword string `json:"admin_password"`
+	LicenseKey     string `json:"license_key"`
+	TenantName     string `json:"tenant_name"`
+	TenantDomain   string `json:"tenant_domain"`
+	AdminUsername  string `json:"admin_username"`
+	AdminPassword  string `json:"admin_password"`
 	SystemUsername string `json:"system_username"`
 	SystemPassword string `json:"system_password"`
-	Host          string `header:"Host"`
+	Host           string `header:"Host"`
 }
 
 type authResponse struct {
@@ -416,6 +416,260 @@ type licenseVerifyResult struct {
 	Error                string `json:"error,omitempty"`
 }
 
+type setupVerifyLicenseParams struct {
+	LicenseKey string `json:"license_key"`
+}
+
+type setupVerifyLicenseResponse struct {
+	Valid                bool   `json:"valid"`
+	TenantName           string `json:"tenant_name"`
+	MaxProjectsPerTenant int    `json:"max_projects_per_tenant"`
+	WhatsappEnabled      bool   `json:"whatsapp_enabled"`
+	SubclientEnabled     bool   `json:"subclient_enabled"`
+}
+
+// SetupVerifyLicense verifies a license key during setup wizard.
+//
+//encore:api public method=POST path=/auth/setup/verify-license
+func SetupVerifyLicense(ctx context.Context, p *setupVerifyLicenseParams) (*setupVerifyLicenseResponse, error) {
+	if p == nil || p.LicenseKey == "" {
+		return nil, badRequest("license_key is required")
+	}
+
+	verified, err := verifyLicenseWithHub(ctx, p.LicenseKey)
+	if err != nil {
+		return nil, err
+	}
+	if !verified.Valid {
+		msg := "invalid license"
+		if verified.Error != "" {
+			msg = verified.Error
+		}
+		return nil, &errs.Error{Code: errs.PermissionDenied, Message: msg}
+	}
+
+	return &setupVerifyLicenseResponse{
+		Valid:                verified.Valid,
+		TenantName:           verified.TenantName,
+		MaxProjectsPerTenant: verified.MaxProjectsPerTenant,
+		WhatsappEnabled:      verified.WhatsappEnabled,
+		SubclientEnabled:     verified.SubclientEnabled,
+	}, nil
+}
+
+type setupCreateTenantParams struct {
+	LicenseKey string `json:"license_key"`
+	Name       string `json:"name"`
+	Domain     string `json:"domain"`
+}
+
+type setupCreateTenantResponse struct {
+	TenantID string `json:"tenant_id"`
+	Name     string `json:"name"`
+}
+
+// SetupCreateTenant creates a tenant during setup wizard.
+//
+//encore:api public method=POST path=/auth/setup/tenant
+func SetupCreateTenant(ctx context.Context, p *setupCreateTenantParams) (*setupCreateTenantResponse, error) {
+	if p == nil || p.LicenseKey == "" {
+		return nil, badRequest("license_key is required")
+	}
+	if p.Name == "" {
+		return nil, badRequest("tenant name is required")
+	}
+
+	// Verify license again to ensure security
+	verified, err := verifyLicenseWithHub(ctx, p.LicenseKey)
+	if err != nil {
+		return nil, err
+	}
+	if !verified.Valid {
+		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "invalid license"}
+	}
+
+	// Create tenant
+	tenantID := newID("tnt")
+	domain := normalizeHost(p.Domain)
+	if domain == "" {
+		domain = "*"
+	}
+	err = q().InsertTenant(ctx, iamdb.InsertTenantParams{
+		ID:     tenantID,
+		Name:   strings.TrimSpace(p.Name),
+		Domain: domain,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Create necessary directories
+	if err := os.MkdirAll(filepath.Join("data", "tenants", tenantID), 0755); err != nil {
+		fmt.Printf("Warning: failed to create tenant directory: %v\n", err)
+	}
+
+	return &setupCreateTenantResponse{
+		TenantID: tenantID,
+		Name:     p.Name,
+	}, nil
+}
+
+type setupCreateAdminParams struct {
+	LicenseKey string `json:"license_key"`
+	TenantID   string `json:"tenant_id"`
+	Username   string `json:"username"`
+	Email      string `json:"email"`
+	Password   string `json:"password"`
+}
+
+type setupCreateAdminResponse struct {
+	UserID   string `json:"user_id"`
+	Username string `json:"username"`
+}
+
+// SetupCreateAdmin creates an admin user during setup wizard.
+//
+//encore:api public method=POST path=/auth/setup/admin
+func SetupCreateAdmin(ctx context.Context, p *setupCreateAdminParams) (*setupCreateAdminResponse, error) {
+	if p == nil || p.LicenseKey == "" {
+		return nil, badRequest("license_key is required")
+	}
+	if p.TenantID == "" || p.Username == "" || p.Password == "" {
+		return nil, badRequest("tenant_id, username, and password are required")
+	}
+
+	// Verify license
+	verified, err := verifyLicenseWithHub(ctx, p.LicenseKey)
+	if err != nil {
+		return nil, err
+	}
+	if !verified.Valid {
+		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "invalid license"}
+	}
+
+	passwordHash, err := hashPassword(p.Password)
+	if err != nil {
+		return nil, err
+	}
+
+	userID := newID("usr")
+	now := time.Now().UTC()
+	err = q().CreateUser(ctx, iamdb.CreateUserParams{
+		ID:           userID,
+		TenantID:     sql.NullString{String: p.TenantID, Valid: true},
+		Username:     p.Username,
+		Email:        sql.NullString{String: p.Email, Valid: p.Email != ""},
+		PasswordHash: sql.NullString{String: passwordHash, Valid: true},
+		Role:         string(roleAdmin),
+		Source:       "manual",
+		CreatedAt:    now,
+		UpdatedAt:    now.Unix(), // CreateUser query uses INTEGER or DATETIME?
+	})
+	// Wait, schema says created_at DATETIME, query says updated_at ?
+	// Let's check schema.sql for updated_at type in users table.
+	// Step 31: line 11: ALTER TABLE users ADD COLUMN updated_at INTEGER NOT NULL DEFAULT 0;
+	// So updated_at is INTEGER (likely unix timestamp).
+	// created_at is DATETIME.
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &setupCreateAdminResponse{
+		UserID:   userID,
+		Username: p.Username,
+	}, nil
+}
+
+type setupCompleteParams struct {
+	LicenseKey string `json:"license_key"`
+	TenantID   string `json:"tenant_id"` // Optional, to verify it exists
+	UserID     string `json:"user_id"`   // The admin user to log in as
+}
+
+// SetupComplete finalizes the setup by saving the license and logging in.
+//
+//encore:api public method=POST path=/auth/setup/complete
+func SetupComplete(ctx context.Context, p *setupCompleteParams) (*authResponse, error) {
+	if p == nil || p.LicenseKey == "" {
+		return nil, badRequest("license_key is required")
+	}
+
+	// Check if already installed to prevent re-setup
+	installed, err := isInstalled(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if installed {
+		return nil, &errs.Error{Code: errs.FailedPrecondition, Message: "already installed"}
+	}
+
+	verified, err := verifyLicenseWithHub(ctx, p.LicenseKey)
+	if err != nil {
+		return nil, err
+	}
+	if !verified.Valid {
+		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "invalid license"}
+	}
+
+	// Verify user exists using GetUserDetail which returns full info
+	user, err := q().GetUserDetail(ctx, p.UserID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, &errs.Error{Code: errs.NotFound, Message: "admin user not found"}
+		}
+		return nil, err
+	}
+
+	// Save license to mark as installed
+	licenseID := newID("lic")
+	whatsappEnabled := int64(0)
+	if verified.WhatsappEnabled {
+		whatsappEnabled = 1
+	}
+	subclientEnabled := int64(0)
+	if verified.SubclientEnabled {
+		subclientEnabled = 1
+	}
+
+	err = q().InsertLicense(ctx, iamdb.InsertLicenseParams{
+		ID:                   licenseID,
+		LicenseKey:           p.LicenseKey,
+		MaxProjectsPerTenant: int64(verified.MaxProjectsPerTenant),
+		WhatsappEnabled:      whatsappEnabled,
+		SubclientEnabled:     subclientEnabled,
+		TenantName:           verified.TenantName,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Create session for the verified user
+	// If the user belongs to a tenant, the session scope should be tenant
+	scopeType := scopeTenant
+	scopeID := user.TenantID.String
+	if !user.TenantID.Valid {
+		// Fallback, though setup wizard should have created tenant user
+		scopeType = scopeSystem
+		scopeID = user.ID
+	}
+
+	token, cookie, err := createSession(ctx, user.ID, scopeType, scopeID, "setup-wizard")
+	if err != nil {
+		return nil, err
+	}
+
+	_ = token
+	return &authResponse{
+		SetCookie: cookie,
+		UserID:    user.ID,
+		Role:      user.Role,
+		ScopeType: string(scopeType),
+		ScopeID:   scopeID,
+		Username:  user.Username,
+	}, nil
+}
+
 type tenantLoginParams struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
@@ -487,16 +741,16 @@ type createProjectParams struct {
 }
 
 type projectResponse struct {
-	ID               string    `json:"id"`
-	TenantID         string    `json:"tenant_id"`
-	Name             string    `json:"name"`
-	WhatsappEnabled  bool      `json:"whatsapp_enabled"`
-	SubclientEnabled bool      `json:"subclient_enabled"`
-	CreatedByUserID  string    `json:"created_by_user_id"`
-	CreatedAt        string    `json:"created_at"`
-	ShowHistory      bool      `json:"show_history"`
-	UseClientUID     bool      `json:"use_client_uid"`
-	AllowedOrigins   []string  `json:"allowed_origins"`
+	ID               string   `json:"id"`
+	TenantID         string   `json:"tenant_id"`
+	Name             string   `json:"name"`
+	WhatsappEnabled  bool     `json:"whatsapp_enabled"`
+	SubclientEnabled bool     `json:"subclient_enabled"`
+	CreatedByUserID  string   `json:"created_by_user_id"`
+	CreatedAt        string   `json:"created_at"`
+	ShowHistory      bool     `json:"show_history"`
+	UseClientUID     bool     `json:"use_client_uid"`
+	AllowedOrigins   []string `json:"allowed_origins"`
 }
 
 type listProjectsResponse struct {
@@ -886,8 +1140,8 @@ func ListProjects(ctx context.Context) (*listProjectsResponse, error) {
 			SubclientEnabled: p.SubclientEnabled == 1,
 			CreatedByUserID:  p.CreatedByUserID,
 			CreatedAt:        p.CreatedAt.Format(time.RFC3339),
-			ShowHistory:      false, // Default value
-			UseClientUID:     false, // Default value
+			ShowHistory:      false,      // Default value
+			UseClientUID:     false,      // Default value
 			AllowedOrigins:   []string{}, // Default value
 		}
 	}
@@ -1050,7 +1304,7 @@ func GetEmbedCSS(ctx context.Context, projectID string) (*embedCSSResponse, erro
 }
 
 type embedCSSResponse struct {
-	Success bool         `json:"success"`
+	Success bool          `json:"success"`
 	Data    *embedCSSData `json:"data"`
 }
 
