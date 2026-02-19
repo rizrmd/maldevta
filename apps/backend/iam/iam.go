@@ -85,6 +85,7 @@ const (
 type role string
 
 const (
+	roleSystem role = "system"
 	roleAdmin role = "admin"
 	roleUser  role = "user"
 )
@@ -94,6 +95,7 @@ type scopeType string
 const (
 	scopeTenant    scopeType = "tenant"
 	scopeSubclient scopeType = "subclient"
+	scopeSystem    scopeType = "system"
 )
 
 // AuthData contains the authenticated user's session information
@@ -185,6 +187,8 @@ type installParams struct {
 	TenantDomain  string `json:"tenant_domain"`
 	AdminUsername string `json:"admin_username"`
 	AdminPassword string `json:"admin_password"`
+	SystemUsername string `json:"system_username"`
+	SystemPassword string `json:"system_password"`
 	Host          string `header:"Host"`
 }
 
@@ -258,7 +262,7 @@ func ResetInstall(ctx context.Context) (*installStatusResponse, error) {
 	}, nil
 }
 
-// Install verifies the license and bootstraps the default tenant + admin user.
+// Install verifies the license and bootstraps the initial global system user.
 // This endpoint only works once.
 //
 //encore:api public method=POST path=/auth/install
@@ -295,31 +299,29 @@ func Install(ctx context.Context, p *installParams) (*authResponse, error) {
 		tenantName = verified.TenantName
 	}
 	if tenantName == "" {
-		tenantName = "Default Tenant"
+		tenantName = "Unassigned"
 	}
 
-	tenantDomain := normalizeHost(p.TenantDomain)
-	if tenantDomain == "" {
-		tenantDomain = "*"
+	systemUsername := strings.TrimSpace(p.SystemUsername)
+	if systemUsername == "" {
+		systemUsername = strings.TrimSpace(p.AdminUsername)
 	}
-
-	adminUsername := strings.TrimSpace(p.AdminUsername)
-	if adminUsername == "" {
-		adminUsername = "admin"
+	if systemUsername == "" {
+		systemUsername = "system"
 	}
-
-	adminPassword := p.AdminPassword
-	if adminPassword == "" {
-		adminPassword = p.LicenseKey
+	systemPassword := p.SystemPassword
+	if systemPassword == "" {
+		systemPassword = p.AdminPassword
 	}
-
-	hash, err := hashPassword(adminPassword)
+	if systemPassword == "" {
+		systemPassword = p.LicenseKey
+	}
+	systemHash, err := hashPassword(systemPassword)
 	if err != nil {
 		return nil, err
 	}
 
 	licenseID := newID("lic")
-	tenantID := newID("ten")
 	userID := newID("usr")
 
 	whatsappEnabled := int64(0)
@@ -343,33 +345,19 @@ func Install(ctx context.Context, p *installParams) (*authResponse, error) {
 		return nil, err
 	}
 
-	err = q().InsertTenant(ctx, iamdb.InsertTenantParams{
-		ID:     tenantID,
-		Name:   tenantName,
-		Domain: tenantDomain,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	// Initialize tenant directory structure
-	if err := os.MkdirAll(getTenantPath(tenantID), 0755); err != nil && !os.IsExist(err) {
-		return nil, fmt.Errorf("failed to initialize tenant directory: %w", err)
-	}
-
 	err = q().InsertUser(ctx, iamdb.InsertUserParams{
 		ID:           userID,
-		TenantID:     sql.NullString{String: tenantID, Valid: true},
-		Username:     adminUsername,
-		PasswordHash: sql.NullString{String: hash, Valid: true},
-		Role:         string(roleAdmin),
+		TenantID:     sql.NullString{},
+		Username:     systemUsername,
+		PasswordHash: sql.NullString{String: systemHash, Valid: true},
+		Role:         string(roleSystem),
 		Source:       "manual",
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	token, cookie, err := createSession(ctx, userID, scopeTenant, tenantID, normalizeHost(p.Host))
+	token, cookie, err := createSession(ctx, userID, scopeSystem, userID, normalizeHost(p.Host))
 	if err != nil {
 		return nil, err
 	}
@@ -378,9 +366,10 @@ func Install(ctx context.Context, p *installParams) (*authResponse, error) {
 	return &authResponse{
 		SetCookie: cookie,
 		UserID:    userID,
-		Role:      string(roleAdmin),
-		ScopeType: string(scopeTenant),
-		ScopeID:   tenantID,
+		Role:      string(roleSystem),
+		ScopeType: string(scopeSystem),
+		ScopeID:   userID,
+		Username:  systemUsername,
 	}, nil
 }
 
@@ -439,6 +428,27 @@ type tenantLoginParams struct {
 func TenantLogin(ctx context.Context, p *tenantLoginParams) (*authResponse, error) {
 	if p == nil || p.Username == "" || p.Password == "" {
 		return nil, badRequest("username and password are required")
+	}
+
+	systemUserID, systemRole, systemHash, systemErr := findSystemUser(ctx, p.Username)
+	if systemErr == nil {
+		if err := bcrypt.CompareHashAndPassword([]byte(systemHash), []byte(p.Password)); err != nil {
+			return nil, &errs.Error{Code: errs.Unauthenticated, Message: "invalid credentials"}
+		}
+
+		_, cookie, err := createSession(ctx, systemUserID, scopeSystem, systemUserID, normalizeHost(p.Host))
+		if err != nil {
+			return nil, err
+		}
+
+		return &authResponse{
+			SetCookie: cookie,
+			UserID:    systemUserID,
+			Role:      systemRole,
+			ScopeType: string(scopeSystem),
+			ScopeID:   systemUserID,
+			Username:  p.Username,
+		}, nil
 	}
 
 	tenantID, err := resolveTenantByHost(ctx, normalizeHost(p.Host))
@@ -1409,6 +1419,27 @@ func findTenantUser(ctx context.Context, tenantID, username string) (userID, use
 	return user.ID, user.Role, user.PasswordHash.String, nil
 }
 
+func findSystemUser(ctx context.Context, username string) (userID, userRole, passwordHash string, err error) {
+	row := db.QueryRowContext(ctx, `
+		SELECT id, role, password_hash
+		FROM users
+		WHERE tenant_id IS NULL AND subclient_id IS NULL AND role = ? AND username = ?
+		LIMIT 1
+	`, string(roleSystem), username)
+
+	var hash sql.NullString
+	if err := row.Scan(&userID, &userRole, &hash); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", "", "", &errs.Error{Code: errs.Unauthenticated, Message: "invalid credentials"}
+		}
+		return "", "", "", err
+	}
+	if !hash.Valid {
+		return "", "", "", &errs.Error{Code: errs.Unauthenticated, Message: "invalid credentials"}
+	}
+	return userID, userRole, hash.String, nil
+}
+
 func resolveTenantByHost(ctx context.Context, host string) (string, error) {
 	host = normalizeHost(host)
 
@@ -1519,6 +1550,30 @@ func runMigrations(ctx context.Context, db *sql.DB) error {
 
 	if currentVersion < 2 {
 		if err := applyMigration(ctx, db, 2); err != nil {
+			return err
+		}
+	}
+
+	if currentVersion < 3 {
+		if err := applyMigration(ctx, db, 3); err != nil {
+			return err
+		}
+	}
+
+	if currentVersion < 4 {
+		if err := applyMigration(ctx, db, 4); err != nil {
+			return err
+		}
+	}
+
+	if currentVersion < 5 {
+		if err := applyMigration(ctx, db, 5); err != nil {
+			return err
+		}
+	}
+
+	if currentVersion < 6 {
+		if err := applyMigration(ctx, db, 6); err != nil {
 			return err
 		}
 	}

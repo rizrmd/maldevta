@@ -8,9 +8,8 @@ import {
   Library,
   History,
   Folder,
-  CreditCard,
-  DollarSign,
   Building2,
+  Cpu,
 } from "lucide-react"
 import { useLocation } from "wouter"
 import { NavMain } from "@/components/nav-main"
@@ -40,6 +39,7 @@ interface MenuItem {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { currentProject, projects, loadProjects, hasInitialized } = useProjectStore();
   const user = useAuthStore((state) => state.user);
+  const isSystem = user?.role === "system";
   const isAdmin = user?.role === "admin";
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
@@ -55,6 +55,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   // Effect to detect project pages from URL
   React.useEffect(() => {
+    // System users use global tenant-management navigation only.
+    if (isSystem) {
+      setIsInProjectPage(false);
+      return;
+    }
+
     const init = async () => {
       // Load projects if not yet initialized
       if (!hasInitialized) {
@@ -102,14 +108,30 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         }
       }
     }
-  }, [pathname, projects, hasInitialized, loadProjects]);
+  }, [pathname, projects, hasInitialized, isSystem, loadProjects]);
 
   // Get the effective project to use for generating URLs
   // Prefer currentProject from store, but fall back to urlProjectId from URL
   const effectiveProject = currentProject || (urlProjectId ? projects.find(p => p.id === urlProjectId) : null);
 
+  const systemItems = React.useMemo(() => {
+    if (!isSystem) return [];
+    return [
+      {
+        title: "Tenants",
+        url: "/system/tenants",
+        icon: Building2,
+      },
+      {
+        title: "LLM Endpoints",
+        url: "/system/llm-endpoints",
+        icon: Cpu,
+      },
+    ];
+  }, [isSystem]);
+
   // === MENU SAAT TIDAK ADA PROJECT (Project Selector) ===
-  // Hanya muncul: Projects, Billing, Payment (admin only)
+  // Hanya muncul: Projects, Tenants (admin only)
   const projectSelectorItems = React.useMemo(() => {
     if (isInProjectPage) return [];
 
@@ -125,21 +147,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     if (isAdmin) {
       items.push({
         title: "Tenants",
-        url: "/admin/tenants",
+        url: "/system/tenants",
         icon: Building2,
       });
 
-      items.push({
-        title: "Billing",
-        url: "/billing",
-        icon: CreditCard,
-      });
-
-      items.push({
-        title: "Payment",
-        url: "/payment",
-        icon: DollarSign,
-      });
     }
 
     return items;
@@ -251,29 +262,35 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarHeader className={cn("border-b border-border/50 transition-all duration-200", isCollapsed ? "p-2" : "p-4")}>
         <TeamSwitcher
           appName={appName}
-          currentProjectName={effectiveProject?.name}
+          currentProjectName={isSystem ? "System Console" : effectiveProject?.name}
           logoUrl={logoUrl}
-          isSelectable={isInProjectPage}
+          isSelectable={!isSystem && isInProjectPage}
         />
       </SidebarHeader>
 
       <SidebarContent className="gap-0 py-2">
+        {isSystem && systemItems.length > 0 && (
+          <div className="px-3">
+            <NavMain label="System" items={systemItems} />
+          </div>
+        )}
+
         {/* Saat tidak ada project: Menu sederhana (Projects, Billing, Payment) */}
-        {!isInProjectPage && projectSelectorItems.length > 0 && (
+        {!isSystem && !isInProjectPage && projectSelectorItems.length > 0 && (
           <div className="px-3">
             <NavMain label="Platform" items={projectSelectorItems} />
           </div>
         )}
 
         {/* Saat ada project: Platform menu (Chat, History, Workspace) */}
-        {isInProjectPage && platformItems.length > 0 && (
+        {!isSystem && isInProjectPage && platformItems.length > 0 && (
           <div className="px-3">
             <NavMain label="Platform" items={platformItems} />
           </div>
         )}
 
         {/* Saat ada project: Management menu (admin only, project-specific) */}
-        {isInProjectPage && managementItems.length > 0 && (
+        {!isSystem && isInProjectPage && managementItems.length > 0 && (
           <div className="mt-4 px-3">
             <NavMain label="Management" items={managementItems} />
           </div>

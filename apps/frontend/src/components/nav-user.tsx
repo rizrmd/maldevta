@@ -24,6 +24,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuthStore } from "@/stores/authStore";
+import { useLocation } from "wouter";
 
 export function NavUser({
   user,
@@ -36,6 +37,12 @@ export function NavUser({
 }) {
   const { isMobile } = useSidebar();
   const logout = useAuthStore((state) => state.logout);
+  const [, setLocation] = useLocation();
+
+  const handleLogout = async () => {
+    await logout();
+    setLocation("/login", { replace: true });
+  };
 
   return (
     <SidebarMenu>
@@ -98,7 +105,7 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => logout()}>
+            <DropdownMenuItem onSelect={handleLogout}>
               <LogOut />
               Log out
             </DropdownMenuItem>

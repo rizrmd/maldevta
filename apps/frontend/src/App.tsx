@@ -24,6 +24,7 @@ import LicenseVerifyPage from "@/pages/LicenseVerify";
 import LicenseSetupPage from "@/pages/LicenseSetup";
 import NotFoundPage from "@/pages/NotFound";
 import { AdminTenantsPage } from "@/pages/AdminTenants";
+import LLMEndpointsPage from "@/pages/LLMEndpoints";
 
 //take out hardcode license true
 function LoadingScreen() {
@@ -160,7 +161,8 @@ function App() {
             {/* <Route path="/feedback" component={SupportPage} /> */}
             <Route path="/billing" component={BillingPage} />
             <Route path="/payment" component={PaymentPage} />
-            <Route path="/admin/tenants" component={AdminTenantsPage} />
+            <Route path="/system/tenants" component={AdminTenantsPage} />
+            <Route path="/system/llm-endpoints" component={LLMEndpointsPage} />
           </Switch>
         </ProtectedRoute>
 

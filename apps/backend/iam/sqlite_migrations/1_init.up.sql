@@ -44,7 +44,7 @@ CREATE TABLE users (
   subclient_id TEXT REFERENCES subclients(id) ON DELETE CASCADE,
   username TEXT NOT NULL,
   password_hash TEXT,
-  role TEXT NOT NULL CHECK (role IN ('admin', 'user')),
+  role TEXT NOT NULL CHECK (role IN ('system', 'admin', 'user')),
   source TEXT NOT NULL CHECK (source IN ('manual', 'whatsapp')),
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   UNIQUE (tenant_id, username, subclient_id),
@@ -54,7 +54,7 @@ CREATE TABLE users (
 CREATE TABLE sessions (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  scope_type TEXT NOT NULL CHECK (scope_type IN ('tenant', 'subclient')),
+  scope_type TEXT NOT NULL CHECK (scope_type IN ('system', 'tenant', 'subclient')),
   scope_id TEXT NOT NULL,
   token_hash TEXT NOT NULL UNIQUE,
   host TEXT,

@@ -182,7 +182,7 @@ export function AdminTenantsPage() {
                           <div className="flex items-center gap-3">
                             {tenant.has_logo ? (
                               <img
-                                src={`/admin/tenants/${tenant.id}/logo`}
+                                src={`/system/tenants/${tenant.id}/logo`}
                                 alt={`${tenant.name} logo`}
                                 className="h-10 w-10 rounded-lg border object-cover"
                               />
