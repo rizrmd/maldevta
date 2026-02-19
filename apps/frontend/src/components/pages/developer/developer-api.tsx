@@ -18,15 +18,18 @@ import {
   Code2,
   BookOpen,
   Send,
-  Loader2
+  Loader2,
+  LayoutGrid
 } from "lucide-react";
 import { useParams } from "wouter";
 import AppLayout from "@/components/app-layout";
 import {
   Breadcrumb,
   BreadcrumbItem,
+  BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbPage,
+  BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { useProjectStore } from "@/stores";
 
@@ -230,6 +233,13 @@ console.log(data.response);`;
       header={
         <Breadcrumb>
           <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/" className="flex items-center gap-2">
+                <LayoutGrid className="h-4 w-4" />
+                Projects
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
             <BreadcrumbItem>
               <BreadcrumbPage>API</BreadcrumbPage>
             </BreadcrumbItem>

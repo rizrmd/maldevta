@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useParams } from "wouter";
 import AppLayout from "@/components/app-layout";
 import {
   Breadcrumb,
   BreadcrumbItem,
+  BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbPage,
+  BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,7 +19,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Database, Plus, Trash2, Search, Clock } from "lucide-react";
+import { Database, Plus, Trash2, Search, Clock, LayoutGrid } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import {
   Select,
@@ -95,10 +97,11 @@ async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
 
 export default function MemoryPage() {
   const { user } = useAuth();
+  const params = useParams<{ projectId: string }>();
   const [location] = useLocation();
+  const [, setLocation] = useLocation();
 
   const [projects, setProjects] = useState<ProjectResponse[]>([]);
-  const [selectedProjectId, setSelectedProjectId] = useState("");
   const [memories, setMemories] = useState<MemoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -108,13 +111,19 @@ export default function MemoryPage() {
   const [newValue, setNewValue] = useState("");
   const [busy, setBusy] = useState(false);
 
-  // Get project ID from URL
+  const selectedProjectId = params.projectId || "";
+
+  // Get project ID from URL (fallback for legacy routes)
   useEffect(() => {
-    const match = location.match(/\/projects\/([^\/]+)/);
-    if (match) {
-      setSelectedProjectId(match[1]);
+    if (!selectedProjectId) {
+      const match = location.match(/\/projects\/([^\/]+)/);
+      if (match) {
+        // Legacy route - redirect to new route
+        const projectId = match[1];
+        setLocation(`/projects/${projectId}/memory`);
+      }
     }
-  }, [location]);
+  }, [location, selectedProjectId, setLocation]);
 
   // Load projects
   useEffect(() => {
@@ -123,9 +132,6 @@ export default function MemoryPage() {
         const response = await apiRequest<ListProjectsResponse>("/projects");
         const projectList = response.projects || [];
         setProjects(projectList);
-        if (projectList.length > 0 && !selectedProjectId) {
-          setSelectedProjectId(projectList[0].id);
-        }
       } catch (err) {
         setError((err as { message?: string })?.message || "Failed to load projects");
       }
@@ -221,6 +227,13 @@ export default function MemoryPage() {
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
+              <BreadcrumbLink href="/" className="flex items-center gap-2">
+                <LayoutGrid className="h-4 w-4" />
+                Projects
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
               <BreadcrumbPage>Memory</BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
@@ -247,7 +260,7 @@ export default function MemoryPage() {
                 Add Memory
               </Button>
               <span className="text-sm text-muted-foreground">Project:</span>
-              <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
+              <Select value={selectedProjectId} onValueChange={(value) => setLocation(`/projects/${value}/memory`)}>
                 <SelectTrigger className="w-48">
                   <SelectValue placeholder="Select project" />
                 </SelectTrigger>
@@ -321,7 +334,7 @@ export default function MemoryPage() {
             <div className="w-full rounded-lg border border-slate-200 bg-white/80 p-8 text-center">
               <Database className="mx-auto h-12 w-12 text-slate-400" />
               <p className="mt-4 text-sm text-muted-foreground">
-                {loading ? "Loading projects..." : "No projects available. Create a project first."}
+                No project selected. Please select a project from the URL or go back to Projects.
               </p>
             </div>
           ) : (

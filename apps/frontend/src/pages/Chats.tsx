@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
+import { useParams, useLocation } from "wouter";
 import AppLayout from "@/components/app-layout";
 import {
   Breadcrumb,
   BreadcrumbItem,
+  BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbPage,
+  BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,7 +19,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { MessageSquare, Phone, Clock, User, Send } from "lucide-react";
+import { MessageSquare, Phone, Clock, User, Send, LayoutGrid } from "lucide-react";
 // import { useAuth } from "@/hooks/useAuth";
 import {
   Select,
@@ -105,9 +108,12 @@ async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export default function ChatsPage() {
+  const params = useParams<{ projectId: string }>();
+  const [location] = useLocation();
+  const [, setLocation] = useLocation();
+
   // const { user } = useAuth();
   const [projects, setProjects] = useState<ProjectResponse[]>([]);
-  const [selectedProjectId, setSelectedProjectId] = useState("");
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<ChatConversation | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -116,6 +122,20 @@ export default function ChatsPage() {
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
 
+  const selectedProjectId = params.projectId || "";
+
+  // Get project ID from URL (fallback for legacy routes)
+  useEffect(() => {
+    if (!selectedProjectId) {
+      const match = location.match(/\/whatsapp\/([^\/]+)/);
+      if (match) {
+        // Legacy route - redirect to new route
+        const projectId = match[1];
+        setLocation(`/whatsapp/${projectId}`);
+      }
+    }
+  }, [location, selectedProjectId, setLocation]);
+
   // Load projects
   useEffect(() => {
     const loadProjects = async () => {
@@ -123,9 +143,6 @@ export default function ChatsPage() {
         const response = await apiRequest<ListProjectsResponse>("/projects");
         const projectList = response.projects || [];
         setProjects(projectList);
-        if (projectList.length > 0 && !selectedProjectId) {
-          setSelectedProjectId(projectList[0].id);
-        }
       } catch (err) {
         const apiError = err as ApiError;
         setError(apiError.message || "Failed to load projects");
@@ -182,6 +199,8 @@ export default function ChatsPage() {
     ]);
   }, [selectedConversation]);
 
+  const selectedProject = projects.find((p) => p.id === selectedProjectId);
+
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedProjectId || !selectedConversation) {
       return;
@@ -222,7 +241,14 @@ export default function ChatsPage() {
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
-              <BreadcrumbPage>Chats</BreadcrumbPage>
+              <BreadcrumbLink href="/" className="flex items-center gap-2">
+                <LayoutGrid className="h-4 w-4" />
+                Projects
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>WhatsApp</BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
@@ -244,7 +270,7 @@ export default function ChatsPage() {
             </div>
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">Project:</span>
-              <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
+              <Select value={selectedProjectId} onValueChange={(value) => setLocation(`/whatsapp/${value}`)}>
                 <SelectTrigger className="w-48">
                   <SelectValue placeholder="Select project" />
                 </SelectTrigger>

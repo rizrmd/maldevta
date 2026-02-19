@@ -5,8 +5,10 @@ import { useProjectStore } from "@/stores";
 import {
   Breadcrumb,
   BreadcrumbItem,
+  BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbPage,
+  BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +21,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Check, Copy, Globe, Code2 } from "lucide-react";
+import { Check, Copy, Globe, Code2, LayoutGrid } from "lucide-react";
 
 type ApiError = {
   message: string;
@@ -291,6 +293,13 @@ export function EmbedSettings() {
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
+                <BreadcrumbLink href="/" className="flex items-center gap-2">
+                  <LayoutGrid className="h-4 w-4" />
+                  Projects
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
                 <BreadcrumbPage>Embed</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
@@ -312,6 +321,13 @@ export function EmbedSettings() {
       header={
         <Breadcrumb>
           <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/" className="flex items-center gap-2">
+                <LayoutGrid className="h-4 w-4" />
+                Projects
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
             <BreadcrumbItem>
               <BreadcrumbPage>Embed</BreadcrumbPage>
             </BreadcrumbItem>

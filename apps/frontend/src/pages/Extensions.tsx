@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
+import { useParams, useLocation } from "wouter";
 
 import AppLayout from "@/components/app-layout";
 import {
   Breadcrumb,
   BreadcrumbItem,
+  BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbPage,
+  BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,7 +17,7 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Puzzle, Search, X, Globe, Database, FileText, Wrench, BarChart3, Loader2 } from "lucide-react";
+import { Puzzle, Search, X, Globe, Database, FileText, Wrench, BarChart3, Loader2, LayoutGrid } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 
@@ -37,11 +40,29 @@ const AIHUB_API = "https://hub.maldevta.com";
 
 export default function ExtensionsPage() {
   const { user } = useAuth();
+  const params = useParams<{ projectId: string }>();
+  const [location] = useLocation();
+  const [, setLocation] = useLocation();
+
   const [extensions, setExtensions] = useState<ExtensionResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
+
+  const selectedProjectId = params.projectId || "";
+
+  // Get project ID from URL (fallback for legacy routes)
+  useEffect(() => {
+    if (!selectedProjectId) {
+      const match = location.match(/\/extensions\/([^\/]+)/);
+      if (match) {
+        // Legacy route - redirect to new route
+        const projectId = match[1];
+        setLocation(`/extensions/${projectId}`);
+      }
+    }
+  }, [location, selectedProjectId, setLocation]);
 
   // Fetch extensions from aihub
   const loadExtensions = async () => {
@@ -306,6 +327,13 @@ export default function ExtensionsPage() {
         <div className="flex items-center justify-between w-full">
           <Breadcrumb>
             <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink href="/" className="flex items-center gap-2">
+                  <LayoutGrid className="h-4 w-4" />
+                  Projects
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
               <BreadcrumbItem>
                 <BreadcrumbPage>Extensions</BreadcrumbPage>
               </BreadcrumbItem>

@@ -471,9 +471,7 @@ export default function ChatPage() {
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
-                <BreadcrumbPage>
-                  {currentProject?.name || "AI Chat"}
-                </BreadcrumbPage>
+                <BreadcrumbPage>Chat</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>

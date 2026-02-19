@@ -1,15 +1,17 @@
 import { useEffect, useState, useMemo } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useParams } from "wouter";
 import AppLayout from "@/components/app-layout";
 import {
   Breadcrumb,
   BreadcrumbItem,
+  BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbPage,
+  BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Trash2, Search } from "lucide-react";
+import { MessageSquare, Trash2, Search, LayoutGrid } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Input } from "@/components/ui/input";
 
@@ -89,23 +91,29 @@ async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export default function HistoryPage() {
+  const params = useParams<{ projectId: string }>();
   const [location] = useLocation();
   const [, setLocation] = useLocation();
 
   const [projects, setProjects] = useState<ProjectResponse[]>([]);
-  const [selectedProjectId, setSelectedProjectId] = useState("");
   const [conversations, setConversations] = useState<ConversationResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Get project ID from URL
+  const selectedProjectId = params.projectId || "";
+
+  // Get project ID from URL (fallback for legacy routes)
   useEffect(() => {
-    const match = location.match(/\/projects\/([^\/]+)/);
-    if (match) {
-      setSelectedProjectId(match[1]);
+    if (!selectedProjectId) {
+      const match = location.match(/\/projects\/([^\/]+)/);
+      if (match) {
+        // Legacy route - redirect to new route
+        const projectId = match[1];
+        setLocation(`/projects/${projectId}/history`);
+      }
     }
-  }, [location]);
+  }, [location, selectedProjectId, setLocation]);
 
   // Load projects
   useEffect(() => {
@@ -114,9 +122,6 @@ export default function HistoryPage() {
         const response = await apiRequest<ListProjectsResponse>("/projects");
         const projectList = response.projects || [];
         setProjects(projectList);
-        if (projectList.length > 0 && !selectedProjectId) {
-          setSelectedProjectId(projectList[0].id);
-        }
       } catch (err) {
         const apiError = err as ApiError;
         setError(apiError.message || "Failed to load projects");
@@ -217,7 +222,9 @@ export default function HistoryPage() {
   };
 
   const openConversation = (convId: string) => {
-    setLocation(`/projects/${selectedProjectId}/chat/${convId}`);
+    if (selectedProjectId) {
+      setLocation(`/chat/${selectedProjectId}`);
+    }
   };
 
   const selectedProject = projects.find((p) => p.id === selectedProjectId);
@@ -228,7 +235,14 @@ export default function HistoryPage() {
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
-              <BreadcrumbPage>Conversation History</BreadcrumbPage>
+              <BreadcrumbLink href="/" className="flex items-center gap-2">
+                <LayoutGrid className="h-4 w-4" />
+                Projects
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>History</BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>

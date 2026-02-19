@@ -51,6 +51,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   // === URL-BASED PROJECT DETECTION ===
   // Determine if we're on a project page based on URL, not Zustand store
   const [isInProjectPage, setIsInProjectPage] = React.useState(false);
+  const [urlProjectId, setUrlProjectId] = React.useState<string>("");
 
   // Effect to detect project pages from URL
   React.useEffect(() => {
@@ -63,48 +64,49 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
     init();
 
-    // Project pages: /chat/:id, /files, /memory, /history, /settings/context, /whatsapp, /extensions, /developer, /api/:id, /embed/:id
-    // Non-project pages: /, /projects, /dashboard, /chats, /billing, /payment
+    // Project pages with projectId in URL:
+    // /chat/:projectId, /projects/:projectId/*, /api/:projectId, /embed/:projectId, /settings/context/:projectId, /whatsapp/:projectId, /extensions/:projectId
     const projectPagePatterns = [
-      /^\/chat(\/|$)/,
-      /^\/files/,
-      /^\/memory/,
-      /^\/history/,
-      /^\/settings\/context/,
-      /^\/whatsapp/,
-      /^\/extensions/,
-      /^\/developer/,
-      /^\/api\/([^/]+)/,  // /api/:projectId
-      /^\/embed\/([^/]+)/,  // /embed/:projectId
-      /^\/sub-clients/,
+      /^\/chat\/([^\/]+)/,  // /chat/:projectId
+      /^\/projects\/([^\/]+)\//,  // /projects/:projectId/*
+      /^\/api\/([^\/]+)/,  // /api/:projectId
+      /^\/embed\/([^\/]+)/,  // /embed/:projectId
+      /^\/settings\/context\/([^\/]+)/,  // /settings/context/:projectId
+      /^\/whatsapp\/([^\/]+)/,  // /whatsapp/:projectId
+      /^\/extensions\/([^\/]+)/,  // /extensions/:projectId
     ];
 
-    const onProjectPage = projectPagePatterns.some(pattern => pattern.test(pathname));
+    let matchedProjectId = "";
+    const onProjectPage = projectPagePatterns.some(pattern => {
+      const match = pathname.match(pattern);
+      if (match) {
+        matchedProjectId = match[1];
+        return true;
+      }
+      return false;
+    });
+
     setIsInProjectPage(onProjectPage);
+    setUrlProjectId(matchedProjectId);
 
     // Also sync project with Zustand if URL contains project ID
-    if (onProjectPage) {
-      // Check for /chat/:projectId pattern
-      const chatPathMatch = pathname.match(/^\/chat\/([^\/]+)/);
-      // Check for /api/:projectId pattern
-      const apiPathMatch = pathname.match(/^\/api\/([^\/]+)/);
-      // Check for /embed/:projectId pattern
-      const embedPathMatch = pathname.match(/^\/embed\/([^\/]+)/);
-
-      const projectId = chatPathMatch?.[1] || apiPathMatch?.[1] || embedPathMatch?.[1];
-
-      if (projectId) {
-        const project = projects.find(p => p.id === projectId);
-        // Get current project fresh from store to avoid stale closure
-        const storeCurrentProject = useProjectStore.getState().currentProject;
-        console.log('[AppSidebar] Path:', pathname, 'URL projectId:', projectId, 'storeCurrentProject:', storeCurrentProject?.id, 'project found:', !!project, 'projects count:', projects.length);
-        if (project && storeCurrentProject?.id !== projectId) {
-          console.log('[AppSidebar] Syncing project:', projectId);
-          useProjectStore.getState().selectProject(projectId);
+    if (onProjectPage && matchedProjectId) {
+      // Sync project with Zustand store
+      const storeCurrentProject = useProjectStore.getState().currentProject;
+      if (storeCurrentProject?.id !== matchedProjectId) {
+        // Try to find project in loaded projects
+        const project = projects.find(p => p.id === matchedProjectId);
+        if (project) {
+          console.log('[AppSidebar] Syncing project:', matchedProjectId);
+          useProjectStore.getState().selectProject(matchedProjectId);
         }
       }
     }
-  }, [pathname, projects, hasInitialized]); // Added hasInitialized to trigger re-run after projects load
+  }, [pathname, projects, hasInitialized, loadProjects]);
+
+  // Get the effective project to use for generating URLs
+  // Prefer currentProject from store, but fall back to urlProjectId from URL
+  const effectiveProject = currentProject || (urlProjectId ? projects.find(p => p.id === urlProjectId) : null);
 
   // === MENU SAAT TIDAK ADA PROJECT (Project Selector) ===
   // Hanya muncul: Projects, Billing, Payment (admin only)
@@ -151,12 +153,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const items: MenuItem[] = [
       {
         title: "Chat",
-        url: currentProject ? `/chat/${currentProject.id}` : "/chat",
+        url: effectiveProject ? `/chat/${effectiveProject.id}` : "/chat",
         icon: MessageCircle,
       },
       {
         title: "History",
-        url: "/history",
+        url: effectiveProject ? `/projects/${effectiveProject.id}/history` : "/history",
         icon: History,
       }
     ];
@@ -165,27 +167,27 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     if (isAdmin) {
       items.push({
         title: "Workspace",
-        url: "/settings/context",
+        url: effectiveProject ? `/settings/context/${effectiveProject.id}` : "/settings/context",
         icon: Library,
         items: [
           {
             title: "Context",
-            url: "/settings/context",
+            url: effectiveProject ? `/settings/context/${effectiveProject.id}` : "/settings/context",
           },
           {
             title: "Files",
-            url: "/files",
+            url: effectiveProject ? `/projects/${effectiveProject.id}/files` : "/files",
           },
           {
             title: "Memory",
-            url: "/memory",
+            url: effectiveProject ? `/projects/${effectiveProject.id}/memory` : "/memory",
           }
         ]
       });
     }
 
     return items;
-  }, [isInProjectPage, currentProject, isAdmin]);
+  }, [isInProjectPage, effectiveProject, isAdmin]);
 
   // === MANAGEMENT MENU (SAAT DI PROJECT PAGE - ADMIN ONLY) ===
   // Items khusus untuk project yang sedang aktif
@@ -198,7 +200,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     // WhatsApp (khusus project yang aktif)
     items.push({
       title: "WhatsApp",
-      url: "/whatsapp",
+      url: effectiveProject ? `/whatsapp/${effectiveProject.id}` : "/whatsapp",
       icon: WhatsAppIcon as LucideIcon,
     });
 
@@ -227,21 +229,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       items: [
         {
           title: "API",
-          url: currentProject ? `/api/${currentProject.id}` : "/api",
+          url: effectiveProject ? `/api/${effectiveProject.id}` : "/api",
         },
         {
           title: "Embed",
-          url: currentProject ? `/embed/${currentProject.id}` : "/embed",
+          url: effectiveProject ? `/embed/${effectiveProject.id}` : "/embed",
         },
         {
           title: "Extensions",
-          url: "/extensions",
+          url: effectiveProject ? `/extensions/${effectiveProject.id}` : "/extensions",
         },
       ]
     });
 
     return items;
-  }, [isInProjectPage, isAdmin, currentProject]);
+  }, [isInProjectPage, isAdmin, effectiveProject]);
 
 
   return (
@@ -249,7 +251,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarHeader className={cn("border-b border-border/50 transition-all duration-200", isCollapsed ? "p-2" : "p-4")}>
         <TeamSwitcher
           appName={appName}
-          currentProjectName={currentProject?.name}
+          currentProjectName={effectiveProject?.name}
           logoUrl={logoUrl}
           isSelectable={isInProjectPage}
         />

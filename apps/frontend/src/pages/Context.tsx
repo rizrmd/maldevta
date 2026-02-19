@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useParams } from "wouter";
 import AppLayout from "@/components/app-layout";
 import {
   Breadcrumb,
   BreadcrumbItem,
+  BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbPage,
+  BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 
 import { Button } from "@/components/ui/button";
@@ -17,7 +19,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Save, FileText, Settings2, Clock } from "lucide-react";
+import { Save, FileText, Settings2, Clock, LayoutGrid } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Label } from "@/components/ui/label";
 import {
@@ -97,10 +99,11 @@ async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
 
 export default function ContextPage() {
   const { user } = useAuth();
+  const params = useParams<{ projectId: string }>();
   const [location] = useLocation();
+  const [, setLocation] = useLocation();
 
   const [projects, setProjects] = useState<ProjectResponse[]>([]);
-  const [selectedProjectId, setSelectedProjectId] = useState("");
   const [context, setContext] = useState("");
   const [tone, setTone] = useState("professional");
   const [language, setLanguage] = useState("english");
@@ -110,13 +113,24 @@ export default function ContextPage() {
   const [success, setSuccess] = useState("");
   const [lastUpdated, setLastUpdated] = useState("");
 
-  // Get project ID from URL
+  const selectedProjectId = params.projectId || "";
+
+  // Get project ID from URL (fallback for legacy routes)
   useEffect(() => {
-    const match = location.match(/\/projects\/([^\/]+)/);
-    if (match) {
-      setSelectedProjectId(match[1]);
+    if (!selectedProjectId) {
+      const match = location.match(/\/settings\/context\/([^\/]+)/);
+      if (match) {
+        // Already on new route, no redirect needed
+        return;
+      }
+      // Check legacy route
+      const legacyMatch = location.match(/\/projects\/([^\/]+)/);
+      if (legacyMatch) {
+        const projectId = legacyMatch[1];
+        setLocation(`/settings/context/${projectId}`);
+      }
     }
-  }, [location]);
+  }, [location, selectedProjectId, setLocation]);
 
   // Load projects
   useEffect(() => {
@@ -125,9 +139,6 @@ export default function ContextPage() {
         const response = await apiRequest<ListProjectsResponse>("/projects");
         const projectList = response.projects || [];
         setProjects(projectList);
-        if (projectList.length > 0 && !selectedProjectId) {
-          setSelectedProjectId(projectList[0].id);
-        }
       } catch (err) {
         const apiError = err as ApiError;
         setError(apiError.message || "Failed to load projects");
@@ -201,7 +212,14 @@ export default function ContextPage() {
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
-              <BreadcrumbPage>Workspace / Context</BreadcrumbPage>
+              <BreadcrumbLink href="/" className="flex items-center gap-2">
+                <LayoutGrid className="h-4 w-4" />
+                Projects
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>Context</BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
@@ -223,7 +241,7 @@ export default function ContextPage() {
             </div>
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">Project:</span>
-              <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
+              <Select value={selectedProjectId} onValueChange={(value) => setLocation(`/settings/context/${value}`)}>
                 <SelectTrigger className="w-48">
                   <SelectValue placeholder="Select project" />
                 </SelectTrigger>

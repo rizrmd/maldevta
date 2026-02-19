@@ -132,6 +132,16 @@ function App() {
             <Route path="/projects" component={ProjectsPage} />
             <Route path="/api/:projectId" component={DeveloperAPIPage} />
             <Route path="/embed/:projectId" component={EmbedSettings} />
+
+            {/* Project-scoped routes - require projectId */}
+            <Route path="/projects/:projectId/history" component={HistoryPage} />
+            <Route path="/projects/:projectId/files" component={FilesPage} />
+            <Route path="/projects/:projectId/memory" component={MemoryPage} />
+            <Route path="/settings/context/:projectId" component={ContextPage} />
+            <Route path="/whatsapp/:projectId" component={ChatsPage} />
+            <Route path="/extensions/:projectId" component={ExtensionsPage} />
+
+            {/* Legacy routes without projectId - redirect or fallback */}
             <Route path="/whatsapp" component={ChatsPage} />
             <Route path="/chats" component={ChatsPage} />
             <Route path="/files" component={FilesPage} />

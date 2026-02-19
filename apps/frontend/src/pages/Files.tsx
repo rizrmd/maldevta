@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
+import { useParams, useLocation } from "wouter";
 import AppLayout from "@/components/app-layout";
 import {
   Breadcrumb,
   BreadcrumbItem,
+  BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbPage,
+  BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,7 +18,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { FileIcon, Upload, Trash2, FileText, Image, FileArchive, FileCode, Download } from "lucide-react";
+import { FileIcon, Upload, Trash2, FileText, Image, FileArchive, FileCode, Download, LayoutGrid } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import {
   Select,
@@ -117,12 +120,29 @@ function formatFileSize(bytes: number): string {
 
 export default function FilesPage() {
   const { user } = useAuth();
+  const params = useParams<{ projectId: string }>();
+  const [location] = useLocation();
+  const [, setLocation] = useLocation();
+
   const [projects, setProjects] = useState<ProjectResponse[]>([]);
-  const [selectedProjectId, setSelectedProjectId] = useState("");
   const [files, setFiles] = useState<FileItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+
+  const selectedProjectId = params.projectId || "";
+
+  // Get project ID from URL (fallback for legacy routes)
+  useEffect(() => {
+    if (!selectedProjectId) {
+      const match = location.match(/\/projects\/([^\/]+)/);
+      if (match) {
+        // Legacy route - redirect to new route
+        const projectId = match[1];
+        setLocation(`/projects/${projectId}/files`);
+      }
+    }
+  }, [location, selectedProjectId, setLocation]);
 
   // Load projects
   useEffect(() => {
@@ -131,9 +151,6 @@ export default function FilesPage() {
         const response = await apiRequest<ListProjectsResponse>("/projects");
         const projectList = response.projects || [];
         setProjects(projectList);
-        if (projectList.length > 0 && !selectedProjectId) {
-          setSelectedProjectId(projectList[0].id);
-        }
       } catch (err) {
         const apiError = err as ApiError;
         setError(apiError.message || "Failed to load projects");
@@ -238,6 +255,13 @@ export default function FilesPage() {
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
+              <BreadcrumbLink href="/" className="flex items-center gap-2">
+                <LayoutGrid className="h-4 w-4" />
+                Projects
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
               <BreadcrumbPage>Files</BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
@@ -261,7 +285,7 @@ export default function FilesPage() {
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">Project:</span>
-                <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
+                <Select value={selectedProjectId} onValueChange={(value) => setLocation(`/projects/${value}/files`)}>
                   <SelectTrigger className="w-48">
                     <SelectValue placeholder="Select project" />
                   </SelectTrigger>
@@ -290,7 +314,7 @@ export default function FilesPage() {
             <div className="w-full rounded-lg border border-slate-200 bg-white/80 p-8 text-center">
               <FileIcon className="mx-auto h-12 w-12 text-slate-400" />
               <p className="mt-4 text-sm text-muted-foreground">
-                {loading ? "Loading projects..." : "No projects available. Create a project first."}
+                No project selected. Please select a project from the URL or go back to Projects.
               </p>
             </div>
           ) : (
