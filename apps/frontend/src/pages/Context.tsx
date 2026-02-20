@@ -380,19 +380,19 @@ export default function ContextPage() {
                 <>
                   <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors">
                     <code className="text-sm font-mono bg-white px-3 py-1.5 rounded border border-slate-200 text-slate-700">
-                      {{"{{project_name}}"}}
+                      {"{{project_name}}"}
                     </code>
                     <span className="text-sm text-muted-foreground">Project name</span>
                   </div>
                   <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors">
                     <code className="text-sm font-mono bg-white px-3 py-1.5 rounded border border-slate-200 text-slate-700">
-                      {{"{{user_role}}"}}
+                      {"{{user_role}}"}
                     </code>
                     <span className="text-sm text-muted-foreground">User role</span>
                   </div>
                   <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors">
                     <code className="text-sm font-mono bg-white px-3 py-1.5 rounded border border-slate-200 text-slate-700">
-                      {{"{{date}}"}}
+                      {"{{date}}"}
                     </code>
                     <span className="text-sm text-muted-foreground">Current date</span>
                   </div>
@@ -401,13 +401,13 @@ export default function ContextPage() {
                 <>
                   <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors">
                     <code className="text-sm font-mono bg-white px-3 py-1.5 rounded border border-slate-200 text-slate-700">
-                      {{"{{summary_length}}"}}
+                      {"{{summary_length}}"}
                     </code>
                     <span className="text-sm text-muted-foreground">Summary length</span>
                   </div>
                   <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors">
                     <code className="text-sm font-mono bg-white px-3 py-1.5 rounded border border-slate-200 text-slate-700">
-                      {{"{{key_points}}"}}
+                      {"{{key_points}}"}
                     </code>
                     <span className="text-sm text-muted-foreground">Key points</span>
                   </div>
