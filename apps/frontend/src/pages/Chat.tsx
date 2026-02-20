@@ -203,6 +203,7 @@ export default function ChatPage() {
   const [location, navigate] = useLocation();
   const [copiedFormat, setCopiedFormat] = useState<string | null>(null);
   const [backendConversationId, setBackendConversationId] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   const projectIdRef = useRef<string>("");
   const conversationIdRef = useRef<string>("");
 
@@ -439,30 +440,71 @@ export default function ChatPage() {
         metadata: {},
       };
 
-      // Call LLM API with timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      // Call LLM API with timeout and retry
+      let lastError = null;
+      let responseContent = "";
+      const maxRetries = 3;
+      const timeoutMs = 120000; // 120 second timeout for complex requests
 
-      const llmResponse = await fetch("/llm/generate", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          prompt: messageContent,
-          project_context: projectContext,
-        }),
-        signal: controller.signal,
-      });
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          // Update retry count for UI
+          if (attempt > 1) {
+            setRetryCount(attempt - 1);
+          }
 
-      clearTimeout(timeoutId);
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-      if (!llmResponse.ok) {
-        const errorData = await llmResponse.json().catch(() => ({}));
-        throw new Error(errorData.message || "Failed to get AI response");
+          const llmResponse = await fetch("/llm/generate", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              prompt: messageContent,
+              project_context: projectContext,
+            }),
+            signal: controller.signal,
+          });
+
+          clearTimeout(timeoutId);
+
+          if (!llmResponse.ok) {
+            const errorData = await llmResponse.json().catch(() => ({}));
+            throw new Error(errorData.message || `HTTP ${llmResponse.status}`);
+          }
+
+          const llmData = await llmResponse.json();
+          responseContent = llmData.content || "No response from AI.";
+          break; // Success, exit retry loop
+        } catch (error) {
+          lastError = error;
+          console.error(`LLM attempt ${attempt} failed:`, error);
+
+          // Don't retry if it's a client error (4xx) or abort
+          if (error instanceof Error && (
+            error.message.includes("400") ||
+            error.name === "AbortError"
+          )) {
+            break;
+          }
+
+          // Wait before retry (exponential backoff)
+          if (attempt < maxRetries) {
+            await new Promise(resolve => setTimeout(resolve, Math.min(1000 * Math.pow(2, attempt - 1), 5000)));
+            addToast({
+              type: "info",
+              title: `Connection lost. Retrying... (${attempt}/${maxRetries})`,
+              duration: 1500,
+            });
+          }
+        }
       }
 
-      const llmData = await llmResponse.json();
-      const responseContent = llmData.content || "No response from AI.";
+      // Check if we got a valid response after all retries
+      if (!responseContent) {
+        throw lastError || new Error("Failed to get AI response after multiple attempts");
+      }
 
       // Add assistant message to UI
       addMessage({
@@ -481,6 +523,9 @@ export default function ChatPage() {
         title: "Response received",
         duration: 2000,
       });
+
+      // Reset retry count on success
+      setRetryCount(0);
     } catch (error) {
       console.error("Failed to send message:", error);
       const errorMessage = error instanceof Error ? error.message : "Failed to get AI response";
@@ -488,7 +533,7 @@ export default function ChatPage() {
       // Add error message to UI
       addMessage({
         role: "assistant",
-        content: `Sorry, I encountered an error: ${errorMessage}\n\nPlease make sure the OPENAI_API_KEY is configured in the backend.`,
+        content: `Sorry, I encountered an error: ${errorMessage}\n\nPlease check your connection and try again.`,
       });
 
       addToast({
@@ -496,6 +541,9 @@ export default function ChatPage() {
         title: "Failed to get AI response",
         duration: 5000,
       });
+
+      // Reset retry count on error
+      setRetryCount(0);
     } finally {
       setIsGenerating(false);
     }
@@ -1058,7 +1106,9 @@ export default function ChatPage() {
                             <div className="h-2 w-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
                             <div className="h-2 w-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                           </div>
-                          <span className="text-sm text-slate-500">Thinking...</span>
+                          <span className="text-sm text-slate-500">
+                            {retryCount > 0 ? `Retrying... (${retryCount}/3)` : "Thinking..."}
+                          </span>
                         </div>
                       </div>
                     </div>
