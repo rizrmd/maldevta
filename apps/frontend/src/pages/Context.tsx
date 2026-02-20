@@ -19,16 +19,16 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Save, FileText, Settings2, Clock, LayoutGrid, Eye, Code } from "lucide-react";
+import { Save, FileText, Settings2, Clock, LayoutGrid, Eye, Code, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type ApiError = {
@@ -113,6 +113,8 @@ export default function ContextPage() {
   const [success, setSuccess] = useState("");
   const [lastUpdated, setLastUpdated] = useState("");
   const [activeTab, setActiveTab] = useState("base");
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [showVariablesModal, setShowVariablesModal] = useState(false);
 
   const selectedProjectId = params.projectId || "";
 
@@ -220,36 +222,6 @@ export default function ContextPage() {
       }
     >
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-6">
-          {/* Header */}
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-xs uppercase tracking-[0.28em] text-muted-foreground">
-                Project Workspace
-              </p>
-              <h1 className="font-display text-3xl text-slate-900 md:text-4xl">
-                Context Editor
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Define how your AI assistant should behave
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Project:</span>
-              <Select value={selectedProjectId} onValueChange={(value) => setLocation(`/settings/context/${value}`)}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Select project" />
-                </SelectTrigger>
-                <SelectContent>
-                  {projects.map((project) => (
-                    <SelectItem key={project.id} value={project.id}>
-                      {project.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
           {error && (
             <div className="w-full rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
               {error}
@@ -271,7 +243,7 @@ export default function ContextPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              {/* Tab Navigation with Save Button */}
+              {/* Tab Navigation with Save and Preview Buttons */}
               <div className="flex items-center justify-between">
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                   <TabsList className="grid w-full max-w-md grid-cols-2">
@@ -280,14 +252,34 @@ export default function ContextPage() {
                   </TabsList>
                 </Tabs>
 
-                <Button
-                  onClick={handleSaveContext}
-                  disabled={saving || loading}
-                  className="min-w-[100px]"
-                >
-                  <Save className="mr-2 h-4 w-4" />
-                  {saving ? "Saving..." : "Save"}
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={() => setShowPreviewModal(true)}
+                    disabled={loading}
+                    variant="outline"
+                    className="min-w-[100px]"
+                  >
+                    <Eye className="mr-2 h-4 w-4" />
+                    Preview
+                  </Button>
+                  <Button
+                    onClick={() => setShowVariablesModal(true)}
+                    disabled={loading}
+                    variant="outline"
+                    className="min-w-[100px]"
+                  >
+                    <Code className="mr-2 h-4 w-4" />
+                    Variables
+                  </Button>
+                  <Button
+                    onClick={handleSaveContext}
+                    disabled={saving || loading}
+                    className="min-w-[100px]"
+                  >
+                    <Save className="mr-2 h-4 w-4" />
+                    {saving ? "Saving..." : "Save"}
+                  </Button>
+                </div>
               </div>
 
               {/* Tab Content */}
@@ -311,57 +303,6 @@ export default function ContextPage() {
                       />
                     </CardContent>
                   </Card>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Preview Section */}
-                    <Card className="border border-slate-200">
-                      <CardHeader>
-                        <CardTitle className="text-sm flex items-center gap-2">
-                          <Eye className="h-4 w-4" />
-                          Preview
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="rounded-lg bg-slate-50 border border-slate-100 p-3 min-h-[100px]">
-                          <pre className="text-xs font-mono text-slate-700 whitespace-pre-wrap break-words">
-                            {baseContext || "No base context defined yet..."}
-                          </pre>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    {/* Variable Legend */}
-                    <Card className="border border-slate-200">
-                      <CardHeader>
-                        <CardTitle className="text-sm flex items-center gap-2">
-                          <Code className="h-4 w-4" />
-                          Variables
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2 p-2 rounded hover:bg-slate-50">
-                            <code className="text-xs font-mono bg-slate-100 px-2 py-1 rounded text-slate-700">
-                              {"{{project_name}}"}
-                            </code>
-                            <span className="text-xs text-muted-foreground">Project name</span>
-                          </div>
-                          <div className="flex items-center gap-2 p-2 rounded hover:bg-slate-50">
-                            <code className="text-xs font-mono bg-slate-100 px-2 py-1 rounded text-slate-700">
-                              {"{{user_role}}"}
-                            </code>
-                            <span className="text-xs text-muted-foreground">User role</span>
-                          </div>
-                          <div className="flex items-center gap-2 p-2 rounded hover:bg-slate-50">
-                            <code className="text-xs font-mono bg-slate-100 px-2 py-1 rounded text-slate-700">
-                              {"{{date}}"}
-                            </code>
-                            <span className="text-xs text-muted-foreground">Current date</span>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
                 </TabsContent>
 
                 <TabsContent value="compaction" className="mt-0 space-y-4">
@@ -383,8 +324,7 @@ export default function ContextPage() {
                       />
                     </CardContent>
                   </Card>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                </TabsContent>
                     {/* Preview Section */}
                     <Card className="border border-slate-200">
                       <CardHeader>
@@ -398,32 +338,6 @@ export default function ContextPage() {
                           <pre className="text-xs font-mono text-slate-700 whitespace-pre-wrap break-words">
                             {compactionContext || "No compaction context defined yet..."}
                           </pre>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    {/* Variable Legend */}
-                    <Card className="border border-slate-200">
-                      <CardHeader>
-                        <CardTitle className="text-sm flex items-center gap-2">
-                          <Code className="h-4 w-4" />
-                          Variables
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2 p-2 rounded hover:bg-slate-50">
-                            <code className="text-xs font-mono bg-slate-100 px-2 py-1 rounded text-slate-700">
-                              {"{{summary_length}}"}
-                            </code>
-                            <span className="text-xs text-muted-foreground">Summary length</span>
-                          </div>
-                          <div className="flex items-center gap-2 p-2 rounded hover:bg-slate-50">
-                            <code className="text-xs font-mono bg-slate-100 px-2 py-1 rounded text-slate-700">
-                              {"{{key_points}}"}
-                            </code>
-                            <span className="text-xs text-muted-foreground">Key points</span>
-                          </div>
                         </div>
                       </CardContent>
                     </Card>
@@ -442,6 +356,84 @@ export default function ContextPage() {
             </div>
           )}
         </div>
+
+        {/* Preview Modal */}
+        <Dialog open={showPreviewModal} onOpenChange={setShowPreviewModal}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Eye className="h-5 w-5" />
+                Context Preview
+              </DialogTitle>
+              <DialogDescription>
+                Preview of your {activeTab === 'base' ? 'base' : 'compaction'} context
+              </DialogDescription>
+            </DialogHeader>
+            <div className="mt-4">
+              <div className="rounded-lg bg-slate-50 border border-slate-100 p-4 max-h-[400px] overflow-y-auto">
+                <pre className="text-sm font-mono text-slate-700 whitespace-pre-wrap break-words">
+                  {activeTab === 'base'
+                    ? (baseContext || "No base context defined yet...")
+                    : (compactionContext || "No compaction context defined yet...")}
+                </pre>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Variables Modal */}
+        <Dialog open={showVariablesModal} onOpenChange={setShowVariablesModal}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Code className="h-5 w-5" />
+                Available Variables
+              </DialogTitle>
+              <DialogDescription>
+                Variables you can use in your context
+              </DialogDescription>
+            </DialogHeader>
+            <div className="mt-4 space-y-3">
+              {activeTab === 'base' ? (
+                <>
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors">
+                    <code className="text-sm font-mono bg-white px-3 py-1.5 rounded border border-slate-200 text-slate-700">
+                      {{"{{project_name}}"}}
+                    </code>
+                    <span className="text-sm text-muted-foreground">Project name</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors">
+                    <code className="text-sm font-mono bg-white px-3 py-1.5 rounded border border-slate-200 text-slate-700">
+                      {{"{{user_role}}"}}
+                    </code>
+                    <span className="text-sm text-muted-foreground">User role</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors">
+                    <code className="text-sm font-mono bg-white px-3 py-1.5 rounded border border-slate-200 text-slate-700">
+                      {{"{{date}}"}}
+                    </code>
+                    <span className="text-sm text-muted-foreground">Current date</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors">
+                    <code className="text-sm font-mono bg-white px-3 py-1.5 rounded border border-slate-200 text-slate-700">
+                      {{"{{summary_length}}"}}
+                    </code>
+                    <span className="text-sm text-muted-foreground">Summary length</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors">
+                    <code className="text-sm font-mono bg-white px-3 py-1.5 rounded border border-slate-200 text-slate-700">
+                      {{"{{key_points}}"}}
+                    </code>
+                    <span className="text-sm text-muted-foreground">Key points</span>
+                  </div>
+                </>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
     </AppLayout>
   );
 }
