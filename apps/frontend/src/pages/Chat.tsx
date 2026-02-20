@@ -209,7 +209,6 @@ export default function ChatPage() {
 
   const {
     currentConversation,
-    conversations,
     input,
     isGenerating,
     shouldAutoScroll,
@@ -249,8 +248,6 @@ export default function ChatPage() {
     projectIdRef.current = projectId;
     conversationIdRef.current = conversationId;
   }, [projectId, conversationId]);
-
-  const currentProject = projects.find((p) => p.id === projectId);
 
   // Initialize or load conversation
   useEffect(() => {
@@ -306,6 +303,7 @@ export default function ChatPage() {
       // Create new conversation for this project
       createConversation(currentProjectId, "New Chat");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location]); // Trigger when location changes
 
   // Auto-scroll
@@ -414,7 +412,7 @@ export default function ChatPage() {
     }
 
     // Add user message to UI first for instant feedback
-    const userMessage = addMessage({
+    addMessage({
       role: "user",
       content: messageContent,
     });

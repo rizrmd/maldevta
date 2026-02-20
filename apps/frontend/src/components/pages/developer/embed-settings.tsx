@@ -14,13 +14,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Check, Copy, Globe, Code2, LayoutGrid } from "lucide-react";
 
 type ApiError = {
@@ -99,7 +92,6 @@ export function EmbedSettings() {
   const params = useParams<{ projectId: string }>();
   const projectId = params?.projectId || "";
   const { currentProject, projects, selectProject, loadProjects, hasInitialized } = useProjectStore();
-  const API_BASE_URL = typeof window !== 'undefined' ? window.location.origin : '';
 
   const [embedToken, setEmbedToken] = useState<string | null>(null);
   const [customCss, setCustomCss] = useState("");
@@ -119,8 +111,8 @@ export function EmbedSettings() {
     if (projectId) {
       const storeCurrentProject = useProjectStore.getState().currentProject;
       if (storeCurrentProject?.id !== projectId) {
-        const project = projects.find(p => p.id === projectId);
-        if (project) {
+        const matchedProject = projects.find(p => p.id === projectId);
+        if (matchedProject) {
           selectProject(projectId);
         }
       }
@@ -280,7 +272,7 @@ export function EmbedSettings() {
       await navigator.clipboard.writeText(embedCode);
       showToast("Embed code copied to clipboard!");
       setTimeout(() => setIsCopying(false), 2000);
-    } catch (err) {
+    } catch {
       showToast("Failed to copy to clipboard", "error");
       setIsCopying(false);
     }

@@ -73,13 +73,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     // Project pages with projectId in URL:
     // /chat/:projectId, /projects/:projectId/*, /api/:projectId, /embed/:projectId, /settings/context/:projectId, /whatsapp/:projectId, /extensions/:projectId
     const projectPagePatterns = [
-      /^\/chat\/([^\/]+)/,  // /chat/:projectId
-      /^\/projects\/([^\/]+)\//,  // /projects/:projectId/*
-      /^\/api\/([^\/]+)/,  // /api/:projectId
-      /^\/embed\/([^\/]+)/,  // /embed/:projectId
-      /^\/settings\/context\/([^\/]+)/,  // /settings/context/:projectId
-      /^\/whatsapp\/([^\/]+)/,  // /whatsapp/:projectId
-      /^\/extensions\/([^\/]+)/,  // /extensions/:projectId
+      /^\/chat\/([^/]+)/,  // /chat/:projectId
+      /^\/projects\/([^/]+)\//,  // /projects/:projectId/*
+      /^\/api\/([^/]+)/,  // /api/:projectId
+      /^\/embed\/([^/]+)/,  // /embed/:projectId
+      /^\/settings\/context\/([^/]+)/,  // /settings/context/:projectId
+      /^\/whatsapp\/([^/]+)/,  // /whatsapp/:projectId
+      /^\/extensions\/([^/]+)/,  // /extensions/:projectId
     ];
 
     let matchedProjectId = "";
