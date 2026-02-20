@@ -325,24 +325,6 @@ export default function ContextPage() {
                     </CardContent>
                   </Card>
                 </TabsContent>
-                    {/* Preview Section */}
-                    <Card className="border border-slate-200">
-                      <CardHeader>
-                        <CardTitle className="text-sm flex items-center gap-2">
-                          <Eye className="h-4 w-4" />
-                          Preview
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="rounded-lg bg-slate-50 border border-slate-100 p-3 min-h-[100px]">
-                          <pre className="text-xs font-mono text-slate-700 whitespace-pre-wrap break-words">
-                            {compactionContext || "No compaction context defined yet..."}
-                          </pre>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </TabsContent>
               </Tabs>
 
               {/* Last Updated Info */}
