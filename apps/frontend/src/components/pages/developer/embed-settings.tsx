@@ -5,21 +5,16 @@ import { useProjectStore } from "@/stores";
 import {
   Breadcrumb,
   BreadcrumbItem,
+  BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbPage,
+  BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Check, Copy, Globe, Code2 } from "lucide-react";
+import { Check, Copy, Globe, Code2, LayoutGrid } from "lucide-react";
 
 type ApiError = {
   message: string;
@@ -96,12 +91,10 @@ function showToast(message: string, type: "success" | "error" = "success") {
 export function EmbedSettings() {
   const params = useParams<{ projectId: string }>();
   const projectId = params?.projectId || "";
-  const { currentProject, projects, selectProject, loadProjects, hasInitialized } = useProjectStore();
-  const API_BASE_URL = typeof window !== 'undefined' ? window.location.origin : '';
+  const { projects, selectProject, loadProjects, hasInitialized } = useProjectStore();
 
   const [embedToken, setEmbedToken] = useState<string | null>(null);
   const [customCss, setCustomCss] = useState("");
-  const [project, setProject] = useState<ProjectResponse | null>(null);
 
   // Load projects and sync with URL
   useEffect(() => {
@@ -117,8 +110,8 @@ export function EmbedSettings() {
     if (projectId) {
       const storeCurrentProject = useProjectStore.getState().currentProject;
       if (storeCurrentProject?.id !== projectId) {
-        const project = projects.find(p => p.id === projectId);
-        if (project) {
+        const matchedProject = projects.find(p => p.id === projectId);
+        if (matchedProject) {
           selectProject(projectId);
         }
       }
@@ -150,7 +143,6 @@ export function EmbedSettings() {
       // Load project data
       const projectData = await apiRequest<{ success: boolean; data: ProjectResponse }>(`/projects/${projectId}`);
       if (projectData.success) {
-        setProject(projectData.data);
         setEmbedToken(projectData.data.id);
         setShowHistory(projectData.data.show_history ?? false);
         setUserMode(projectData.data.use_client_uid ? "uid" : "current");
@@ -278,7 +270,7 @@ export function EmbedSettings() {
       await navigator.clipboard.writeText(embedCode);
       showToast("Embed code copied to clipboard!");
       setTimeout(() => setIsCopying(false), 2000);
-    } catch (err) {
+    } catch {
       showToast("Failed to copy to clipboard", "error");
       setIsCopying(false);
     }
@@ -290,6 +282,13 @@ export function EmbedSettings() {
         header={
           <Breadcrumb>
             <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink href="/" className="flex items-center gap-2">
+                  <LayoutGrid className="h-4 w-4" />
+                  Projects
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
               <BreadcrumbItem>
                 <BreadcrumbPage>Embed</BreadcrumbPage>
               </BreadcrumbItem>
@@ -312,6 +311,13 @@ export function EmbedSettings() {
       header={
         <Breadcrumb>
           <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/" className="flex items-center gap-2">
+                <LayoutGrid className="h-4 w-4" />
+                Projects
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
             <BreadcrumbItem>
               <BreadcrumbPage>Embed</BreadcrumbPage>
             </BreadcrumbItem>

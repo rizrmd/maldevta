@@ -165,10 +165,12 @@ type GetConversationResponse struct {
 
 type ListConversationsResponse struct {
 	Conversations []struct {
-		ID        string `json:"id"`
-		Title     string `json:"title"`
-		CreatedAt string `json:"created_at"`
-		UpdatedAt string `json:"updated_at"`
+		ID          string `json:"id"`
+		Title       string `json:"title"`
+		CreatedAt   string `json:"created_at"`
+		UpdatedAt   string `json:"updated_at"`
+		MessageCount int    `json:"message_count"`
+		LastMessage string `json:"last_message,omitempty"`
 	} `json:"conversations"`
 }
 
@@ -423,20 +425,24 @@ func ListProjectConversations(ctx context.Context, projectID string) (*ListConve
 	if err != nil {
 		if os.IsNotExist(err) {
 			return &ListConversationsResponse{Conversations: []struct {
-				ID        string `json:"id"`
-				Title     string `json:"title"`
-				CreatedAt string `json:"created_at"`
-				UpdatedAt string `json:"updated_at"`
+				ID          string `json:"id"`
+				Title       string `json:"title"`
+				CreatedAt   string `json:"created_at"`
+				UpdatedAt   string `json:"updated_at"`
+				MessageCount int    `json:"message_count"`
+				LastMessage string `json:"last_message,omitempty"`
 			}{}}, nil
 		}
 		return nil, err
 	}
 
 	var conversations []struct {
-		ID        string `json:"id"`
-		Title     string `json:"title"`
-		CreatedAt string `json:"created_at"`
-		UpdatedAt string `json:"updated_at"`
+		ID          string `json:"id"`
+		Title       string `json:"title"`
+		CreatedAt   string `json:"created_at"`
+		UpdatedAt   string `json:"updated_at"`
+		MessageCount int    `json:"message_count"`
+		LastMessage string `json:"last_message,omitempty"`
 	}
 
 	for _, entry := range entries {
@@ -447,16 +453,29 @@ func ListProjectConversations(ctx context.Context, projectID string) (*ListConve
 				continue
 			}
 
+			lastMsg := ""
+			if len(conv.Messages) > 0 {
+				lastMsg = conv.Messages[len(conv.Messages)-1].Content
+				// Truncate last message if too long
+				if len(lastMsg) > 100 {
+					lastMsg = lastMsg[:100] + "..."
+				}
+			}
+
 			conversations = append(conversations, struct {
-				ID        string `json:"id"`
-				Title     string `json:"title"`
-				CreatedAt string `json:"created_at"`
-				UpdatedAt string `json:"updated_at"`
+				ID          string `json:"id"`
+				Title       string `json:"title"`
+				CreatedAt   string `json:"created_at"`
+				UpdatedAt   string `json:"updated_at"`
+				MessageCount int    `json:"message_count"`
+				LastMessage string `json:"last_message,omitempty"`
 			}{
-				ID:        conv.ID,
-				Title:     conv.Title,
-				CreatedAt: conv.CreatedAt.Format(time.RFC3339),
-				UpdatedAt: conv.UpdatedAt.Format(time.RFC3339),
+				ID:          conv.ID,
+				Title:       conv.Title,
+				CreatedAt:   conv.CreatedAt.Format(time.RFC3339),
+				UpdatedAt:   conv.UpdatedAt.Format(time.RFC3339),
+				MessageCount: len(conv.Messages),
+				LastMessage: lastMsg,
 			})
 		}
 	}
@@ -683,20 +702,24 @@ func ListSubclientConversations(ctx context.Context, subclientID string) (*ListC
 	if err != nil {
 		if os.IsNotExist(err) {
 			return &ListConversationsResponse{Conversations: []struct {
-				ID        string `json:"id"`
-				Title     string `json:"title"`
-				CreatedAt string `json:"created_at"`
-				UpdatedAt string `json:"updated_at"`
+				ID          string `json:"id"`
+				Title       string `json:"title"`
+				CreatedAt   string `json:"created_at"`
+				UpdatedAt   string `json:"updated_at"`
+				MessageCount int    `json:"message_count"`
+				LastMessage string `json:"last_message,omitempty"`
 			}{}}, nil
 		}
 		return nil, err
 	}
 
 	var conversations []struct {
-		ID        string `json:"id"`
-		Title     string `json:"title"`
-		CreatedAt string `json:"created_at"`
-		UpdatedAt string `json:"updated_at"`
+		ID          string `json:"id"`
+		Title       string `json:"title"`
+		CreatedAt   string `json:"created_at"`
+		UpdatedAt   string `json:"updated_at"`
+		MessageCount int    `json:"message_count"`
+		LastMessage string `json:"last_message,omitempty"`
 	}
 
 	for _, entry := range entries {
@@ -707,16 +730,29 @@ func ListSubclientConversations(ctx context.Context, subclientID string) (*ListC
 				continue
 			}
 
+			lastMsg := ""
+			if len(conv.Messages) > 0 {
+				lastMsg = conv.Messages[len(conv.Messages)-1].Content
+				// Truncate last message if too long
+				if len(lastMsg) > 100 {
+					lastMsg = lastMsg[:100] + "..."
+				}
+			}
+
 			conversations = append(conversations, struct {
-				ID        string `json:"id"`
-				Title     string `json:"title"`
-				CreatedAt string `json:"created_at"`
-				UpdatedAt string `json:"updated_at"`
+				ID          string `json:"id"`
+				Title       string `json:"title"`
+				CreatedAt   string `json:"created_at"`
+				UpdatedAt   string `json:"updated_at"`
+				MessageCount int    `json:"message_count"`
+				LastMessage string `json:"last_message,omitempty"`
 			}{
-				ID:        conv.ID,
-				Title:     conv.Title,
-				CreatedAt: conv.CreatedAt.Format(time.RFC3339),
-				UpdatedAt: conv.UpdatedAt.Format(time.RFC3339),
+				ID:          conv.ID,
+				Title:       conv.Title,
+				CreatedAt:   conv.CreatedAt.Format(time.RFC3339),
+				UpdatedAt:   conv.UpdatedAt.Format(time.RFC3339),
+				MessageCount: len(conv.Messages),
+				LastMessage: lastMsg,
 			})
 		}
 	}

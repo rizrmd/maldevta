@@ -22,7 +22,7 @@ import {
   Check,
   LayoutGrid,
   MoreHorizontal,
-  Link as LinkIcon,
+  Link,
   FileJson,
   FileText,
   Download,
@@ -45,7 +45,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useChatStore, useFileStore, useUIStore, useProjectStore } from "@/stores";
-import type { Message } from "@/stores/chatStore";
+import type { Message, Conversation } from "@/stores/chatStore";
 import { clsx } from "clsx";
 
 function ChatMessage({ message, isGenerating }: { message: Message; isGenerating?: boolean }) {
@@ -200,12 +200,15 @@ function FileAttachmentPreview() {
 }
 
 export default function ChatPage() {
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
   const [copiedFormat, setCopiedFormat] = useState<string | null>(null);
+  const [backendConversationId, setBackendConversationId] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const projectIdRef = useRef<string>("");
+  const conversationIdRef = useRef<string>("");
 
   const {
     currentConversation,
-    conversations,
     input,
     isGenerating,
     shouldAutoScroll,
@@ -240,27 +243,68 @@ export default function ChatPage() {
     conversationId = pathParts[3] || "";
   }
 
-  const currentProject = projects.find((p) => p.id === projectId);
+  // Update refs whenever URL changes
+  useEffect(() => {
+    projectIdRef.current = projectId;
+    conversationIdRef.current = conversationId;
+  }, [projectId, conversationId]);
 
   // Initialize or load conversation
   useEffect(() => {
-    if (!projectId) return;
+    const currentProjectId = projectIdRef.current;
+    const currentConversationId = conversationIdRef.current;
 
-    if (conversationId) {
-      // Try to find the conversation in the store
-      const conversation = conversations.find(c => c.id === conversationId);
-      if (conversation) {
-        setCurrentConversation(conversation);
-      } else {
-        // If not found in store, create a new one with the given ID
-        // TODO: Fetch conversation from API
-        createConversation(projectId, "Chat");
-      }
-    } else if (!currentConversation || currentConversation.projectId !== projectId) {
+    if (!currentProjectId) return;
+
+    if (currentConversationId) {
+      // Load conversation from backend
+      const loadConversation = async () => {
+        try {
+          const response = await fetch(`/projects/${currentProjectId}/conversations/${currentConversationId}`, {
+            credentials: "include",
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            setBackendConversationId(currentConversationId);
+
+            // Create conversation with backend data
+            const loadedConv: Conversation = {
+              id: currentConversationId,
+              projectId: currentProjectId,
+              title: data.title || "Chat",
+              createdAt: new Date(data.created_at),
+              updatedAt: new Date(data.updated_at),
+              messages: (data.messages || []).map((msg: any) => ({
+                id: msg.id,
+                role: msg.role,
+                content: msg.content,
+                createdAt: new Date(msg.timestamp),
+                rating: null,
+              })),
+            };
+
+            // Set in store
+            setCurrentConversation(loadedConv);
+          } else {
+            // If not found, create a new one
+            await createConversation(currentProjectId, "Chat");
+            setBackendConversationId(null);
+          }
+        } catch (error) {
+          console.error("Failed to load conversation:", error);
+          await createConversation(currentProjectId, "Chat");
+          setBackendConversationId(null);
+        }
+      };
+
+      loadConversation();
+    } else if (!currentConversation || currentConversation.projectId !== currentProjectId) {
       // Create new conversation for this project
-      createConversation(projectId, "New Chat");
+      createConversation(currentProjectId, "New Chat");
     }
-  }, [projectId, conversationId, conversations]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location]); // Trigger when location changes
 
   // Auto-scroll
   useEffect(() => {
@@ -279,38 +323,225 @@ export default function ChatPage() {
 
   // New chat handler
   const handleNewChat = async () => {
-    if (projectId) {
-      await createConversation(
-        projectId,
-        `Chat ${new Date().toLocaleString()}`
-      );
+    const currentProjectId = projectIdRef.current;
+    if (currentProjectId) {
+      setBackendConversationId(null);
+      setInput("");
+      await createConversation(currentProjectId, "New Chat");
+      // Navigate to the new chat URL
+      navigate(`/chat/${currentProjectId}`);
     }
   };
 
+  // Helper function to create backend conversation
+  const createBackendConversation = async (title: string, pid: string): Promise<string | null> => {
+    if (!pid) return null;
+
+    try {
+      const response = await fetch(`/projects/${pid}/conversations`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        console.error("Failed to create conversation:", error);
+        return null;
+      }
+
+      const data = await response.json();
+      return data.id;
+    } catch (error) {
+      console.error("Failed to create conversation:", error);
+      return null;
+    }
+  };
+
+  // Helper function to add message to backend
+  const addBackendMessage = async (role: string, content: string, pid: string, convId: string): Promise<void> => {
+    if (!pid || !convId) return;
+
+    try {
+      const response = await fetch(`/projects/${pid}/conversations/${convId}/messages`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role, content }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        console.error("Failed to add message:", error);
+      }
+    } catch (error) {
+      console.error("Failed to add message:", error);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!input.trim() || isGenerating) return;
 
-    const userMessage = addMessage({
+    const messageContent = input.trim();
+    setInput("");
+
+    const currentProjectId = projectIdRef.current;
+
+    // Create backend conversation if it doesn't exist
+    let convId = backendConversationId;
+    if (!convId) {
+      const title = messageContent.slice(0, 50) + (messageContent.length > 50 ? "..." : "");
+      convId = await createBackendConversation(title, currentProjectId);
+      if (convId) {
+        setBackendConversationId(convId);
+        // Update current conversation ID in store to match backend
+        if (currentConversation) {
+          setCurrentConversation({
+            ...currentConversation,
+            id: convId,
+            title: title,
+          });
+        }
+      }
+    }
+
+    // Check if we have a current conversation, if not create one in store
+    if (!currentConversation) {
+      await createConversation(currentProjectId, messageContent.slice(0, 50));
+    }
+
+    // Add user message to UI first for instant feedback
+    addMessage({
       role: "user",
-      content: input.trim(),
+      content: messageContent,
     });
 
-    setInput("");
     clearFiles();
     setIsGenerating(true);
 
     try {
-      // TODO: Implement actual streaming API
-      // For now, simulate a response
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Save user message to backend
+      if (convId) {
+        await addBackendMessage("user", messageContent, currentProjectId, convId);
+      }
 
+      // Get project context for LLM
+      const currentProject = projects.find(p => p.id === currentProjectId);
+      const projectContext = {
+        project_id: currentProjectId,
+        project_name: currentProject?.name || "Project",
+        instructions: "", // TODO: Load from Context page
+        tone: "professional",
+        language: "english",
+        extensions: [],
+        metadata: {},
+      };
+
+      // Call LLM API with timeout and retry
+      let lastError = null;
+      let responseContent = "";
+      const maxRetries = 3;
+      const timeoutMs = 120000; // 120 second timeout for complex requests
+
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          // Update retry count for UI
+          if (attempt > 1) {
+            setRetryCount(attempt - 1);
+          }
+
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+          const llmResponse = await fetch("/llm/generate", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              prompt: messageContent,
+              project_context: projectContext,
+            }),
+            signal: controller.signal,
+          });
+
+          clearTimeout(timeoutId);
+
+          if (!llmResponse.ok) {
+            const errorData = await llmResponse.json().catch(() => ({}));
+            throw new Error(errorData.message || `HTTP ${llmResponse.status}`);
+          }
+
+          const llmData = await llmResponse.json();
+          responseContent = llmData.content || "No response from AI.";
+          break; // Success, exit retry loop
+        } catch (error) {
+          lastError = error;
+          console.error(`LLM attempt ${attempt} failed:`, error);
+
+          // Don't retry if it's a client error (4xx) or abort
+          if (error instanceof Error && (
+            error.message.includes("400") ||
+            error.name === "AbortError"
+          )) {
+            break;
+          }
+
+          // Wait before retry (exponential backoff)
+          if (attempt < maxRetries) {
+            await new Promise(resolve => setTimeout(resolve, Math.min(1000 * Math.pow(2, attempt - 1), 5000)));
+            addToast({
+              type: "info",
+              title: `Connection lost. Retrying... (${attempt}/${maxRetries})`,
+              duration: 1500,
+            });
+          }
+        }
+      }
+
+      // Check if we got a valid response after all retries
+      if (!responseContent) {
+        throw lastError || new Error("Failed to get AI response after multiple attempts");
+      }
+
+      // Add assistant message to UI
       addMessage({
         role: "assistant",
-        content: `I received your message: "${userMessage.content}".\n\nThe AI chat backend is not yet connected. Please configure the API endpoint to enable real AI responses.`,
+        content: responseContent,
       });
+
+      // Save assistant message to backend
+      if (convId) {
+        await addBackendMessage("assistant", responseContent, currentProjectId, convId);
+      }
+
+      // Show success toast
+      addToast({
+        type: "success",
+        title: "Response received",
+        duration: 2000,
+      });
+
+      // Reset retry count on success
+      setRetryCount(0);
     } catch (error) {
       console.error("Failed to send message:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to get AI response";
+
+      // Add error message to UI
+      addMessage({
+        role: "assistant",
+        content: `Sorry, I encountered an error: ${errorMessage}\n\nPlease check your connection and try again.`,
+      });
+
+      addToast({
+        type: "error",
+        title: "Failed to get AI response",
+        duration: 5000,
+      });
+
+      // Reset retry count on error
+      setRetryCount(0);
     } finally {
       setIsGenerating(false);
     }
@@ -471,9 +702,7 @@ export default function ChatPage() {
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
-                <BreadcrumbPage>
-                  {currentProject?.name || "AI Chat"}
-                </BreadcrumbPage>
+                <BreadcrumbPage>Chat</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
@@ -709,7 +938,7 @@ export default function ChatPage() {
                         {copiedFormat === "link" && (
                           <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/10 to-teal-400/10 animate-pulse" />
                         )}
-                        <LinkIcon className={clsx(
+                        <Link className={clsx(
                           "h-5 w-5 relative z-10",
                           copiedFormat === "link" ? "text-emerald-600" : "text-emerald-500"
                         )} />
@@ -855,11 +1084,34 @@ export default function ChatPage() {
                   </p>
                 </div>
               ) : (
-                currentConversation?.messages.map((message) => (
-                  <div key={message.id} className="group">
-                    <ChatMessage message={message} />
-                  </div>
-                ))
+                <>
+                  {currentConversation?.messages.map((message) => (
+                    <div key={message.id} className="group">
+                      <ChatMessage message={message} />
+                    </div>
+                  ))}
+
+                  {/* Loading indicator */}
+                  {isGenerating && (
+                    <div className="flex gap-3 justify-start">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#ffd7a8] to-[#9fe7d4] text-sm font-semibold text-slate-700">
+                        AI
+                      </div>
+                      <div className="max-w-[80%] rounded-2xl rounded-bl-sm px-4 py-3 bg-white text-slate-900 border border-slate-200">
+                        <div className="flex items-center gap-2">
+                          <div className="flex gap-1">
+                            <div className="h-2 w-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                            <div className="h-2 w-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                            <div className="h-2 w-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                          </div>
+                          <span className="text-sm text-slate-500">
+                            {retryCount > 0 ? `Retrying... (${retryCount}/3)` : "Thinking..."}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
               <div ref={messagesEndRef} />
             </div>
@@ -869,23 +1121,28 @@ export default function ChatPage() {
           <div className="p-4">
             <FileAttachmentPreview />
 
-            <div className="flex items-end gap-2">
-              <div className="flex-1">
+            <div className="border border-slate-300 bg-white rounded-lg shadow-sm overflow-hidden max-w-2xl mx-auto">
+              <div className="flex items-center justify-center px-3 py-2 gap-2">
                 <Textarea
                   ref={textareaRef}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
                   onPaste={handlePaste}
-                  placeholder="Message AI..."
-                  className="min-h-[60px] max-h-[200px] resize-none border-slate-200 bg-white px-4 py-3 text-sm focus-visible:ring-1 focus-visible:ring-slate-400 focus-visible:border-slate-400 rounded-lg shadow-sm"
+                  placeholder="Ask AI..."
+                  className="flex-1 min-h-[40px] max-h-[120px] resize-none border-0 bg-transparent px-3 py-2 text-sm focus-visible:ring-0 focus-visible:border-0"
                   disabled={isGenerating}
                 />
-              </div>
 
-              <div className="flex items-center gap-1">
                 <label className="cursor-pointer">
                   <input
+                    ref={(input) => {
+                      if (input) {
+                        input.onclick = (e) => {
+                          e.stopPropagation();
+                        };
+                      }
+                    }}
                     type="file"
                     multiple
                     className="hidden"
@@ -895,11 +1152,16 @@ export default function ChatPage() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-10 w-10 p-0"
+                    className="h-7 w-7 p-0 hover:bg-slate-100 shrink-0"
                     type="button"
                     disabled={isGenerating}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                      if (input) input.click();
+                    }}
                   >
-                    <Plus className="h-4 w-4" />
+                    <Link className="h-3.5 w-3.5 text-slate-600" />
                   </Button>
                 </label>
 
@@ -908,9 +1170,9 @@ export default function ChatPage() {
                     onClick={() => setIsGenerating(false)}
                     variant="destructive"
                     size="sm"
-                    className="h-10 px-4"
+                    className="h-7 px-3 shrink-0"
                   >
-                    <Square className="mr-1 h-4 w-4" />
+                    <Square className="mr-1 h-3 w-3" />
                     Stop
                   </Button>
                 ) : (
@@ -918,13 +1180,14 @@ export default function ChatPage() {
                     onClick={handleSubmit}
                     disabled={!input.trim()}
                     size="sm"
-                    className="h-10 px-4"
+                    className="h-7 px-3 shrink-0"
                   >
-                    <Send className="h-4 w-4" />
+                    <Send className="h-3.5 w-3.5" />
                   </Button>
                 )}
               </div>
             </div>
+
             <p className="mt-2 text-center text-xs text-muted-foreground">
               AI can make mistakes. Consider checking important information.
             </p>

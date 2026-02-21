@@ -126,10 +126,8 @@ export default function LicenseSetupPage() {
   const [licenseDetails, setLicenseDetails] = useState<VerifyLicenseResponse | null>(null);
 
   // Step 2: Installation
-  const [tenantName, setTenantName] = useState("");
-  const [tenantDomain, setTenantDomain] = useState("*");
-  const [adminUsername, setAdminUsername] = useState("admin");
-  const [adminPassword, setAdminPassword] = useState("");
+  const [systemUsername, setSystemUsername] = useState("system");
+  const [systemPassword, setSystemPassword] = useState("");
 
   // Login form (when already installed)
   const [loginUsername, setLoginUsername] = useState("");
@@ -205,7 +203,7 @@ export default function LicenseSetupPage() {
                 </Badge>
               </CardTitle>
               <CardDescription>
-                Your application is already set up. Sign in with your admin credentials.
+                Your application is already set up. Sign in with your system credentials.
               </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4">
@@ -214,7 +212,7 @@ export default function LicenseSetupPage() {
                 <Input
                   value={loginUsername}
                   onChange={(e) => setLoginUsername(e.target.value)}
-                  placeholder="admin"
+                  placeholder="system"
                   disabled={loggingIn}
                   autoFocus
                 />
@@ -285,10 +283,6 @@ export default function LicenseSetupPage() {
       setLicenseDetails(response);
 
       if (response.valid) {
-        // Auto-fill tenant name from license if available
-        if (response.tenant_name) {
-          setTenantName(response.tenant_name);
-        }
         setStep(2);
       } else {
         setError(response.error || "Invalid license key");
@@ -307,8 +301,8 @@ export default function LicenseSetupPage() {
       setError("License key is required");
       return;
     }
-    if (!adminUsername.trim() || !adminPassword.trim()) {
-      setError("Admin credentials are required");
+    if (!systemUsername.trim() || !systemPassword.trim()) {
+      setError("System credentials are required");
       return;
     }
 
@@ -320,10 +314,8 @@ export default function LicenseSetupPage() {
         method: "POST",
         body: JSON.stringify({
           license_key: licenseKey,
-          tenant_name: tenantName || undefined,
-          tenant_domain: tenantDomain,
-          admin_username: adminUsername,
-          admin_password: adminPassword,
+          system_username: systemUsername,
+          system_password: systemPassword,
         }),
       });
 
@@ -338,7 +330,7 @@ export default function LicenseSetupPage() {
       } catch {
         // Fallback: explicitly login with the credentials just created
         try {
-          await login(adminUsername, adminPassword);
+          await login(systemUsername, systemPassword);
         } catch {
           console.warn("[LICENSE] Auto-login after install failed, showing login form");
           setAlreadyInstalled(true);
@@ -499,48 +491,29 @@ export default function LicenseSetupPage() {
             {step === 2 && (
               <div className="grid gap-4">
                 <div>
-                  <h3 className="text-lg font-semibold mb-2">Step 2: Configure Tenant</h3>
+                  <h3 className="text-lg font-semibold mb-2">Step 2: Configure System Access</h3>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Configure your tenant and create admin account.
+                    Create the initial global system account.
                   </p>
                 </div>
 
                 <div className="grid gap-3 md:grid-cols-2">
                   <label className="grid gap-2 text-sm text-slate-700">
-                    Tenant Name
+                    System Username
                     <Input
-                      value={tenantName}
-                      onChange={(e) => setTenantName(e.target.value)}
-                      placeholder="My Organization"
+                      value={systemUsername}
+                      onChange={(e) => setSystemUsername(e.target.value)}
+                      placeholder="system"
                       disabled={installing}
                     />
                   </label>
                   <label className="grid gap-2 text-sm text-slate-700">
-                    Tenant Domain
-                    <Input
-                      value={tenantDomain}
-                      onChange={(e) => setTenantDomain(e.target.value)}
-                      placeholder="*"
-                      disabled={installing}
-                    />
-                  </label>
-                </div>
-
-                <div className="grid gap-3 md:grid-cols-2">
-                  <label className="grid gap-2 text-sm text-slate-700">
-                    Admin Username
-                    <Input
-                      value={adminUsername}
-                      onChange={(e) => setAdminUsername(e.target.value)}
-                      disabled={installing}
-                    />
-                  </label>
-                  <label className="grid gap-2 text-sm text-slate-700">
-                    Admin Password
+                    System Password
                     <Input
                       type="password"
-                      value={adminPassword}
-                      onChange={(e) => setAdminPassword(e.target.value)}
+                      value={systemPassword}
+                      onChange={(e) => setSystemPassword(e.target.value)}
+                      placeholder="Enter your password"
                       disabled={installing}
                     />
                   </label>
@@ -561,7 +534,7 @@ export default function LicenseSetupPage() {
                   >
                     Back
                   </Button>
-                  <Button onClick={handleInstall} disabled={installing} className="flex-1">
+                  <Button onClick={handleInstall} disabled={installing || !systemUsername.trim() || !systemPassword.trim()} className="flex-1">
                     {installing ? "Installing..." : "Install & Continue"}
                   </Button>
                 </div>

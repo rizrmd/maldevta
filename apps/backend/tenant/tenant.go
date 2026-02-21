@@ -34,8 +34,9 @@ type TenantAuthData struct {
 }
 
 const (
-	roleAdmin = "admin"
-	roleUser  = "user"
+	roleSystem = "system"
+	roleAdmin  = "admin"
+	roleUser   = "user"
 )
 
 // Tenant represents a tenant in the system
@@ -109,12 +110,12 @@ type UpdateUserRequest struct {
 	Role     string `json:"role"`
 }
 
-// Helper to check if user is admin
-func isAdmin(data *iam.AuthData) bool {
+// Helper to check if user is a global system operator.
+func isSystem(data *iam.AuthData) bool {
 	if data == nil {
 		return false
 	}
-	return string(data.Role) == roleAdmin
+	return string(data.Role) == roleSystem
 }
 
 // Helper to parse time from flexible DB types
@@ -159,15 +160,15 @@ func scanUser(row *sql.Row) (*User, error) {
 	return &u, nil
 }
 
-//encore:api auth method=GET path=/api/admin/tenants
+//encore:api auth method=GET path=/api/system/tenants
 func ListTenants(ctx context.Context) (*ListTenantsResponse, error) {
 	raw := auth.Data()
 	if raw == nil {
 		return nil, &errs.Error{Code: errs.Unauthenticated, Message: "not authenticated"}
 	}
 	data, _ := raw.(*iam.AuthData)
-	if data == nil || !isAdmin(data) {
-		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "only admins can list tenants"}
+	if data == nil || !isSystem(data) {
+		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "only system users can list tenants"}
 	}
 
 	db, err := getDB()
@@ -203,15 +204,15 @@ func ListTenants(ctx context.Context) (*ListTenantsResponse, error) {
 	return &ListTenantsResponse{Tenants: tenants}, nil
 }
 
-//encore:api auth method=GET path=/api/admin/tenants/:tenantID
+//encore:api auth method=GET path=/api/system/tenants/:tenantID
 func GetTenant(ctx context.Context, tenantID string) (*GetTenantResponse, error) {
 	raw := auth.Data()
 	if raw == nil {
 		return nil, &errs.Error{Code: errs.Unauthenticated, Message: "not authenticated"}
 	}
 	data, _ := raw.(*iam.AuthData)
-	if data == nil || !isAdmin(data) {
-		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "only admins can view tenants"}
+	if data == nil || !isSystem(data) {
+		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "only system users can view tenants"}
 	}
 
 	db, err := getDB()
@@ -235,15 +236,15 @@ func GetTenant(ctx context.Context, tenantID string) (*GetTenantResponse, error)
 	return &GetTenantResponse{Tenant: tenant}, nil
 }
 
-//encore:api auth method=POST path=/api/admin/tenants
+//encore:api auth method=POST path=/api/system/tenants
 func CreateTenant(ctx context.Context, p *CreateTenantRequest) (*GetTenantResponse, error) {
 	raw := auth.Data()
 	if raw == nil {
 		return nil, &errs.Error{Code: errs.Unauthenticated, Message: "not authenticated"}
 	}
 	data, _ := raw.(*iam.AuthData)
-	if data == nil || !isAdmin(data) {
-		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "only admins can create tenants"}
+	if data == nil || !isSystem(data) {
+		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "only system users can create tenants"}
 	}
 
 	if p == nil || strings.TrimSpace(p.Name) == "" {
@@ -292,15 +293,15 @@ func CreateTenant(ctx context.Context, p *CreateTenantRequest) (*GetTenantRespon
 	}, nil
 }
 
-//encore:api auth method=PUT path=/api/admin/tenants/:tenantID
+//encore:api auth method=PUT path=/api/system/tenants/:tenantID
 func UpdateTenant(ctx context.Context, tenantID string, p *UpdateTenantRequest) (*GetTenantResponse, error) {
 	raw := auth.Data()
 	if raw == nil {
 		return nil, &errs.Error{Code: errs.Unauthenticated, Message: "not authenticated"}
 	}
 	data, _ := raw.(*iam.AuthData)
-	if data == nil || !isAdmin(data) {
-		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "only admins can update tenants"}
+	if data == nil || !isSystem(data) {
+		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "only system users can update tenants"}
 	}
 
 	if p == nil {
@@ -356,15 +357,15 @@ func UpdateTenant(ctx context.Context, tenantID string, p *UpdateTenantRequest) 
 	return GetTenant(ctx, tenantID)
 }
 
-//encore:api auth method=DELETE path=/api/admin/tenants/:tenantID
+//encore:api auth method=DELETE path=/api/system/tenants/:tenantID
 func DeleteTenant(ctx context.Context, tenantID string) error {
 	raw := auth.Data()
 	if raw == nil {
 		return &errs.Error{Code: errs.Unauthenticated, Message: "not authenticated"}
 	}
 	data, _ := raw.(*iam.AuthData)
-	if data == nil || !isAdmin(data) {
-		return &errs.Error{Code: errs.PermissionDenied, Message: "only admins can delete tenants"}
+	if data == nil || !isSystem(data) {
+		return &errs.Error{Code: errs.PermissionDenied, Message: "only system users can delete tenants"}
 	}
 
 	db, err := getDB()
@@ -405,15 +406,15 @@ func DeleteTenant(ctx context.Context, tenantID string) error {
 // User Management
 // ============================================================================
 
-//encore:api auth method=GET path=/api/admin/tenants/:tenantID/users
+//encore:api auth method=GET path=/api/system/tenants/:tenantID/users
 func ListTenantUsers(ctx context.Context, tenantID string) (*ListUsersResponse, error) {
 	raw := auth.Data()
 	if raw == nil {
 		return nil, &errs.Error{Code: errs.Unauthenticated, Message: "not authenticated"}
 	}
 	data, _ := raw.(*iam.AuthData)
-	if data == nil || !isAdmin(data) {
-		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "only admins can list users"}
+	if data == nil || !isSystem(data) {
+		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "only system users can list users"}
 	}
 
 	db, err := getDB()
@@ -457,15 +458,15 @@ func ListTenantUsers(ctx context.Context, tenantID string) (*ListUsersResponse, 
 	return &ListUsersResponse{Users: users}, nil
 }
 
-//encore:api auth method=POST path=/api/admin/tenants/:tenantID/users
+//encore:api auth method=POST path=/api/system/tenants/:tenantID/users
 func CreateTenantUser(ctx context.Context, tenantID string, p *CreateUserRequest) (*CreateUserResponse, error) {
 	raw := auth.Data()
 	if raw == nil {
 		return nil, &errs.Error{Code: errs.Unauthenticated, Message: "not authenticated"}
 	}
 	data, _ := raw.(*iam.AuthData)
-	if data == nil || !isAdmin(data) {
-		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "only admins can create users"}
+	if data == nil || !isSystem(data) {
+		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "only system users can create users"}
 	}
 
 	if p == nil || strings.TrimSpace(p.Username) == "" || p.Password == "" {
@@ -534,15 +535,15 @@ func CreateTenantUser(ctx context.Context, tenantID string, p *CreateUserRequest
 	return &CreateUserResponse{User: user}, nil
 }
 
-//encore:api auth method=PUT path=/api/admin/tenants/:tenantID/users/:userID
+//encore:api auth method=PUT path=/api/system/tenants/:tenantID/users/:userID
 func UpdateTenantUser(ctx context.Context, tenantID, userID string, p *UpdateUserRequest) (*CreateUserResponse, error) {
 	raw := auth.Data()
 	if raw == nil {
 		return nil, &errs.Error{Code: errs.Unauthenticated, Message: "not authenticated"}
 	}
 	data, _ := raw.(*iam.AuthData)
-	if data == nil || !isAdmin(data) {
-		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "only admins can update users"}
+	if data == nil || !isSystem(data) {
+		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "only system users can update users"}
 	}
 
 	if p == nil {
@@ -631,15 +632,15 @@ func UpdateTenantUser(ctx context.Context, tenantID, userID string, p *UpdateUse
 
 // GetTenantUser gets a single user
 //
-//encore:api auth method=GET path=/api/admin/tenants/:tenantID/users/:userID
+//encore:api auth method=GET path=/api/system/tenants/:tenantID/users/:userID
 func GetTenantUser(ctx context.Context, tenantID, userID string) (*CreateUserResponse, error) {
 	raw := auth.Data()
 	if raw == nil {
 		return nil, &errs.Error{Code: errs.Unauthenticated, Message: "not authenticated"}
 	}
 	data, _ := raw.(*iam.AuthData)
-	if data == nil || !isAdmin(data) {
-		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "only admins can view users"}
+	if data == nil || !isSystem(data) {
+		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "only system users can view users"}
 	}
 
 	db, err := getDB()
@@ -663,15 +664,15 @@ func GetTenantUser(ctx context.Context, tenantID, userID string) (*CreateUserRes
 	return &CreateUserResponse{User: user}, nil
 }
 
-//encore:api auth method=DELETE path=/api/admin/tenants/:tenantID/users/:userID
+//encore:api auth method=DELETE path=/api/system/tenants/:tenantID/users/:userID
 func DeleteTenantUser(ctx context.Context, tenantID, userID string) error {
 	raw := auth.Data()
 	if raw == nil {
 		return &errs.Error{Code: errs.Unauthenticated, Message: "not authenticated"}
 	}
 	data, _ := raw.(*iam.AuthData)
-	if data == nil || !isAdmin(data) {
-		return &errs.Error{Code: errs.PermissionDenied, Message: "only admins can delete users"}
+	if data == nil || !isSystem(data) {
+		return &errs.Error{Code: errs.PermissionDenied, Message: "only system users can delete users"}
 	}
 
 	db, err := getDB()

@@ -18,15 +18,18 @@ import {
   Code2,
   BookOpen,
   Send,
-  Loader2
+  Loader2,
+  LayoutGrid
 } from "lucide-react";
 import { useParams } from "wouter";
 import AppLayout from "@/components/app-layout";
 import {
   Breadcrumb,
   BreadcrumbItem,
+  BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbPage,
+  BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { useProjectStore } from "@/stores";
 
@@ -104,7 +107,7 @@ function showToast(message: string, type: "success" | "error" = "success") {
 export function DeveloperAPIPage() {
   const params = useParams<{ projectId: string }>();
   const projectId = params?.projectId || "";
-  const { currentProject, projects, selectProject, loadProjects, hasInitialized } = useProjectStore();
+  const { projects, selectProject, loadProjects, hasInitialized } = useProjectStore();
   const API_BASE_URL = typeof window !== 'undefined' ? window.location.origin : '';
 
   const [context, setContext] = useState("");
@@ -230,6 +233,13 @@ console.log(data.response);`;
       header={
         <Breadcrumb>
           <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/" className="flex items-center gap-2">
+                <LayoutGrid className="h-4 w-4" />
+                Projects
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
             <BreadcrumbItem>
               <BreadcrumbPage>API</BreadcrumbPage>
             </BreadcrumbItem>

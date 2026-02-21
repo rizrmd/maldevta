@@ -158,6 +158,7 @@ export const useAuthStore = create<AuthStore>()(
           // Ignore logout errors
         } finally {
           set({ user: null, loading: false });
+          useAuthStore.persist.clearStorage();
         }
       },
 

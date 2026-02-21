@@ -1,32 +1,22 @@
 import { useEffect, useState, useMemo } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useParams } from "wouter";
 import AppLayout from "@/components/app-layout";
 import {
   Breadcrumb,
   BreadcrumbItem,
+  BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbPage,
+  BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Trash2, Search } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import { MessageSquare, Trash2, Search, LayoutGrid } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 type ApiError = {
   message: string;
   status?: number;
   code?: string;
-};
-
-type ProjectResponse = {
-  id: string;
-  name: string;
-  whatsapp_enabled: boolean;
-};
-
-type ListProjectsResponse = {
-  projects: ProjectResponse[];
 };
 
 // Conversation types
@@ -89,41 +79,28 @@ async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export default function HistoryPage() {
+  const params = useParams<{ projectId: string }>();
   const [location] = useLocation();
   const [, setLocation] = useLocation();
 
-  const [projects, setProjects] = useState<ProjectResponse[]>([]);
-  const [selectedProjectId, setSelectedProjectId] = useState("");
   const [conversations, setConversations] = useState<ConversationResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Get project ID from URL
-  useEffect(() => {
-    const match = location.match(/\/projects\/([^\/]+)/);
-    if (match) {
-      setSelectedProjectId(match[1]);
-    }
-  }, [location]);
+  const selectedProjectId = params.projectId || "";
 
-  // Load projects
+  // Get project ID from URL (fallback for legacy routes)
   useEffect(() => {
-    const loadProjects = async () => {
-      try {
-        const response = await apiRequest<ListProjectsResponse>("/projects");
-        const projectList = response.projects || [];
-        setProjects(projectList);
-        if (projectList.length > 0 && !selectedProjectId) {
-          setSelectedProjectId(projectList[0].id);
-        }
-      } catch (err) {
-        const apiError = err as ApiError;
-        setError(apiError.message || "Failed to load projects");
+    if (!selectedProjectId) {
+      const match = location.match(/\/projects\/([^\/]+)/);
+      if (match) {
+        // Legacy route - redirect to new route
+        const projectId = match[1];
+        setLocation(`/projects/${projectId}/history`);
       }
-    };
-    loadProjects();
-  }, []);
+    }
+  }, [location, selectedProjectId, setLocation]);
 
   // Load conversations for selected project
   useEffect(() => {
@@ -216,11 +193,11 @@ export default function HistoryPage() {
     }
   };
 
-  const openConversation = (convId: string) => {
-    setLocation(`/projects/${selectedProjectId}/chat/${convId}`);
+  const openConversation = () => {
+    if (selectedProjectId) {
+      setLocation(`/chat/${selectedProjectId}`);
+    }
   };
-
-  const selectedProject = projects.find((p) => p.id === selectedProjectId);
 
   return (
     <AppLayout
@@ -228,7 +205,14 @@ export default function HistoryPage() {
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
-              <BreadcrumbPage>Conversation History</BreadcrumbPage>
+              <BreadcrumbLink href="/" className="flex items-center gap-2">
+                <LayoutGrid className="h-4 w-4" />
+                Projects
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>History</BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
@@ -317,7 +301,7 @@ export default function HistoryPage() {
                               <div
                                 key={conv.id}
                                 className="group relative flex items-center gap-3 py-3 px-2 -mx-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
-                                onClick={() => openConversation(conv.id)}
+                                onClick={openConversation}
                               >
                                 {/* Content */}
                                 <div className="flex-1 min-w-0">

@@ -1,4 +1,4 @@
-import { Route, Switch } from "wouter";
+import { Route, Switch, useLocation } from "wouter";
 import { useEffect, useState } from "react";
 import { useAuthStore } from "@/stores/authStore";
 
@@ -25,6 +25,15 @@ import LicenseVerifyPage from "@/pages/LicenseVerify";
 import LicenseSetupPage from "@/pages/LicenseSetup";
 import NotFoundPage from "@/pages/NotFound";
 import { AdminTenantsPage } from "@/pages/AdminTenants";
+import SystemTenantCreatePage from "@/pages/SystemTenantCreate";
+import SystemTenantEditPage from "@/pages/SystemTenantEdit";
+import SystemTenantUsersPage from "@/pages/SystemTenantUsers";
+import SystemTenantUserCreatePage from "@/pages/SystemTenantUserCreate";
+import SystemTenantUserEditPage from "@/pages/SystemTenantUserEdit";
+import LLMEndpointsPage from "@/pages/LLMEndpoints";
+import WhatsAppPage from "@/pages/WhatsApp";
+import { SetupRequired } from "@/components/setup-required";
+import AdminSetupPage from "@/pages/AdminSetup";
 
 //take out hardcode license true
 function LoadingScreen() {
@@ -36,6 +45,16 @@ function LoadingScreen() {
       </div>
     </div>
   );
+}
+
+function RedirectToLogin() {
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    setLocation("/login", { replace: true });
+  }, [setLocation]);
+
+  return null;
 }
 
 function LicenseCheck({ children }: { children: React.ReactNode }) {
@@ -69,9 +88,11 @@ function LicenseCheck({ children }: { children: React.ReactNode }) {
   if (!isInstalled) {
     return (
       <Switch>
-        <Route path="/license/setup" component={LicenseSetupPage} />
+        <Route path="/admin-setup" component={AdminSetupPage} />
+        {/* Legacy routes redirect to setup or show setup required */}
+        <Route path="/license/setup" component={SetupRequired} />
         <Route path="/license/verify" component={LicenseVerifyPage} />
-        <Route path="/*"><LicenseSetupPage /></Route>
+        <Route path="/*"><SetupRequired /></Route>
       </Switch>
     );
   }
@@ -116,6 +137,7 @@ function App() {
         {/* Public routes - license setup */}
         <Route path="/license/setup" component={LicenseSetupPage} />
         <Route path="/license/verify" component={LicenseVerifyPage} />
+        <Route path="/admin-setup" component={RedirectToLogin} />
 
         {/* Login route - accessible when licensed but not authenticated */}
         <Route path="/login" component={LoginPage} />
@@ -135,7 +157,16 @@ function App() {
             <Route path="/api/:projectId" component={DeveloperAPIPage} />
             <Route path="/projects/:projectId/embed" component={EmbedSettings} />
             <Route path="/embed/:projectId" component={EmbedSettings} />
+            {/* Project-scoped routes - require projectId */}
+            <Route path="/projects/:projectId/history" component={HistoryPage} />
+            <Route path="/projects/:projectId/files" component={FilesPage} />
+            <Route path="/projects/:projectId/memory" component={MemoryPage} />
+            <Route path="/settings/context/:projectId" component={ContextPage} />
+            <Route path="/whatsapp/:projectId" component={ChatsPage} />
+            <Route path="/extensions/:projectId" component={ExtensionsPage} />
             <Route path="/sub-clients/settings/:projectId" component={SubClientSettingsPage} />
+
+            {/* Legacy routes without projectId - redirect or fallback */}
             <Route path="/whatsapp" component={ChatsPage} />
             <Route path="/chats" component={ChatsPage} />
             <Route path="/files" component={FilesPage} />
@@ -150,11 +181,18 @@ function App() {
             <Route path="/extensions" component={ExtensionsPage} />
             <Route path="/developer" component={DeveloperPage} />
             <Route path="/embed" component={EmbedRedirectorPage} />
+            <Route path="/projects/:projectId/whatsapp" component={WhatsAppPage} />
             {/* <Route path="/support" component={SupportPage} /> */}
             {/* <Route path="/feedback" component={SupportPage} /> */}
             <Route path="/billing" component={BillingPage} />
             <Route path="/payment" component={PaymentPage} />
-            <Route path="/admin/tenants" component={AdminTenantsPage} />
+            <Route path="/system/tenants" component={AdminTenantsPage} />
+            <Route path="/system/tenants/new" component={SystemTenantCreatePage} />
+            <Route path="/system/tenants/:tenantId/edit" component={SystemTenantEditPage} />
+            <Route path="/system/tenants/:tenantId/users" component={SystemTenantUsersPage} />
+            <Route path="/system/tenants/:tenantId/users/new" component={SystemTenantUserCreatePage} />
+            <Route path="/system/tenants/:tenantId/users/:userId/edit" component={SystemTenantUserEditPage} />
+            <Route path="/system/llm-endpoints" component={LLMEndpointsPage} />
           </Switch>
         </ProtectedRoute>
 

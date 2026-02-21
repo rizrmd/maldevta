@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useParams } from "wouter";
 import AppLayout from "@/components/app-layout";
 import {
   Breadcrumb,
   BreadcrumbItem,
+  BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbPage,
+  BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 
 import { Button } from "@/components/ui/button";
@@ -17,31 +19,20 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Save, FileText, Settings2, Clock } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
-import { Label } from "@/components/ui/label";
+import { Save, FileText, LayoutGrid, Eye, Code } from "lucide-react";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type ApiError = {
   message: string;
   status?: number;
   code?: string;
-};
-
-type ProjectResponse = {
-  id: string;
-  name: string;
-  whatsapp_enabled: boolean;
-};
-
-type ListProjectsResponse = {
-  projects: ProjectResponse[];
 };
 
 type ContextResponse = {
@@ -96,50 +87,45 @@ async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export default function ContextPage() {
-  const { user } = useAuth();
+  const params = useParams<{ projectId: string }>();
   const [location] = useLocation();
+  const [, setLocation] = useLocation();
 
-  const [projects, setProjects] = useState<ProjectResponse[]>([]);
-  const [selectedProjectId, setSelectedProjectId] = useState("");
-  const [context, setContext] = useState("");
-  const [tone, setTone] = useState("professional");
-  const [language, setLanguage] = useState("english");
+  const [baseContext, setBaseContext] = useState("");
+  const [compactionContext, setCompactionContext] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [lastUpdated, setLastUpdated] = useState("");
+  const [activeTab, setActiveTab] = useState("base");
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [showVariablesModal, setShowVariablesModal] = useState(false);
 
-  // Get project ID from URL
-  useEffect(() => {
-    const match = location.match(/\/projects\/([^\/]+)/);
-    if (match) {
-      setSelectedProjectId(match[1]);
-    }
-  }, [location]);
+  const selectedProjectId = params.projectId || "";
 
-  // Load projects
+  // Get project ID from URL (fallback for legacy routes)
   useEffect(() => {
-    const loadProjects = async () => {
-      try {
-        const response = await apiRequest<ListProjectsResponse>("/projects");
-        const projectList = response.projects || [];
-        setProjects(projectList);
-        if (projectList.length > 0 && !selectedProjectId) {
-          setSelectedProjectId(projectList[0].id);
-        }
-      } catch (err) {
-        const apiError = err as ApiError;
-        setError(apiError.message || "Failed to load projects");
+    if (!selectedProjectId) {
+      const match = location.match(/\/settings\/context\/([^\/]+)/);
+      if (match) {
+        // Already on new route, no redirect needed
+        return;
       }
-    };
-    loadProjects();
-  }, []);
+      // Check legacy route
+      const legacyMatch = location.match(/\/projects\/([^\/]+)/);
+      if (legacyMatch) {
+        const projectId = legacyMatch[1];
+        setLocation(`/settings/context/${projectId}`);
+      }
+    }
+  }, [location, selectedProjectId, setLocation]);
 
   // Load context for selected project
   useEffect(() => {
     if (!selectedProjectId) {
-      setContext("");
+      setBaseContext("");
+      setCompactionContext("");
       return;
     }
 
@@ -149,9 +135,8 @@ export default function ContextPage() {
         const response = await apiRequest<ContextResponse>(
           `/projects/${selectedProjectId}/context`
         );
-        setContext(response.content || "");
-        setTone(response.tone || "professional");
-        setLanguage(response.language || "english");
+        setBaseContext(response.content || "");
+        setCompactionContext("");
         setLastUpdated(response.updated_at || "");
       } catch (err) {
         const apiError = err as ApiError;
@@ -164,11 +149,6 @@ export default function ContextPage() {
   }, [selectedProjectId]);
 
   const handleSaveContext = async () => {
-    if (!context.trim()) {
-      setError("Context content cannot be empty");
-      return;
-    }
-
     setSaving(true);
     setError("");
     setSuccess("");
@@ -177,9 +157,7 @@ export default function ContextPage() {
       await apiRequest(`/projects/${selectedProjectId}/context`, {
         method: "PUT",
         body: JSON.stringify({
-          content: context,
-          tone,
-          language,
+          content: activeTab === "base" ? baseContext : compactionContext,
         }),
       });
 
@@ -193,51 +171,26 @@ export default function ContextPage() {
     }
   };
 
-  const selectedProject = projects.find((p) => p.id === selectedProjectId);
-
   return (
     <AppLayout
       header={
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
-              <BreadcrumbPage>Workspace / Context</BreadcrumbPage>
+              <BreadcrumbLink href="/" className="flex items-center gap-2">
+                <LayoutGrid className="h-4 w-4" />
+                Projects
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>Context</BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
       }
     >
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
-          {/* Header */}
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-xs uppercase tracking-[0.28em] text-muted-foreground">
-                Project Workspace
-              </p>
-              <h1 className="font-display text-3xl text-slate-900 md:text-4xl">
-                Context Editor
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Define how your AI assistant should behave
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Project:</span>
-              <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Select project" />
-                </SelectTrigger>
-                <SelectContent>
-                  {projects.map((project) => (
-                    <SelectItem key={project.id} value={project.id}>
-                      {project.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-6">
           {error && (
             <div className="w-full rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
               {error}
@@ -251,140 +204,187 @@ export default function ContextPage() {
           )}
 
           {!selectedProjectId ? (
-            <div className="w-full rounded-lg border border-slate-200 bg-white/80 p-8 text-center">
-              <FileText className="mx-auto h-12 w-12 text-slate-400" />
+            <div className="w-full rounded-lg border border-slate-200 bg-white p-12 text-center">
+              <FileText className="mx-auto h-16 w-16 text-slate-300" />
               <p className="mt-4 text-sm text-muted-foreground">
                 {loading ? "Loading projects..." : "No projects available. Create a project first."}
               </p>
             </div>
           ) : (
-            <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
-              {/* Context Editor */}
-              <Card className="border-[#e6dccc] bg-white/80 backdrop-blur">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>System Instructions</CardTitle>
-                      <CardDescription>
-                        {selectedProject ? (
-                          <>For <span className="font-medium">{selectedProject.name}</span></>
-                        ) : (
-                          "Define AI behavior"
-                        )}
-                      </CardDescription>
-                    </div>
-                    {lastUpdated && (
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Clock className="h-3 w-3" />
-                        <span>Last updated: {new Date(lastUpdated).toLocaleString()}</span>
-                      </div>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="context">System Prompt / Context</Label>
-                    <Textarea
-                      id="context"
-                      value={context}
-                      onChange={(e) => setContext(e.target.value)}
-                      placeholder="You are a helpful AI assistant for this project. Your responses should be friendly and professional..."
-                      rows={12}
-                      disabled={loading}
-                      className="font-mono text-sm"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      This context will be used to guide the AI's behavior in all conversations for this project.
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="tone">Response Tone</Label>
-                      <Select value={tone} onValueChange={setTone}>
-                        <SelectTrigger id="tone">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="professional">Professional</SelectItem>
-                          <SelectItem value="casual">Casual</SelectItem>
-                          <SelectItem value="friendly">Friendly</SelectItem>
-                          <SelectItem value="formal">Formal</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="language">Language</Label>
-                      <Select value={language} onValueChange={setLanguage}>
-                        <SelectTrigger id="language">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="english">English</SelectItem>
-                          <SelectItem value="indonesian">Indonesian</SelectItem>
-                          <SelectItem value="spanish">Spanish</SelectItem>
-                          <SelectItem value="french">French</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Button onClick={handleSaveContext} disabled={saving || loading}>
-                      <Save className="mr-2 h-4 w-4" />
-                      {saving ? "Saving..." : "Save Context"}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Tips Card */}
-              <Card className="border-[#e6dccc] bg-white/80 backdrop-blur">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Settings2 className="h-5 w-5" />
-                    Tips for Better Context
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3 text-sm">
-                  <div>
-                    <p className="font-medium text-slate-900">Be Specific</p>
-                    <p className="text-muted-foreground">
-                      Clearly define the AI's role, expertise, and limitations for this project.
-                    </p>
-                  </div>
-                  <div>
-                    <p className="font-medium text-slate-900">Set Behavior Guidelines</p>
-                    <p className="text-muted-foreground">
-                      Include instructions about tone, formatting preferences, and what to avoid.
-                    </p>
-                  </div>
-                  <div>
-                    <p className="font-medium text-slate-900">Define Project Scope</p>
-                    <p className="text-muted-foreground">
-                      Specify what the AI should help with and what's outside its scope for this project.
-                    </p>
-                  </div>
-                  <div>
-                    <p className="font-medium text-slate-900">Use Examples</p>
-                    <p className="text-muted-foreground">
-                      Provide example responses or scenarios to guide the AI's behavior.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {user && (
-            <div className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">
+            <div className="space-y-4">
+              {/* Tab Navigation with Save and Preview Buttons */}
               <div className="flex items-center justify-between">
-                <span>Signed in as: <span className="font-medium">{user.role}</span></span>
-                <span className="font-mono">{user.userId?.slice(0, 8)}...</span>
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                  <TabsList className="grid w-full max-w-md grid-cols-2">
+                    <TabsTrigger value="base">Base Context</TabsTrigger>
+                    <TabsTrigger value="compaction">Compaction Context</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={() => setShowPreviewModal(true)}
+                    disabled={loading}
+                    variant="outline"
+                    className="min-w-[100px]"
+                  >
+                    <Eye className="mr-2 h-4 w-4" />
+                    Preview
+                  </Button>
+                  <Button
+                    onClick={() => setShowVariablesModal(true)}
+                    disabled={loading}
+                    variant="outline"
+                    className="min-w-[100px]"
+                  >
+                    <Code className="mr-2 h-4 w-4" />
+                    Variables
+                  </Button>
+                  <Button
+                    onClick={handleSaveContext}
+                    disabled={saving || loading}
+                    className="min-w-[100px]"
+                  >
+                    <Save className="mr-2 h-4 w-4" />
+                    {saving ? "Saving..." : "Save"}
+                  </Button>
+                </div>
               </div>
+
+              {/* Tab Content */}
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsContent value="base" className="mt-0 space-y-4">
+                  <Card className="border border-slate-200">
+                    <CardHeader className="border-b border-slate-100">
+                      <CardTitle className="text-base">Base Context</CardTitle>
+                      <CardDescription className="text-xs">
+                        Define the fundamental system prompt and behavior guidelines
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="pt-4">
+                      <Textarea
+                        value={baseContext}
+                        onChange={(e) => setBaseContext(e.target.value)}
+                        placeholder="You are a helpful AI assistant for this project. Your responses should be friendly and professional..."
+                        rows={8}
+                        disabled={loading}
+                        className="resize-none font-mono text-sm leading-relaxed"
+                      />
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="compaction" className="mt-0 space-y-4">
+                  <Card className="border border-slate-200">
+                    <CardHeader className="border-b border-slate-100">
+                      <CardTitle className="text-base">Compaction Context</CardTitle>
+                      <CardDescription className="text-xs">
+                        Define context for condensed/summarized interactions
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="pt-4">
+                      <Textarea
+                        value={compactionContext}
+                        onChange={(e) => setCompactionContext(e.target.value)}
+                        placeholder="Define how the AI should handle context compaction and summarization..."
+                        rows={8}
+                        disabled={loading}
+                        className="resize-none font-mono text-sm leading-relaxed"
+                      />
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
+
+              {/* Last Updated Info */}
+              {lastUpdated && (
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground">
+                    Last updated: {new Date(lastUpdated).toLocaleString()}
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>
+
+        {/* Preview Modal */}
+        <Dialog open={showPreviewModal} onOpenChange={setShowPreviewModal}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Eye className="h-5 w-5" />
+                Context Preview
+              </DialogTitle>
+              <DialogDescription>
+                Preview of your {activeTab === 'base' ? 'base' : 'compaction'} context
+              </DialogDescription>
+            </DialogHeader>
+            <div className="mt-4">
+              <div className="rounded-lg bg-slate-50 border border-slate-100 p-4 max-h-[400px] overflow-y-auto">
+                <pre className="text-sm font-mono text-slate-700 whitespace-pre-wrap break-words">
+                  {activeTab === 'base'
+                    ? (baseContext || "No base context defined yet...")
+                    : (compactionContext || "No compaction context defined yet...")}
+                </pre>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Variables Modal */}
+        <Dialog open={showVariablesModal} onOpenChange={setShowVariablesModal}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Code className="h-5 w-5" />
+                Available Variables
+              </DialogTitle>
+              <DialogDescription>
+                Variables you can use in your context
+              </DialogDescription>
+            </DialogHeader>
+            <div className="mt-4 space-y-3">
+              {activeTab === 'base' ? (
+                <>
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors">
+                    <code className="text-sm font-mono bg-white px-3 py-1.5 rounded border border-slate-200 text-slate-700">
+                      {"{{project_name}}"}
+                    </code>
+                    <span className="text-sm text-muted-foreground">Project name</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors">
+                    <code className="text-sm font-mono bg-white px-3 py-1.5 rounded border border-slate-200 text-slate-700">
+                      {"{{user_role}}"}
+                    </code>
+                    <span className="text-sm text-muted-foreground">User role</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors">
+                    <code className="text-sm font-mono bg-white px-3 py-1.5 rounded border border-slate-200 text-slate-700">
+                      {"{{date}}"}
+                    </code>
+                    <span className="text-sm text-muted-foreground">Current date</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors">
+                    <code className="text-sm font-mono bg-white px-3 py-1.5 rounded border border-slate-200 text-slate-700">
+                      {"{{summary_length}}"}
+                    </code>
+                    <span className="text-sm text-muted-foreground">Summary length</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors">
+                    <code className="text-sm font-mono bg-white px-3 py-1.5 rounded border border-slate-200 text-slate-700">
+                      {"{{key_points}}"}
+                    </code>
+                    <span className="text-sm text-muted-foreground">Key points</span>
+                  </div>
+                </>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
     </AppLayout>
   );
 }

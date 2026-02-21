@@ -76,7 +76,7 @@ export const useTenantStore = create<TenantStore>((set) => ({
   fetchTenants: async () => {
     set({ isLoading: true, error: null });
     try {
-      const response = await fetch(`${API_BASE}/api/admin/tenants`, {
+      const response = await fetch(`${API_BASE}/api/system/tenants`, {
         credentials: "include",
       });
       if (!response.ok) {
@@ -97,7 +97,7 @@ export const useTenantStore = create<TenantStore>((set) => ({
   createTenant: async (name: string, domain: string) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await fetch(`${API_BASE}/api/admin/tenants`, {
+      const response = await fetch(`${API_BASE}/api/system/tenants`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -127,7 +127,7 @@ export const useTenantStore = create<TenantStore>((set) => ({
   updateTenant: async (tenantId: string, name: string, domain: string) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await fetch(`${API_BASE}/api/admin/tenants/${tenantId}`, {
+      const response = await fetch(`${API_BASE}/api/system/tenants/${tenantId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -159,7 +159,7 @@ export const useTenantStore = create<TenantStore>((set) => ({
   deleteTenant: async (tenantId: string) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await fetch(`${API_BASE}/api/admin/tenants/${tenantId}`, {
+      const response = await fetch(`${API_BASE}/api/system/tenants/${tenantId}`, {
         method: "DELETE",
         credentials: "include",
       });
@@ -187,7 +187,7 @@ export const useTenantStore = create<TenantStore>((set) => ({
     set({ isLoading: true, error: null });
     try {
       const response = await fetch(
-        `${API_BASE}/api/admin/tenants/${tenantId}/users`,
+        `${API_BASE}/api/system/tenants/${tenantId}/users`,
         { credentials: "include" }
       );
       if (!response.ok) {
@@ -215,7 +215,7 @@ export const useTenantStore = create<TenantStore>((set) => ({
     set({ isLoading: true, error: null });
     try {
       const response = await fetch(
-        `${API_BASE}/api/admin/tenants/${tenantId}/users`,
+        `${API_BASE}/api/system/tenants/${tenantId}/users`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -252,7 +252,7 @@ export const useTenantStore = create<TenantStore>((set) => ({
     set({ isLoading: true, error: null });
     try {
       const response = await fetch(
-        `${API_BASE}/api/admin/tenants/${tenantId}/users/${userId}`,
+        `${API_BASE}/api/system/tenants/${tenantId}/users/${userId}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -287,7 +287,7 @@ export const useTenantStore = create<TenantStore>((set) => ({
     set({ isLoading: true, error: null });
     try {
       const response = await fetch(
-        `${API_BASE}/api/admin/tenants/${tenantId}/users/${userId}`,
+        `${API_BASE}/api/system/tenants/${tenantId}/users/${userId}`,
         {
           method: "DELETE",
           credentials: "include",

@@ -146,6 +146,7 @@ export default function ProjectsPage() {
   };
 
   const openProject = (projectId: string) => {
+    // Navigate to project's chat page with project context
     setLocation(`/chat/${projectId}`);
   };
 
