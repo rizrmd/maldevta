@@ -75,10 +75,19 @@ export default function ProjectSelectorPage() {
 
   // Load projects on mount
   useEffect(() => {
+    if (user?.role === "system") {
+      setLocation("/system/tenants");
+      return;
+    }
+
     if (!hasInitialized) {
       loadProjects();
     }
-  }, [hasInitialized, loadProjects]);
+  }, [hasInitialized, loadProjects, setLocation, user?.role]);
+
+  if (user?.role === "system") {
+    return null;
+  }
 
   const handleSelectProject = (project: Project) => {
     selectProject(project.id);

@@ -1,4 +1,4 @@
-import { Route, Switch } from "wouter";
+import { Route, Switch, useLocation } from "wouter";
 import { useEffect, useState } from "react";
 import { useAuthStore } from "@/stores/authStore";
 
@@ -24,6 +24,9 @@ import LicenseVerifyPage from "@/pages/LicenseVerify";
 import LicenseSetupPage from "@/pages/LicenseSetup";
 import NotFoundPage from "@/pages/NotFound";
 import { AdminTenantsPage } from "@/pages/AdminTenants";
+import SystemTenantCreatePage from "@/pages/SystemTenantCreate";
+import SystemTenantEditPage from "@/pages/SystemTenantEdit";
+import SystemTenantUsersPage from "@/pages/SystemTenantUsers";
 import LLMEndpointsPage from "@/pages/LLMEndpoints";
 import WhatsAppPage from "@/pages/WhatsApp";
 import { SetupRequired } from "@/components/setup-required";
@@ -39,6 +42,16 @@ function LoadingScreen() {
       </div>
     </div>
   );
+}
+
+function RedirectToLogin() {
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    setLocation("/login", { replace: true });
+  }, [setLocation]);
+
+  return null;
 }
 
 function LicenseCheck({ children }: { children: React.ReactNode }) {
@@ -121,7 +134,7 @@ function App() {
         {/* Public routes - license setup */}
         <Route path="/license/setup" component={LicenseSetupPage} />
         <Route path="/license/verify" component={LicenseVerifyPage} />
-        <Route path="/admin-setup" component={AdminSetupPage} />
+        <Route path="/admin-setup" component={RedirectToLogin} />
 
         {/* Login route - accessible when licensed but not authenticated */}
         <Route path="/login" component={LoginPage} />
@@ -169,6 +182,9 @@ function App() {
             <Route path="/billing" component={BillingPage} />
             <Route path="/payment" component={PaymentPage} />
             <Route path="/system/tenants" component={AdminTenantsPage} />
+            <Route path="/system/tenants/new" component={SystemTenantCreatePage} />
+            <Route path="/system/tenants/:tenantId/edit" component={SystemTenantEditPage} />
+            <Route path="/system/tenants/:tenantId/users" component={SystemTenantUsersPage} />
             <Route path="/system/llm-endpoints" component={LLMEndpointsPage} />
           </Switch>
         </ProtectedRoute>

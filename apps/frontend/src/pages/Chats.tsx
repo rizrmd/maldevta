@@ -199,8 +199,6 @@ export default function ChatsPage() {
     ]);
   }, [selectedConversation]);
 
-  const selectedProject = projects.find((p) => p.id === selectedProjectId);
-
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedProjectId || !selectedConversation) {
       return;

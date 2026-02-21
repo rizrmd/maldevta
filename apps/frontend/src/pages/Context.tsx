@@ -19,9 +19,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Save, FileText, Settings2, Clock, LayoutGrid, Eye, Code, X } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
-import { Label } from "@/components/ui/label";
+import { Save, FileText, LayoutGrid, Eye, Code } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -35,16 +33,6 @@ type ApiError = {
   message: string;
   status?: number;
   code?: string;
-};
-
-type ProjectResponse = {
-  id: string;
-  name: string;
-  whatsapp_enabled: boolean;
-};
-
-type ListProjectsResponse = {
-  projects: ProjectResponse[];
 };
 
 type ContextResponse = {
@@ -99,12 +87,10 @@ async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export default function ContextPage() {
-  const { user } = useAuth();
   const params = useParams<{ projectId: string }>();
   const [location] = useLocation();
   const [, setLocation] = useLocation();
 
-  const [projects, setProjects] = useState<ProjectResponse[]>([]);
   const [baseContext, setBaseContext] = useState("");
   const [compactionContext, setCompactionContext] = useState("");
   const [loading, setLoading] = useState(true);
@@ -134,21 +120,6 @@ export default function ContextPage() {
       }
     }
   }, [location, selectedProjectId, setLocation]);
-
-  // Load projects
-  useEffect(() => {
-    const loadProjects = async () => {
-      try {
-        const response = await apiRequest<ListProjectsResponse>("/projects");
-        const projectList = response.projects || [];
-        setProjects(projectList);
-      } catch (err) {
-        const apiError = err as ApiError;
-        setError(apiError.message || "Failed to load projects");
-      }
-    };
-    loadProjects();
-  }, []);
 
   // Load context for selected project
   useEffect(() => {
@@ -199,8 +170,6 @@ export default function ContextPage() {
       setSaving(false);
     }
   };
-
-  const selectedProject = projects.find((p) => p.id === selectedProjectId);
 
   return (
     <AppLayout

@@ -91,11 +91,10 @@ function showToast(message: string, type: "success" | "error" = "success") {
 export function EmbedSettings() {
   const params = useParams<{ projectId: string }>();
   const projectId = params?.projectId || "";
-  const { currentProject, projects, selectProject, loadProjects, hasInitialized } = useProjectStore();
+  const { projects, selectProject, loadProjects, hasInitialized } = useProjectStore();
 
   const [embedToken, setEmbedToken] = useState<string | null>(null);
   const [customCss, setCustomCss] = useState("");
-  const [project, setProject] = useState<ProjectResponse | null>(null);
 
   // Load projects and sync with URL
   useEffect(() => {
@@ -144,7 +143,6 @@ export function EmbedSettings() {
       // Load project data
       const projectData = await apiRequest<{ success: boolean; data: ProjectResponse }>(`/projects/${projectId}`);
       if (projectData.success) {
-        setProject(projectData.data);
         setEmbedToken(projectData.data.id);
         setShowHistory(projectData.data.show_history ?? false);
         setUserMode(projectData.data.use_client_uid ? "uid" : "current");

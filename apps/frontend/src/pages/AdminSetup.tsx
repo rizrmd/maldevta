@@ -24,8 +24,7 @@ export default function AdminSetupPage() {
   const [tenantId, setTenantId] = useState("");
 
   const [adminUser, setAdminUser] = useState({
-    username: "",
-    email: "",
+    username: "system",
     password: "",
   });
 
@@ -107,7 +106,6 @@ export default function AdminSetupPage() {
           license_key: licenseKey,
           tenant_id: tenantId,
           username: adminUser.username,
-          email: adminUser.email,
           password: adminUser.password,
         }),
       });
@@ -252,20 +250,9 @@ export default function AdminSetupPage() {
                   <Label htmlFor="username">Username</Label>
                   <Input
                     id="username"
-                    placeholder="admin"
+                    placeholder="system"
                     value={adminUser.username}
                     onChange={(e) => setAdminUser({ ...adminUser, username: e.target.value })}
-                    disabled={loading}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="admin@example.com"
-                    value={adminUser.email}
-                    onChange={(e) => setAdminUser({ ...adminUser, email: e.target.value })}
                     disabled={loading}
                   />
                 </div>
