@@ -27,6 +27,8 @@ import { AdminTenantsPage } from "@/pages/AdminTenants";
 import SystemTenantCreatePage from "@/pages/SystemTenantCreate";
 import SystemTenantEditPage from "@/pages/SystemTenantEdit";
 import SystemTenantUsersPage from "@/pages/SystemTenantUsers";
+import SystemTenantUserCreatePage from "@/pages/SystemTenantUserCreate";
+import SystemTenantUserEditPage from "@/pages/SystemTenantUserEdit";
 import LLMEndpointsPage from "@/pages/LLMEndpoints";
 import WhatsAppPage from "@/pages/WhatsApp";
 import { SetupRequired } from "@/components/setup-required";
@@ -185,6 +187,8 @@ function App() {
             <Route path="/system/tenants/new" component={SystemTenantCreatePage} />
             <Route path="/system/tenants/:tenantId/edit" component={SystemTenantEditPage} />
             <Route path="/system/tenants/:tenantId/users" component={SystemTenantUsersPage} />
+            <Route path="/system/tenants/:tenantId/users/new" component={SystemTenantUserCreatePage} />
+            <Route path="/system/tenants/:tenantId/users/:userId/edit" component={SystemTenantUserEditPage} />
             <Route path="/system/llm-endpoints" component={LLMEndpointsPage} />
           </Switch>
         </ProtectedRoute>

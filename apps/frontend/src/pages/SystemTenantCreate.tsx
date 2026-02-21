@@ -4,10 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useTenantStore } from "@/stores/tenantStore";
-import { ArrowLeft, Building2, Loader2 } from "lucide-react";
+import { useAuthStore } from "@/stores/authStore";
+import { ArrowLeft, Building2, Loader2, LogOut } from "lucide-react";
 
 export default function SystemTenantCreatePage() {
   const [, setLocation] = useLocation();
+  const logout = useAuthStore((state) => state.logout);
   const { createTenant, error, setError } = useTenantStore();
   const [name, setName] = useState("");
   const [domain, setDomain] = useState("");
@@ -24,6 +26,11 @@ export default function SystemTenantCreatePage() {
     }
   };
 
+  const handleLogout = async () => {
+    await logout();
+    setLocation("/login", { replace: true });
+  };
+
   return (
     <div className="h-screen overflow-auto bg-background">
       <div className="border-b bg-card">
@@ -35,6 +42,12 @@ export default function SystemTenantCreatePage() {
           <div>
             <h1 className="text-xl font-semibold">Create Tenant</h1>
             <p className="text-sm text-muted-foreground">Add a new tenant to your platform</p>
+          </div>
+          <div className="ml-auto">
+            <Button variant="outline" onClick={handleLogout}>
+              <LogOut className="mr-2 h-4 w-4" />
+              Log out
+            </Button>
           </div>
         </div>
       </div>

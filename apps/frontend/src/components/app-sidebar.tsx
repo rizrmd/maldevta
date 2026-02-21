@@ -135,26 +135,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const projectSelectorItems = React.useMemo(() => {
     if (isInProjectPage) return [];
 
-    const items: MenuItem[] = [
+    return [
       {
         title: "Projects",
         url: "/",
         icon: Folder,
       }
     ];
-
-    // Admin-only items when no project selected
-    if (isAdmin) {
-      items.push({
-        title: "Tenants",
-        url: "/system/tenants",
-        icon: Building2,
-      });
-
-    }
-
-    return items;
-  }, [isAdmin, isInProjectPage]);
+  }, [isInProjectPage]);
 
   // === PLATFORM MENU (SAAT DI PROJECT PAGE) ===
   // Chat, History, Workspace (admin only - collapsible)

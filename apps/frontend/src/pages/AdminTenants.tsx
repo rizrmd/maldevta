@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useTenantStore } from "@/stores/tenantStore";
 import type { Tenant } from "@/stores/tenantStore";
+import { useAuthStore } from "@/stores/authStore";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -12,10 +13,12 @@ import {
   Users,
   Globe,
   Loader2,
+  LogOut,
 } from "lucide-react";
 
 export function AdminTenantsPage() {
   const [, setLocation] = useLocation();
+  const logout = useAuthStore((state) => state.logout);
   const { tenants, isLoading, error, fetchTenants, deleteTenant } =
     useTenantStore();
 
@@ -24,6 +27,12 @@ export function AdminTenantsPage() {
   useEffect(() => {
     fetchTenants();
   }, [fetchTenants]);
+
+  const handleLogout = async () => {
+    await logout();
+    setLocation("/login", { replace: true });
+  };
+
   const handleDeleteTenant = async (tenant: Tenant) => {
     if (!confirm(`Delete tenant "${tenant.name}"? This cannot be undone.`)) return;
     setIsSubmitting(true);
@@ -53,10 +62,16 @@ export function AdminTenantsPage() {
               </p>
             </div>
           </div>
-          <Button onClick={() => setLocation("/system/tenants/new")}>
-            <Plus className="mr-2 h-4 w-4" />
-            Create Tenant
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={handleLogout}>
+              <LogOut className="mr-2 h-4 w-4" />
+              Log out
+            </Button>
+            <Button onClick={() => setLocation("/system/tenants/new")}>
+              <Plus className="mr-2 h-4 w-4" />
+              Create Tenant
+            </Button>
+          </div>
         </div>
       </div>
 

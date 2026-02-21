@@ -26,6 +26,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Plus,
   MessageCircle as WhatsAppIcon,
@@ -35,18 +36,23 @@ import {
   MoreVertical,
   Pencil,
   Trash2,
+  ChevronsUpDown,
+  LogOut,
 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useProjectStore, useUIStore, useAuthStore } from "@/stores";
 import type { Project } from "@/stores";
 
 export default function ProjectSelectorPage() {
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
+  const logout = useAuthStore((state) => state.logout);
   const [, setLocation] = useLocation();
   const {
     projects,
@@ -158,8 +164,14 @@ export default function ProjectSelectorPage() {
   const projectToDelete = dialogData?.project as Project | undefined;
   const projectToRename = dialogData?.project as Project | undefined;
 
+  const handleLogout = async () => {
+    await logout();
+    setLocation("/login", { replace: true });
+  };
+
   return (
     <AppLayout
+      showSidebar={false}
       header={
         <Breadcrumb>
           <BreadcrumbList>
@@ -168,6 +180,29 @@ export default function ProjectSelectorPage() {
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
+      }
+      headerRight={
+        user ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-10 px-2">
+                <Avatar className="h-7 w-7">
+                  <AvatarFallback>{(user.username || "U").slice(0, 2).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <span className="ml-2 max-w-32 truncate text-sm">{user.username || "User"}</span>
+                <ChevronsUpDown className="ml-2 h-4 w-4 text-muted-foreground" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="min-w-48">
+              <DropdownMenuLabel>{user.username || "User"}</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={handleLogout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                Log out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : null
       }
     >
       <div className="mx-auto grid max-w-6xl gap-6">
@@ -285,11 +320,6 @@ export default function ProjectSelectorPage() {
                         )}
                     </div>
 
-                    {/* Project ID */}
-                    <div className="rounded-md bg-slate-50 px-2 py-1 text-xs font-mono text-slate-600">
-                      ID: {project.id.slice(0, 8)}...
-                    </div>
-
                     {/* Admin actions */}
                     {isAdmin && (
                       <DropdownMenu>
@@ -332,17 +362,6 @@ export default function ProjectSelectorPage() {
             </div>
           )}
 
-          {/* User info footer */}
-          {user && (
-            <div className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">
-              <div className="flex items-center justify-between">
-                <span>
-                  Signed in as: <span className="font-medium">{user.role}</span>
-                </span>
-                <span className="font-mono">{user.userId?.slice(0, 8)}...</span>
-              </div>
-            </div>
-          )}
         </div>
 
       {/* Create Project Dialog */}
