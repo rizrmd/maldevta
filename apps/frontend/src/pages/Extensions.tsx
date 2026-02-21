@@ -10,7 +10,6 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -37,19 +36,12 @@ import {
   LayoutGrid,
   RefreshCw,
   Bug,
-  MoreVertical,
   Trash2,
-  ChevronDown,
-  ChevronUp,
-  Copy,
   Edit,
   Power,
   RotateCcw,
   MessageSquare,
   Layers,
-  FileText as FileTextIcon,
-  Settings,
-  Eye,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useUIStore } from "@/stores";
@@ -95,7 +87,6 @@ export default function ExtensionsPage() {
   // Action states
   const [togglingExtension, setTogglingExtension] = useState<string | null>(null);
   const [reloadingExtensions, setReloadingExtensions] = useState<Set<string>>(new Set());
-  const [expandedCapabilities, setExpandedCapabilities] = useState<Set<string>>(new Set());
 
   // Dialog states
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -699,14 +690,6 @@ export default function ExtensionsPage() {
     return extensions.filter(ext => ext.category.toLowerCase() === categoryId.toLowerCase()).length;
   };
 
-  const getCapabilityBadgeColor = (capability: string) => {
-    const lower = capability.toLowerCase();
-    if (lower.includes("network") || lower.includes("web")) return "bg-orange-100 text-orange-700 border-orange-200";
-    if (lower.includes("read") || lower.includes("chat")) return "bg-green-100 text-green-700 border-green-200";
-    if (lower.includes("write") || lower.includes("modify")) return "bg-red-100 text-red-700 border-red-200";
-    return "bg-blue-100 text-blue-700 border-blue-200";
-  };
-
   const getCapabilityTagColor = (capability: string) => {
     const lower = capability.toLowerCase();
     if (lower.includes("network") || lower.includes("web")) return "bg-orange-400";
@@ -715,20 +698,6 @@ export default function ExtensionsPage() {
     if (lower.includes("process") || lower.includes("upload")) return "bg-yellow-400";
     if (lower.includes("generate") || lower.includes("ai")) return "bg-purple-500";
     return "bg-gray-500";
-  };
-
-  const getCategoryIcon = (category: string) => {
-    const lower = category.toLowerCase();
-    switch (lower) {
-      case "database": return Database;
-      case "documents": return FileText;
-      case "utilities": return Wrench;
-      case "visualization": return BarChart3;
-      case "web": return Globe;
-      case "chat": return MessageSquare;
-      case "context": return Layers;
-      default: return Puzzle;
-    }
   };
 
   return (
