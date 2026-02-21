@@ -9,26 +9,14 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, Trash2, Search, LayoutGrid } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
 import { Input } from "@/components/ui/input";
 
 type ApiError = {
   message: string;
   status?: number;
   code?: string;
-};
-
-type ProjectResponse = {
-  id: string;
-  name: string;
-  whatsapp_enabled: boolean;
-};
-
-type ListProjectsResponse = {
-  projects: ProjectResponse[];
 };
 
 // Conversation types
@@ -95,7 +83,6 @@ export default function HistoryPage() {
   const [location] = useLocation();
   const [, setLocation] = useLocation();
 
-  const [projects, setProjects] = useState<ProjectResponse[]>([]);
   const [conversations, setConversations] = useState<ConversationResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -114,21 +101,6 @@ export default function HistoryPage() {
       }
     }
   }, [location, selectedProjectId, setLocation]);
-
-  // Load projects
-  useEffect(() => {
-    const loadProjects = async () => {
-      try {
-        const response = await apiRequest<ListProjectsResponse>("/projects");
-        const projectList = response.projects || [];
-        setProjects(projectList);
-      } catch (err) {
-        const apiError = err as ApiError;
-        setError(apiError.message || "Failed to load projects");
-      }
-    };
-    loadProjects();
-  }, []);
 
   // Load conversations for selected project
   useEffect(() => {
@@ -221,13 +193,11 @@ export default function HistoryPage() {
     }
   };
 
-  const openConversation = (convId: string) => {
+  const openConversation = () => {
     if (selectedProjectId) {
       setLocation(`/chat/${selectedProjectId}`);
     }
   };
-
-  const selectedProject = projects.find((p) => p.id === selectedProjectId);
 
   return (
     <AppLayout
@@ -331,7 +301,7 @@ export default function HistoryPage() {
                               <div
                                 key={conv.id}
                                 className="group relative flex items-center gap-3 py-3 px-2 -mx-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
-                                onClick={() => openConversation(conv.id)}
+                                onClick={openConversation}
                               >
                                 {/* Content */}
                                 <div className="flex-1 min-w-0">

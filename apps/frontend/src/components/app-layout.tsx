@@ -11,12 +11,52 @@ import { cn } from "@/lib/utils";
 export default function AppLayout({
   children,
   header,
+  headerRight,
   containerClassName,
+  showSidebar = true,
 }: {
   children?: React.ReactNode;
   header?: React.ReactNode;
+  headerRight?: React.ReactNode;
   containerClassName?: string;
+  showSidebar?: boolean;
 }) {
+  if (!showSidebar) {
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="flex h-16 shrink-0 items-center border-b">
+          <div className="flex w-full items-center gap-2 px-4">
+            <div className="flex-1">{header}</div>
+            {headerRight}
+          </div>
+        </header>
+        <div className="flex flex-1 pt-0 overflow-auto relative">
+          <main className="absolute inset-0 px-4 pb-4 flex flex-col">
+            <div
+              className={cn(
+                "relative flex-1 rounded-2xl border bg-white min-h-0",
+                containerClassName === undefined ? "p-6 overflow-auto" : cn("overflow-hidden", containerClassName)
+              )}
+            >
+              {children ? (
+                children
+              ) : (
+                <div className="flex min-h-screen flex-col bg-slate-50/50">
+                  <div className="grid auto-rows-min gap-4 md:grid-cols-3">
+                    <div className="bg-muted/50 aspect-video rounded-xl" />
+                    <div className="bg-muted/50 aspect-video rounded-xl" />
+                    <div className="bg-muted/50 aspect-video rounded-xl" />
+                  </div>
+                  <div className="bg-muted/50 flex-1 rounded-xl md:min-h-min" />
+                </div>
+              )}
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -31,6 +71,7 @@ export default function AppLayout({
             <div className="flex-1">
               {header}
             </div>
+            {headerRight}
           </div>
         </header>
         <div className="flex flex-1 pt-0 overflow-auto relative">

@@ -541,8 +541,8 @@ func SetupCreateAdmin(ctx context.Context, p *setupCreateAdminParams) (*setupCre
 	if p == nil || p.LicenseKey == "" {
 		return nil, badRequest("license_key is required")
 	}
-	if p.TenantID == "" || p.Username == "" || p.Password == "" {
-		return nil, badRequest("tenant_id, username, and password are required")
+	if p.Username == "" || p.Password == "" {
+		return nil, badRequest("username and password are required")
 	}
 
 	// Verify license
@@ -563,11 +563,13 @@ func SetupCreateAdmin(ctx context.Context, p *setupCreateAdminParams) (*setupCre
 	now := time.Now().UTC()
 	err = q().CreateUser(ctx, iamdb.CreateUserParams{
 		ID:           userID,
-		TenantID:     sql.NullString{String: p.TenantID, Valid: true},
+		// First setup user is global system user (not tenant-bound),
+		// so it can authenticate from any host.
+		TenantID:     sql.NullString{},
 		Username:     p.Username,
 		Email:        sql.NullString{String: p.Email, Valid: p.Email != ""},
 		PasswordHash: sql.NullString{String: passwordHash, Valid: true},
-		Role:         string(roleAdmin),
+		Role:         string(roleSystem),
 		Source:       "manual",
 		CreatedAt:    now,
 		UpdatedAt:    now.Unix(), // CreateUser query uses INTEGER or DATETIME?

@@ -126,7 +126,6 @@ export default function FilesPage() {
 
   const [projects, setProjects] = useState<ProjectResponse[]>([]);
   const [files, setFiles] = useState<FileItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
 
@@ -154,8 +153,6 @@ export default function FilesPage() {
       } catch (err) {
         const apiError = err as ApiError;
         setError(apiError.message || "Failed to load projects");
-      } finally {
-        setLoading(false);
       }
     };
     loadProjects();
