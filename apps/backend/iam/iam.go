@@ -44,9 +44,16 @@ func setupSQLite(ctx context.Context) (*sql.DB, error) {
 	}
 
 	dbPath := filepath.Join(dataDir, "iam.db")
+	fmt.Printf("[setupSQLite] Database path: %s\n", dbPath)
 	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %w", err)
+	}
+	fmt.Printf("[setupSQLite] Database opened, checking if file exists...\n")
+	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
+		fmt.Printf("[setupSQLite] WARNING: Database file does not exist yet after sql.Open\n")
+	} else {
+		fmt.Printf("[setupSQLite] Database file exists\n")
 	}
 
 	// Run migrations
@@ -1828,6 +1835,12 @@ func runMigrations(ctx context.Context, db *sql.DB) error {
 
 	if currentVersion < 6 {
 		if err := applyMigration(ctx, db, 6); err != nil {
+			return err
+		}
+	}
+
+	if currentVersion < 7 {
+		if err := applyMigration(ctx, db, 7); err != nil {
 			return err
 		}
 	}
