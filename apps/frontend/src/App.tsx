@@ -17,6 +17,7 @@ import EmbedRedirectorPage from "@/pages/Embed";
 import { DeveloperAPIPage } from "@/components/pages/developer/developer-api";
 import { EmbedSettings } from "@/components/pages/developer/embed-settings";
 import SettingsPage from "@/pages/Settings";
+import SubClientSettingsPage from "@/pages/SubClientSettings";
 // import SupportPage from "@/pages/Support"; // TODO: Create SupportPage
 import BillingPage from "@/pages/Billing";
 import PaymentPage from "@/pages/Payment";
@@ -130,8 +131,11 @@ function App() {
             <Route path="/projects/:projectId/chat" component={ChatPage} />
 
             <Route path="/projects" component={ProjectsPage} />
+            <Route path="/projects/:projectId/api" component={DeveloperAPIPage} />
             <Route path="/api/:projectId" component={DeveloperAPIPage} />
+            <Route path="/projects/:projectId/embed" component={EmbedSettings} />
             <Route path="/embed/:projectId" component={EmbedSettings} />
+            <Route path="/sub-clients/settings/:projectId" component={SubClientSettingsPage} />
             <Route path="/whatsapp" component={ChatsPage} />
             <Route path="/chats" component={ChatsPage} />
             <Route path="/files" component={FilesPage} />

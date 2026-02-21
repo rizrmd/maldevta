@@ -4,6 +4,8 @@ export type { AuthData, SessionStatus } from "./authStore";
 export { useProjectStore } from "./projectStore";
 export type { Project } from "./projectStore";
 
+export { useSubClientStore } from "./subClientStore";
+
 export { useChatStore } from "./chatStore";
 export type { Message, Conversation, MessageRole, ToolInvocation } from "./chatStore";
 

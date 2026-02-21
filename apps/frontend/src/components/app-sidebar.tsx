@@ -63,7 +63,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
     init();
 
-    // Project pages: /chat/:id, /files, /memory, /history, /settings/context, /whatsapp, /extensions, /developer, /api/:id, /embed/:id
+    // Project pages: /chat/:id, /files, /memory, /history, /settings/context, /whatsapp, /extensions, /developer, /api/:id, /embed/:id, /sub-clients/settings/:id
     // Non-project pages: /, /projects, /dashboard, /chats, /billing, /payment
     const projectPagePatterns = [
       /^\/chat(\/|$)/,
@@ -76,6 +76,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       /^\/developer/,
       /^\/api\/([^/]+)/,  // /api/:projectId
       /^\/embed\/([^/]+)/,  // /embed/:projectId
+      /^\/sub-clients\/settings\/([^/]+)/,  // /sub-clients/settings/:projectId
       /^\/sub-clients/,
     ];
 
@@ -90,8 +91,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       const apiPathMatch = pathname.match(/^\/api\/([^\/]+)/);
       // Check for /embed/:projectId pattern
       const embedPathMatch = pathname.match(/^\/embed\/([^\/]+)/);
+      // Check for /sub-clients/settings/:projectId pattern
+      const subClientSettingsMatch = pathname.match(/^\/sub-clients\/settings\/([^\/]+)/);
 
-      const projectId = chatPathMatch?.[1] || apiPathMatch?.[1] || embedPathMatch?.[1];
+      const projectId = chatPathMatch?.[1] || apiPathMatch?.[1] || embedPathMatch?.[1] || subClientSettingsMatch?.[1];
 
       if (projectId) {
         const project = projects.find(p => p.id === projectId);
@@ -193,6 +196,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     if (!isInProjectPage) return [];
     if (!isAdmin) return [];
 
+    // Get projectId from currentProject or URL
+    let projectId = currentProject?.id;
+    if (!projectId) {
+      // Try to extract from URL
+      const chatMatch = pathname.match(/^\/chat\/([^\/]+)/);
+      const apiMatch = pathname.match(/^\/api\/([^\/]+)/);
+      const embedMatch = pathname.match(/^\/embed\/([^\/]+)/);
+      const subClientMatch = pathname.match(/^\/sub-clients\/settings\/([^\/]+)/);
+      projectId = chatMatch?.[1] || apiMatch?.[1] || embedMatch?.[1] || subClientMatch?.[1];
+    }
+
+    console.log('[AppSidebar] managementItems - currentProject:', currentProject?.id, 'extracted projectId:', projectId, 'pathname:', pathname);
+
     const items: MenuItem[] = [];
 
     // WhatsApp (khusus project yang aktif)
@@ -214,7 +230,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         },
         {
           title: "Settings",
-          url: "/sub-clients/settings",
+          url: projectId ? `/sub-clients/settings/${projectId}` : "/sub-clients/settings",
         },
       ]
     });
@@ -227,11 +243,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       items: [
         {
           title: "API",
-          url: currentProject ? `/api/${currentProject.id}` : "/api",
+          url: projectId ? `/api/${projectId}` : "/api",
         },
         {
           title: "Embed",
-          url: currentProject ? `/embed/${currentProject.id}` : "/embed",
+          url: projectId ? `/embed/${projectId}` : "/embed",
         },
         {
           title: "Extensions",
@@ -240,8 +256,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       ]
     });
 
+    console.log('[AppSidebar] Sub Client Settings URL:', projectId ? `/sub-clients/settings/${projectId}` : "/sub-clients/settings");
+
     return items;
-  }, [isInProjectPage, isAdmin, currentProject]);
+  }, [isInProjectPage, isAdmin, currentProject, pathname]);
 
 
   return (

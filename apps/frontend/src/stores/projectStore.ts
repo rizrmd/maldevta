@@ -56,6 +56,8 @@ export type Project = {
   name: string;
   whatsapp_enabled: boolean;
   subclient_enabled: boolean;
+  sub_clients_enabled?: boolean;
+  sub_clients_registration_enabled?: boolean;
   created_by_user_id: string;
   created_at: string;
 };
@@ -80,6 +82,7 @@ interface ProjectStore {
   deleteProject: (projectId: string) => Promise<void>;
   renameProject: (projectId: string, newName: string) => Promise<void>;
   setError: (error: string | null) => void;
+  updateProjectSubClientSettings: (projectId: string, settings: { sub_clients_enabled?: boolean; sub_clients_registration_enabled?: boolean }) => Promise<void>;
 }
 
 export const useProjectStore = create<ProjectStore>((set, get) => ({
@@ -189,4 +192,29 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
   },
 
   setError: (error) => set({ error }),
+
+  updateProjectSubClientSettings: async (projectId: string, settings: { sub_clients_enabled?: boolean; sub_clients_registration_enabled?: boolean }) => {
+    set({ isLoading: true, error: null });
+    try {
+      await apiRequest(`/projects/${projectId}`, {
+        method: "PUT",
+        body: JSON.stringify(settings),
+      });
+
+      set((state) => ({
+        projects: state.projects.map((p) =>
+          p.id === projectId ? { ...p, ...settings } : p
+        ),
+        currentProject:
+          state.currentProject?.id === projectId
+            ? { ...state.currentProject, ...settings }
+            : state.currentProject,
+        isLoading: false,
+      }));
+    } catch (err) {
+      const apiError = err as ApiError;
+      set({ error: apiError.message || "Failed to update settings", isLoading: false });
+      throw err;
+    }
+  },
 }));
