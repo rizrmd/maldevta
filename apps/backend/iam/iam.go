@@ -760,6 +760,7 @@ type projectResponse struct {
 	ShowHistory      bool     `json:"show_history"`
 	UseClientUID     bool     `json:"use_client_uid"`
 	AllowedOrigins   []string `json:"allowed_origins"`
+	ContextRole      string   `json:"context_role"`
 }
 
 type listProjectsResponse struct {
@@ -1141,6 +1142,13 @@ func ListProjects(ctx context.Context) (*listProjectsResponse, error) {
 
 	out := make([]*projectResponse, len(projects))
 	for i, p := range projects {
+		// Get context_role for each project
+		var contextRole string
+		_ = db.QueryRowContext(ctx, "SELECT COALESCE(context_role, 'general') FROM projects WHERE id = ?", p.ID).Scan(&contextRole)
+		if contextRole == "" {
+			contextRole = "general"
+		}
+
 		out[i] = &projectResponse{
 			ID:               p.ID,
 			TenantID:         p.TenantID,
@@ -1152,6 +1160,7 @@ func ListProjects(ctx context.Context) (*listProjectsResponse, error) {
 			ShowHistory:      false,      // Default value
 			UseClientUID:     false,      // Default value
 			AllowedOrigins:   []string{}, // Default value
+			ContextRole:      contextRole,
 		}
 	}
 
@@ -1979,4 +1988,152 @@ func newID(prefix string) string {
 	b := make([]byte, 10)
 	_, _ = rand.Read(b)
 	return prefix + "_" + hex.EncodeToString(b)
+}
+
+// ============================================================================
+// ROLE-BASED CHAT APIS
+// ============================================================================
+
+type getProjectRoleResponse struct {
+	ContextRole string `json:"context_role"`
+}
+
+type updateProjectRoleRequest struct {
+	ContextRole string `json:"context_role" validate:"required"`
+}
+
+// GetProjectRole retrieves the context role for a project
+//
+//encore:api auth method=GET path=/projects/:projectID/role
+func GetProjectRole(ctx context.Context, projectID string) (*getProjectRoleResponse, error) {
+	raw := auth.Data()
+	data, ok := raw.(*AuthData)
+	if !ok || data == nil || data.ScopeType != scopeTenant {
+		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "tenant session required"}
+	}
+
+	// Get project to verify ownership
+	_, err := q().GetProject(ctx, iamdb.GetProjectParams{
+		ID:       projectID,
+		TenantID: data.TenantID,
+	})
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, &errs.Error{Code: errs.NotFound, Message: "project not found"}
+		}
+		return nil, err
+	}
+
+	// Get context_role from project
+	var contextRole string
+	err = db.QueryRowContext(ctx, "SELECT context_role FROM projects WHERE id = ? AND tenant_id = ?", projectID, data.TenantID).Scan(&contextRole)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, &errs.Error{Code: errs.NotFound, Message: "project not found"}
+		}
+		return nil, err
+	}
+
+	return &getProjectRoleResponse{
+		ContextRole: contextRole,
+	}, nil
+}
+
+// UpdateProjectRole updates the context role for a project
+//
+//encore:api auth method=PUT path=/projects/:projectID/role
+func UpdateProjectRole(ctx context.Context, projectID string, req *updateProjectRoleRequest) (*getProjectRoleResponse, error) {
+	if req == nil || strings.TrimSpace(req.ContextRole) == "" {
+		return nil, badRequest("context_role is required")
+	}
+
+	raw := auth.Data()
+	data, ok := raw.(*AuthData)
+	if !ok || data == nil || data.ScopeType != scopeTenant {
+		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "tenant session required"}
+	}
+
+	// Verify project exists
+	_, err := q().GetProject(ctx, iamdb.GetProjectParams{
+		ID:       projectID,
+		TenantID: data.TenantID,
+	})
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, &errs.Error{Code: errs.NotFound, Message: "project not found"}
+		}
+		return nil, err
+	}
+
+	// Validate role exists
+	role := getRoleByID(req.ContextRole)
+	if role == nil {
+		return nil, badRequest("invalid role ID")
+	}
+
+	// Update project role
+	_, err = db.ExecContext(ctx, "UPDATE projects SET context_role = ? WHERE id = ? AND tenant_id = ?", req.ContextRole, projectID, data.TenantID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &getProjectRoleResponse{
+		ContextRole: req.ContextRole,
+	}, nil
+}
+
+// CheckQuestionScope checks if a question is within the project's role scope
+//
+//encore:api auth method=POST path=/projects/:projectID/check-scope
+func CheckQuestionScope(ctx context.Context, projectID string, req *checkQuestionScopeRequest) (*checkQuestionScopeResponse, error) {
+	if req == nil || strings.TrimSpace(req.Question) == "" {
+		return nil, badRequest("question is required")
+	}
+
+	raw := auth.Data()
+	data, ok := raw.(*AuthData)
+	if !ok || data == nil || data.ScopeType != scopeTenant {
+		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "tenant session required"}
+	}
+
+	// Get project role
+	var contextRole string
+	err := db.QueryRowContext(ctx, "SELECT COALESCE(context_role, 'general') FROM projects WHERE id = ? AND tenant_id = ?", projectID, data.TenantID).Scan(&contextRole)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, &errs.Error{Code: errs.NotFound, Message: "project not found"}
+		}
+		return nil, err
+	}
+
+	if contextRole == "" {
+		contextRole = "general"
+	}
+
+	// Get role definition
+	role := getRoleByID(contextRole)
+
+	// Check if question is in scope
+	inScope := isQuestionInScope(req.Question, role)
+
+	response := &checkQuestionScopeResponse{
+		InScope: inScope,
+		Role:    contextRole,
+	}
+
+	if !inScope && role != nil {
+		response.RefusalMessage = getOutOfScopeResponse(role)
+	}
+
+	return response, nil
+}
+
+type checkQuestionScopeRequest struct {
+	Question string `json:"question"`
+}
+
+type checkQuestionScopeResponse struct {
+	InScope         bool   `json:"in_scope"`
+	Role            string `json:"role"`
+	RefusalMessage  string `json:"refusal_message,omitempty"`
 }

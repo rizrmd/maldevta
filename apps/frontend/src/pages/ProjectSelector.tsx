@@ -86,10 +86,12 @@ export default function ProjectSelectorPage() {
       return;
     }
 
-    if (!hasInitialized) {
-      loadProjects();
-    }
-  }, [hasInitialized, loadProjects, setLocation, user?.role]);
+    // Always try to load projects, even if hasInitialized is true
+    // This ensures we have fresh data after login
+    loadProjects().catch(err => {
+      console.error("Failed to load projects:", err);
+    });
+  }, [loadProjects, setLocation, user?.role]);
 
   if (user?.role === "system") {
     return null;

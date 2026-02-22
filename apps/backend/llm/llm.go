@@ -800,6 +800,7 @@ type ProjectContext struct {
 	Language     string            `json:"language"`
 	Extensions   []string          `json:"extensions"`
 	Metadata     map[string]string `json:"metadata"`
+	ContextRole  string            `json:"context_role,omitempty"`
 }
 
 type GenerateResponse struct {
@@ -837,23 +838,47 @@ func randomHex(n int) string {
 // buildSystemPrompt constructs a system prompt from project context.
 func buildSystemPrompt(ctx *ProjectContext) string {
 	var sb strings.Builder
-	sb.WriteString("You are a helpful AI assistant.\n\n")
+
+	// Build a strict system prompt based on user's instructions
+	sb.WriteString("=== IMPORTANT: STRICT ROLE AND SCOPE COMPLIANCE ===\n\n")
+	sb.WriteString("You are an AI assistant with STRICT limitations on what you can discuss. ")
+	sb.WriteString("You MUST comply with the role and scope defined below.\n\n")
 
 	if ctx.ProjectName != "" {
-		sb.WriteString(fmt.Sprintf("Project: %s\n", ctx.ProjectName))
+		sb.WriteString(fmt.Sprintf("Project: %s\n\n", ctx.ProjectName))
 	}
 
 	if ctx.Instructions != "" {
-		sb.WriteString(fmt.Sprintf("\nInstructions:\n%s\n", ctx.Instructions))
+		sb.WriteString("=== YOUR ROLE AND LIMITATIONS ===\n")
+		sb.WriteString(ctx.Instructions)
+		sb.WriteString("\n\n")
 	}
 
+	sb.WriteString("=== CRITICAL RULES YOU MUST FOLLOW ===\n")
+	sb.WriteString("1. You MUST ONLY answer questions within the scope defined in your role above.\n")
+	sb.WriteString("2. If a question is OUTSIDE your defined scope, you MUST refuse to answer.\n")
+	sb.WriteString("3. When refusing, explain that you can only help with topics in your specific scope.\n")
+	sb.WriteString("4. Do NOT attempt to be helpful by answering questions outside your scope.\n")
+	sb.WriteString("5. Your role is LIMITED - respect these limitations strictly.\n\n")
+
+	sb.WriteString("=== HOW TO REFUSE OUT-OF-SCOPE QUESTIONS ===\n")
+	sb.WriteString("When a user asks something outside your scope, respond with:\n")
+	sb.WriteString("\"Maaf, saya hanya dapat membantu pertanyaan seputar [your scope]. ")
+	sb.WriteString("Pertanyaan Anda tentang [their topic] di luar bidang keahlian saya. ")
+	sb.WriteString("Silakan konsultasikan dengan ahli yang relevan untuk topik tersebut.\"\n\n")
+
 	if ctx.Tone != "" {
-		sb.WriteString(fmt.Sprintf("\nTone: Respond in a %s manner.\n", ctx.Tone))
+		sb.WriteString(fmt.Sprintf("Tone: Respond in a %s manner.\n\n", ctx.Tone))
 	}
 
 	if ctx.Language != "" && ctx.Language != "english" && ctx.Language != "en" {
-		sb.WriteString(fmt.Sprintf("\nRespond in %s.\n", ctx.Language))
+		sb.WriteString(fmt.Sprintf("Language: Respond in %s.\n\n", ctx.Language))
+	} else {
+		sb.WriteString("Language: Respond in the same language as the user's question.\n\n")
 	}
+
+	sb.WriteString("=== REMEMBER ===\n")
+	sb.WriteString("Stay within your defined scope. Do not answer questions outside your expertise.\n")
 
 	return sb.String()
 }

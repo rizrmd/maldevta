@@ -204,6 +204,7 @@ export default function ChatPage() {
   const [copiedFormat, setCopiedFormat] = useState<string | null>(null);
   const [backendConversationId, setBackendConversationId] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [contextInstructions, setContextInstructions] = useState<string>("");
   const projectIdRef = useRef<string>("");
   const conversationIdRef = useRef<string>("");
 
@@ -248,6 +249,29 @@ export default function ChatPage() {
     projectIdRef.current = projectId;
     conversationIdRef.current = conversationId;
   }, [projectId, conversationId]);
+
+  // Load project context
+  useEffect(() => {
+    const currentProjectId = projectIdRef.current;
+    if (!currentProjectId) return;
+
+    const loadContext = async () => {
+      try {
+        const response = await fetch(`/projects/${currentProjectId}/context`, {
+          credentials: "include",
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setContextInstructions(data.content || "");
+        }
+      } catch (error) {
+        console.error("Failed to load project context:", error);
+      }
+    };
+
+    loadContext();
+  }, [projectId]);
 
   // Initialize or load conversation
   useEffect(() => {
@@ -431,12 +455,15 @@ export default function ChatPage() {
       const projectContext = {
         project_id: currentProjectId,
         project_name: currentProject?.name || "Project",
-        instructions: "", // TODO: Load from Context page
+        instructions: contextInstructions, // Load from Context page
         tone: "professional",
         language: "english",
         extensions: [],
         metadata: {},
       };
+
+      // Note: Role-based scope enforcement is now handled by the LLM system prompt
+      // The system prompt contains explicit instructions to refuse out-of-scope questions
 
       // Call LLM API with timeout and retry
       let lastError = null;

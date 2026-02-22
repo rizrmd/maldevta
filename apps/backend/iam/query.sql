@@ -198,3 +198,17 @@ ON CONFLICT(project_id) DO UPDATE SET
   custom_css = excluded.custom_css,
   updated_at = excluded.updated_at
 RETURNING project_id;
+
+-- ============================================================================
+-- ROLE-BASED CHAT QUERIES
+-- ============================================================================
+
+-- name: GetProjectWithRole :one
+SELECT id, tenant_id, name, whatsapp_enabled, subclient_enabled, created_by_user_id, created_at, context_role
+FROM projects
+WHERE id = ? AND tenant_id = ?;
+
+-- name: UpdateProjectRole :exec
+UPDATE projects
+SET context_role = ?
+WHERE id = ? AND tenant_id = ?;

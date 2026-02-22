@@ -60,6 +60,7 @@ export type Project = {
   sub_clients_registration_enabled?: boolean;
   created_by_user_id: string;
   created_at: string;
+  context_role: string;
 };
 
 type ListProjectsResponse = {

@@ -94,3 +94,7 @@ ALTER TABLE users ADD COLUMN email TEXT;
 
 -- Create index for email lookups
 CREATE INDEX IF NOT EXISTS users_email_idx ON users(email);
+
+-- Add context_role column to projects table for role-based chat
+ALTER TABLE projects ADD COLUMN context_role TEXT NOT NULL DEFAULT 'general';
+CREATE INDEX IF NOT EXISTS projects_context_role_idx ON projects(context_role);

@@ -107,7 +107,11 @@ func setupProjectStore(ctx context.Context, tenantID, projectID string) (*sqlsto
 
 	dbPath := filepath.Join(waMetaPath, "whatsmeow.db")
 	logger := walog.Stdout(fmt.Sprintf("wa-store-%s", projectID), "INFO", true)
-	store, err := sqlstore.New(ctx, "sqlite", dbPath+"?_foreign_keys=on", logger)
+
+	// Open database connection with foreign keys enabled
+	// The modernc.org/sqlite driver needs _pragma parameter for foreign keys
+	dsn := dbPath + "?_pragma=foreign_keys(1)"
+	store, err := sqlstore.New(ctx, "sqlite", dsn, logger)
 	if err != nil {
 		return nil, fmt.Errorf("open store: %w", err)
 	}
@@ -128,6 +132,10 @@ func (s *Service) handleEvent(ctx context.Context, pc *projectClient, evt interf
 		go s.reply(context.Background(), pc, v.Info.Chat, text)
 	case *waevents.LoggedOut:
 		pc.lastError = fmt.Sprintf("logged out: %v", v.Reason)
+	case *waevents.ConnectFailure:
+		pc.lastError = fmt.Sprintf("connection failed: %v", v.Reason)
+	case *waevents.Disconnected:
+		pc.lastError = fmt.Sprintf("disconnected")
 	}
 }
 
@@ -214,8 +222,41 @@ func (s *Service) loadProjectContext(ctx context.Context, tenantID, projectID st
 }
 
 func (pc *projectClient) updateQR(code string) {
-	pc.lastQR = code
-	pc.lastQRAt = time.Now()
+	// Be very conservative with QR updates to prevent flipping
+
+	// Case 1: New QR code received
+	if code != "" {
+		// Only update if we don't have a QR yet, or this is genuinely different
+		if pc.lastQR == "" || (pc.lastQR != code && len(code) > 50) {
+			pc.lastQR = code
+			pc.lastQRAt = time.Now()
+
+			// Display QR code in terminal
+			fmt.Printf("\n========================================\n")
+			fmt.Printf("WhatsApp QR Code - Project: %s\n", pc.projectID)
+			fmt.Printf("========================================\n")
+			fmt.Printf("Scan this QR code with your WhatsApp:\n")
+			fmt.Printf("\n")
+			fmt.Printf("%s\n", code)
+			fmt.Printf("\n")
+			fmt.Printf("1. Open WhatsApp on your phone\n")
+			fmt.Printf("2. Tap Menu or Settings > Linked Devices\n")
+			fmt.Printf("3. Tap 'Link a Device'\n")
+			fmt.Printf("4. Scan the QR code above\n")
+			fmt.Printf("========================================\n\n")
+		}
+		return
+	}
+
+	// Case 2: Clear QR (empty code)
+	// Only clear if we have a stored device (logged in)
+	if pc.client != nil && pc.client.Store != nil && pc.client.Store.ID != nil {
+		// Successfully logged in, clear the QR
+		pc.lastQR = ""
+		pc.lastQRAt = time.Now()
+		fmt.Printf("\n✓ WhatsApp connected successfully for project: %s\n\n", pc.projectID)
+	}
+	// Otherwise, keep the existing QR code - don't clear it
 }
 
 // Start connects to WhatsApp for a specific project. If not logged in, it starts a QR session.
@@ -264,16 +305,27 @@ func (s *Service) Start(ctx context.Context, projectID string) (*StatusResponse,
 //
 //encore:api auth method=POST path=/projects/:projectID/wa/stop
 func (s *Service) Stop(ctx context.Context, projectID string) (*StatusResponse, error) {
-	s.mu.RLock()
-	pc, exists := s.clients[projectID]
-	s.mu.RUnlock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
+	pc, exists := s.clients[projectID]
 	if !exists {
 		return &StatusResponse{Connected: false, LoggedIn: false}, nil
 	}
 
-	if pc.client != nil && pc.client.IsConnected() {
-		pc.client.Disconnect()
+	if pc.client != nil {
+		if pc.client.IsConnected() {
+			pc.client.Disconnect()
+		}
+
+		// Clear the store ID to force new QR code on next start
+		if pc.client.Store != nil {
+			pc.client.Store.ID = nil
+		}
+
+		// Clear last QR code
+		pc.lastQR = ""
+		pc.lastQRAt = time.Time{}
 	}
 
 	return pc.status(), nil
@@ -409,8 +461,12 @@ func (pc *projectClient) status() *StatusResponse {
 		loggedIn = true
 	}
 
+	// Connected = true if we have a QR code OR if we're logged in
+	// This provides a more stable "connected" status
+	connected := loggedIn || (pc.lastQR != "" && pc.lastQR != "\"")
+
 	return &StatusResponse{
-		Connected: pc.client != nil && pc.client.IsConnected(),
+		Connected: connected,
 		LoggedIn:  loggedIn,
 		ProjectID: pc.projectID,
 		LastQR:    pc.lastQR,

@@ -32,6 +32,7 @@ import SystemTenantUserCreatePage from "@/pages/SystemTenantUserCreate";
 import SystemTenantUserEditPage from "@/pages/SystemTenantUserEdit";
 import LLMEndpointsPage from "@/pages/LLMEndpoints";
 import WhatsAppPage from "@/pages/WhatsApp";
+import WhatsAppQRPage from "@/pages/WhatsAppQR";
 import { SetupRequired } from "@/components/setup-required";
 import AdminSetupPage from "@/pages/AdminSetup";
 
@@ -162,12 +163,14 @@ function App() {
             <Route path="/projects/:projectId/files" component={FilesPage} />
             <Route path="/projects/:projectId/memory" component={MemoryPage} />
             <Route path="/settings/context/:projectId" component={ContextPage} />
-            <Route path="/whatsapp/:projectId" component={ChatsPage} />
+            <Route path="/whatsapp/:projectId" component={WhatsAppPage} />
+            <Route path="/whatsapp/:projectId/qr/:type" component={WhatsAppQRPage} />
+            <Route path="/chats/:projectId" component={ChatsPage} />
             <Route path="/extensions/:projectId" component={ExtensionsPage} />
             <Route path="/sub-clients/settings/:projectId" component={SubClientSettingsPage} />
 
             {/* Legacy routes without projectId - redirect or fallback */}
-            <Route path="/whatsapp" component={ChatsPage} />
+            <Route path="/whatsapp" component={WhatsAppPage} />
             <Route path="/chats" component={ChatsPage} />
             <Route path="/files" component={FilesPage} />
             <Route path="/history" component={HistoryPage} />
