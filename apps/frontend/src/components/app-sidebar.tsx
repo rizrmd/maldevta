@@ -71,7 +71,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     init();
 
     // Project pages with projectId in URL:
-    // /chat/:projectId, /projects/:projectId/*, /api/:projectId, /embed/:projectId, /settings/context/:projectId, /whatsapp/:projectId, /extensions/:projectId, /sub-clients/settings/:projectId
+    // /chat/:projectId, /projects/:projectId/*, /api/:projectId, /embed/:projectId, /settings/context/:projectId, /whatsapp/:projectId, /extensions/:projectId, /sub-clients/settings/:projectId, /sub-clients/management/:projectId
     // Non-project pages: /, /projects, /dashboard, /chats, /billing, /payment
     const projectPagePatterns = [
       /^\/chat\/([^/]+)/,  // /chat/:projectId
@@ -82,6 +82,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       /^\/whatsapp\/([^/]+)/,  // /whatsapp/:projectId
       /^\/extensions\/([^/]+)/,  // /extensions/:projectId
       /^\/sub-clients\/settings\/([^/]+)/,  // /sub-clients/settings/:projectId
+      /^\/sub-clients\/management\/([^/]+)/,  // /sub-clients/management/:projectId
     ];
 
     let matchedProjectId = "";
@@ -197,18 +198,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     if (!isInProjectPage) return [];
     if (!isAdmin) return [];
 
-    // Get projectId from currentProject or URL
-    let projectId = currentProject?.id;
-    if (!projectId) {
-      // Try to extract from URL
-      const chatMatch = pathname.match(/^\/chat\/([^\/]+)/);
-      const apiMatch = pathname.match(/^\/api\/([^\/]+)/);
-      const embedMatch = pathname.match(/^\/embed\/([^\/]+)/);
-      const subClientMatch = pathname.match(/^\/sub-clients\/settings\/([^\/]+)/);
-      projectId = chatMatch?.[1] || apiMatch?.[1] || embedMatch?.[1] || subClientMatch?.[1];
-    }
+    // Use effectiveProject for URL generation
+    const projectId = effectiveProject?.id;
 
-    console.log('[AppSidebar] managementItems - currentProject:', currentProject?.id, 'extracted projectId:', projectId, 'pathname:', pathname);
+    console.log('[AppSidebar] managementItems - currentProject:', currentProject?.id, 'effectiveProject:', effectiveProject?.id, 'pathname:', pathname);
 
     const items: MenuItem[] = [];
 
@@ -227,7 +220,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       items: [
         {
           title: "Management",
-          url: "/sub-clients/management",
+          url: projectId ? `/sub-clients/management/${projectId}` : "/sub-clients/management",
         },
         {
           title: "Settings",
@@ -260,7 +253,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     console.log('[AppSidebar] Sub Client Settings URL:', projectId ? `/sub-clients/settings/${projectId}` : "/sub-clients/settings");
 
     return items;
-  }, [isInProjectPage, isAdmin, effectiveProject]);
+  }, [isInProjectPage, isAdmin, effectiveProject, pathname]);
 
 
   return (
