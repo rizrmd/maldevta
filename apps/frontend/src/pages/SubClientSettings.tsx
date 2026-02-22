@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/breadcrumb";
 import {
   Card,
-  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
@@ -197,20 +196,8 @@ export default function SubClientSettingsPage() {
           <div className="h-full flex flex-col items-center px-4 pt-4 md:px-6 pb-4 overflow-y-auto">
             <div className="w-full max-w-3xl space-y-6">
 
-              {/* Page Header */}
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.28em] text-muted-foreground">
-                    Configuration
-                  </p>
-                  <h1 className="font-display text-3xl text-slate-900 md:text-4xl">
-                    Sub-Clients Settings
-                  </h1>
-                  <p className="text-sm text-muted-foreground">
-                    Configure sub-client functionality for this project
-                  </p>
-                </div>
-              </div>
+             
+              
 
               {/* Error Alert */}
               {error && (
@@ -269,24 +256,6 @@ export default function SubClientSettingsPage() {
                 </Card>
               )}
 
-              {/* Info Card */}
-              <Card className="border-[#e6dccc] bg-white/80 backdrop-blur">
-                <CardContent className="pt-6">
-                  <div className="space-y-3">
-                    <h3 className="font-semibold text-sm text-slate-900">About Sub-Clients</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Sub-clients allow you to create multiple independent client environments
-                      within a single project. Each sub-client has its own:
-                    </p>
-                    <ul className="text-sm text-muted-foreground space-y-1 pl-4 list-disc">
-                      <li>WhatsApp integration and phone number</li>
-                      <li>User management and authentication</li>
-                      <li>Chat history and context</li>
-                      <li>Files and memory storage</li>
-                    </ul>
-                  </div>
-                </CardContent>
-              </Card>
 
             </div>
           </div>

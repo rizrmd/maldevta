@@ -71,7 +71,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     init();
 
     // Project pages with projectId in URL:
-    // /chat/:projectId, /projects/:projectId/*, /api/:projectId, /embed/:projectId, /settings/context/:projectId, /whatsapp/:projectId, /extensions/:projectId, /sub-clients/settings/:projectId
+    // /chat/:projectId, /projects/:projectId/*, /api/:projectId, /embed/:projectId, /settings/context/:projectId, /whatsapp/:projectId, /extensions/:projectId, /sub-clients/settings/:projectId, /sub-clients/management/:projectId
     // Non-project pages: /, /projects, /dashboard, /chats, /billing, /payment
     const projectPagePatterns = [
       /^\/chat\/([^/]+)/,  // /chat/:projectId
@@ -82,6 +82,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       /^\/whatsapp\/([^/]+)/,  // /whatsapp/:projectId
       /^\/extensions\/([^/]+)/,  // /extensions/:projectId
       /^\/sub-clients\/settings\/([^/]+)/,  // /sub-clients/settings/:projectId
+      /^\/sub-clients\/management\/([^/]+)/,  // /sub-clients/management/:projectId
     ];
 
     let matchedProjectId = "";
@@ -219,7 +220,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       items: [
         {
           title: "Management",
-          url: "/sub-clients/management",
+          url: projectId ? `/sub-clients/management/${projectId}` : "/sub-clients/management",
         },
         {
           title: "Settings",

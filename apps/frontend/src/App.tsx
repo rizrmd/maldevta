@@ -18,6 +18,7 @@ import { DeveloperAPIPage } from "@/components/pages/developer/developer-api";
 import { EmbedSettings } from "@/components/pages/developer/embed-settings";
 import SettingsPage from "@/pages/Settings";
 import SubClientSettingsPage from "@/pages/SubClientSettings";
+import SubClientManagementPage from "@/pages/SubClientManagement";
 // import SupportPage from "@/pages/Support"; // TODO: Create SupportPage
 import BillingPage from "@/pages/Billing";
 import PaymentPage from "@/pages/Payment";
@@ -168,6 +169,7 @@ function App() {
             <Route path="/chats/:projectId" component={ChatsPage} />
             <Route path="/extensions/:projectId" component={ExtensionsPage} />
             <Route path="/sub-clients/settings/:projectId" component={SubClientSettingsPage} />
+            <Route path="/sub-clients/management/:projectId" component={SubClientManagementPage} />
 
             {/* Legacy routes without projectId - redirect or fallback */}
             <Route path="/whatsapp" component={WhatsAppPage} />
