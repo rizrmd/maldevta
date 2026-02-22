@@ -414,7 +414,12 @@ export default function WhatsAppPage() {
                 <div className="flex gap-2">
                   {!isConnected ? (
                     <Button
-                      onClick={() => setLocation(`/whatsapp/${projectId}/qr/${selectedType}`)}
+                      onClick={() => {
+                        // If no type selected, default to personal
+                        const type = selectedType || "personal";
+                        console.log('Navigating to QR page with type:', type);
+                        setLocation(`/whatsapp/${projectId}/qr/${type}`);
+                      }}
                       className="flex-1 h-8 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-medium text-[10px]"
                     >
                       <Smartphone className="mr-1.5 h-2.5 w-2.5" />

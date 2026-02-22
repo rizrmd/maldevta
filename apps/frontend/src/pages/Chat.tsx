@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import AppLayout from "@/components/app-layout";
+import { formatFileSize } from "@/lib/utils";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -581,15 +582,70 @@ export default function ChatPage() {
     }
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = e.target.files;
     if (selectedFiles) {
-      Array.from(selectedFiles).forEach(addFile);
+      for (const file of Array.from(selectedFiles)) {
+        // Add file to store
+        addFile(file);
+
+        // Show confirmation message
+        const fileType = file.type.split('/')[1] || 'unknown';
+        const fileSize = formatFileSize(file.size);
+        const fileName = file.name;
+
+        const confirmationMessage = `File received: "${fileName}" (${fileType}, ${fileSize})`;
+
+        // Add system message
+        addMessage({
+          role: "system",
+          content: confirmationMessage,
+          conversationId: currentConversation?.id || "",
+          projectId: projectIdRef.current,
+        });
+
+        // Save to localStorage for Files page
+        try {
+          // Create Base64 preview for images
+          let preview: string | undefined;
+          if (file.type.startsWith("image/")) {
+            preview = await new Promise<string>((resolve) => {
+              const reader = new FileReader();
+              reader.onload = (e) => resolve(e.target?.result as string);
+              reader.readAsDataURL(file);
+            });
+          }
+
+          // Create file item with same structure as Files.tsx
+          const newFile = {
+            id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            uploaded_at: new Date().toISOString(),
+            project_id: projectIdRef.current || "default",
+            url: preview,
+            preview: preview,
+          };
+
+          // Get existing files from localStorage
+          const storedFiles = localStorage.getItem("uploaded-files");
+          const existingFiles = storedFiles ? JSON.parse(storedFiles) : [];
+
+          // Add new file to the beginning
+          const updatedFiles = [newFile, ...existingFiles];
+
+          // Save to localStorage
+          localStorage.setItem("uploaded-files", JSON.stringify(updatedFiles));
+        } catch (error) {
+          console.error("Error saving file to localStorage:", error);
+        }
+      }
     }
     e.target.value = "";
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
 
@@ -597,7 +653,62 @@ export default function ChatPage() {
       (file) => file.type !== ""
     );
 
-    droppedFiles.forEach(addFile);
+    for (const file of droppedFiles) {
+      // Add file to store
+      addFile(file);
+
+      // Show confirmation message
+      const fileType = file.type.split('/')[1] || 'unknown';
+      const fileSize = formatFileSize(file.size);
+      const fileName = file.name;
+
+      const confirmationMessage = `File received: "${fileName}" (${fileType}, ${fileSize})`;
+
+      // Add system message
+      addMessage({
+        role: "system",
+        content: confirmationMessage,
+        conversationId: currentConversation?.id || "",
+        projectId: projectIdRef.current,
+      });
+
+      // Save to localStorage for Files page
+      try {
+        // Create Base64 preview for images
+        let preview: string | undefined;
+        if (file.type.startsWith("image/")) {
+          preview = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target?.result as string);
+            reader.readAsDataURL(file);
+          });
+        }
+
+        // Create file item with same structure as Files.tsx
+        const newFile = {
+          id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          uploaded_at: new Date().toISOString(),
+          project_id: projectIdRef.current || "default",
+          url: preview,
+          preview: preview,
+        };
+
+        // Get existing files from localStorage
+        const storedFiles = localStorage.getItem("uploaded-files");
+        const existingFiles = storedFiles ? JSON.parse(storedFiles) : [];
+
+        // Add new file to the beginning
+        const updatedFiles = [newFile, ...existingFiles];
+
+        // Save to localStorage
+        localStorage.setItem("uploaded-files", JSON.stringify(updatedFiles));
+      } catch (error) {
+        console.error("Error saving file to localStorage:", error);
+      }
+    }
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -609,16 +720,53 @@ export default function ChatPage() {
     setIsDragging(false);
   };
 
-  const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+  const handlePaste = async (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
     const items = e.clipboardData?.items;
     if (!items) return;
 
-    Array.from(items)
+    const pastedFiles = Array.from(items)
       .filter((item) => item.kind === "file" && item.type.startsWith("image/"))
-      .forEach((item) => {
-        const file = item.getAsFile();
-        if (file) addFile(file);
-      });
+      .map((item) => item.getAsFile())
+      .filter((file): file is File => file !== null);
+
+    for (const file of pastedFiles) {
+      // Add file to store
+      addFile(file);
+
+      // Save to localStorage for Files page
+      try {
+        // Create Base64 preview for images
+        const preview = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target?.result as string);
+          reader.readAsDataURL(file);
+        });
+
+        // Create file item with same structure as Files.tsx
+        const newFile = {
+          id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          uploaded_at: new Date().toISOString(),
+          project_id: projectIdRef.current || "default",
+          url: preview,
+          preview: preview,
+        };
+
+        // Get existing files from localStorage
+        const storedFiles = localStorage.getItem("uploaded-files");
+        const existingFiles = storedFiles ? JSON.parse(storedFiles) : [];
+
+        // Add new file to the beginning
+        const updatedFiles = [newFile, ...existingFiles];
+
+        // Save to localStorage
+        localStorage.setItem("uploaded-files", JSON.stringify(updatedFiles));
+      } catch (error) {
+        console.error("Error saving file to localStorage:", error);
+      }
+    }
   };
 
   // Helper functions for share functionality

@@ -24,19 +24,23 @@ export default function WhatsAppQRPage() {
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [qrImageData, setQrImageData] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const projectId = params?.projectId || "";
   const waType = params?.type || "personal";
 
+  console.log('WhatsAppQRPage mounted - projectId:', projectId, 'waType:', waType);
+
   // Generate QR code image when qrCode changes
   useEffect(() => {
-    console.log('QR code effect triggered, qrCode:', !!qrCode, 'canvas:', !!canvasRef.current);
-    if (qrCode && canvasRef.current) {
-      // Sanitize QR code: remove newlines and extra spaces
-      const sanitizedQR = qrCode.replace(/[\r\n]+/g, '').trim();
-      console.log('Generating QR code, length:', sanitizedQR.length);
+    console.log('QR code effect triggered, qrCode:', qrCode ? qrCode.substring(0, 50) + '...' : 'null', 'canvas:', !!canvasRef.current);
+    if (qrCode && qrCode.length > 0 && canvasRef.current) {
+      // Sanitize QR code: remove quotes, newlines and extra spaces
+      let sanitizedQR = qrCode.replace(/^["']|["']$/g, ''); // Remove surrounding quotes
+      sanitizedQR = sanitizedQR.replace(/[\r\n]+/g, '').trim(); // Remove newlines
+      console.log('Generating QR code, length:', sanitizedQR.length, 'first 50 chars:', sanitizedQR.substring(0, 50));
 
       QRCodeLib.toCanvas(canvasRef.current, sanitizedQR, {
         width: 256,
@@ -51,15 +55,16 @@ export default function WhatsAppQRPage() {
           const canvas = canvasRef.current;
           if (canvas) {
             const dataUrl = canvas.toDataURL("image/png");
-            console.log('QR code image generated, size:', dataUrl.length);
+            console.log('QR code image generated successfully, data URL length:', dataUrl.length);
             setQrImageData(dataUrl);
           }
         } else {
           console.error("QR code generation error:", err);
+          setQrImageData(null);
         }
       });
     } else {
-      console.log('QR code or canvas not available');
+      console.log('QR code or canvas not available, qrCode:', !!qrCode, 'canvas:', !!canvasRef.current);
       setQrImageData(null);
     }
   }, [qrCode]);
@@ -79,21 +84,23 @@ export default function WhatsAppQRPage() {
         if (data.logged_in) {
           // Redirect back to WhatsApp page when connected
           setLocation(`/whatsapp/${projectId}`);
-        } else if (data.last_qr && data.last_qr.length > 0) {
-          // Always update QR code to ensure we have the latest refresh
-          // WhatsApp QR codes expire quickly, so always update
-          console.log('QR code from status, length:', data.last_qr.length);
+        }
+
+        // Always update QR code if available, even if we already have one
+        // WhatsApp QR codes expire every 20-30 seconds, so we need to refresh
+        if (data.last_qr && data.last_qr.length > 0 && data.last_qr !== '""') {
+          console.log('Regular poll - QR code from status, length:', data.last_qr.length);
+          // Always update to get the latest QR code
           setQrCode(data.last_qr);
         }
       }
     } catch (err) {
       console.error("Failed to load WhatsApp status:", err);
-    } finally {
-      setLoading(false);
     }
   };
 
   useEffect(() => {
+    console.log('useEffect triggered - projectId:', projectId, 'waType:', waType);
     let quickPollInterval: NodeJS.Timeout | null = null;
 
     // Start WhatsApp connection and get QR
@@ -101,15 +108,16 @@ export default function WhatsAppQRPage() {
       try {
         // First, stop any existing connection to ensure clean state
         console.log('Stopping any existing WhatsApp connection...');
-        await fetch(`/projects/${projectId}/wa/stop`, {
+        const stopResponse = await fetch(`/projects/${projectId}/wa/stop`, {
           method: "POST",
           credentials: "include",
         });
+        console.log('Stop response status:', stopResponse.status);
 
         // Wait a bit before starting new connection
         await new Promise(resolve => setTimeout(resolve, 500));
 
-        console.log('Starting new WhatsApp connection...');
+        console.log('Starting new WhatsApp connection with type:', waType);
         const response = await fetch(`/projects/${projectId}/wa/start`, {
           method: "POST",
           credentials: "include",
@@ -121,8 +129,13 @@ export default function WhatsAppQRPage() {
           }),
         });
 
+        console.log('Start response status:', response.status);
+
         if (response.ok) {
+          const startData = await response.json();
+          console.log('Start response data:', startData);
           console.log('WhatsApp connection started, polling for QR...');
+
           // Quick poll to get QR
           let attempts = 0;
           quickPollInterval = setInterval(async () => {
@@ -133,11 +146,12 @@ export default function WhatsAppQRPage() {
               });
               if (resp.ok) {
                 const data = await resp.json();
-                console.log('Quick poll attempt', attempts, 'QR present:', !!data.last_qr);
-                if (data.last_qr && data.last_qr.length > 0) {
-                  console.log('Setting QR code from quick poll');
+                console.log('Quick poll attempt', attempts, '- connected:', data.connected, 'logged_in:', data.logged_in, 'QR present:', !!data.last_qr, 'QR length:', data.last_qr?.length);
+                if (data.last_qr && data.last_qr.length > 0 && data.last_qr !== '""') {
+                  console.log('Setting QR code from quick poll, length:', data.last_qr.length);
                   setQrCode(data.last_qr);
                   setStatus(data);
+                  setLoading(false); // Turn off loading once we have QR
                   if (quickPollInterval) {
                     clearInterval(quickPollInterval);
                     quickPollInterval = null;
@@ -148,29 +162,54 @@ export default function WhatsAppQRPage() {
                     clearInterval(quickPollInterval);
                     quickPollInterval = null;
                   }
-                  console.log('Quick poll timeout, switching to regular polling');
-                  loadStatus();
+                  console.log('Quick poll timeout after 30 attempts, regular polling will take over');
+                  setError('QR code generation timeout. Please try again.');
+                  setLoading(false);
                 }
+              } else {
+                console.error('Quick poll failed with status:', resp.status);
+                setError('Failed to get WhatsApp status. Please try again.');
+                setLoading(false);
               }
             } catch (err) {
               console.error("Quick poll error:", err);
+              setError('Connection error. Please check your network.');
+              setLoading(false);
             }
           }, 500);
+        } else {
+          const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+          console.error('Failed to start WhatsApp:', errorData);
+          setError(errorData.message || 'Failed to start WhatsApp connection');
+          setLoading(false);
         }
       } catch (err) {
         console.error("Failed to start WhatsApp:", err);
+        setError('Failed to connect to WhatsApp service');
+        setLoading(false);
       }
     };
+
+    // Clear loading state after a timeout even if nothing works
+    const loadingTimeout = setTimeout(() => {
+      if (loading) {
+        console.log('Loading timeout - forcing loading to false');
+        setLoading(false);
+        setError('Connection is taking longer than expected. Please wait or refresh.');
+      }
+    }, 10000); // 10 second timeout
 
     startConnection();
 
     // Poll for connection status and QR code updates more frequently
     // WhatsApp QR codes expire every 20-30 seconds
     intervalRef.current = setInterval(() => {
+      console.log('Regular poll - checking status');
       loadStatus();
     }, 5000); // Poll every 5 seconds to get fresh QR codes
 
     return () => {
+      clearTimeout(loadingTimeout);
       if (quickPollInterval) {
         clearInterval(quickPollInterval);
       }
@@ -178,7 +217,7 @@ export default function WhatsAppQRPage() {
         clearInterval(intervalRef.current);
       }
     };
-  }, [projectId]);
+  }, [projectId, waType]);
 
   const isConnected = status?.logged_in === true;
 
@@ -277,8 +316,10 @@ export default function WhatsAppQRPage() {
                 </div>
               </div>
 
-              {/* Hidden Canvas for QR Code Generation */}
-              <canvas ref={canvasRef} style={{ display: "none" }} />
+              {/* Hidden Canvas for QR Code Generation - positioned off-screen but still renderable */}
+              <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
+                <canvas ref={canvasRef} width={256} height={256} />
+              </div>
 
               {/* QR Code Display */}
               {qrImageData && (
@@ -291,9 +332,12 @@ export default function WhatsAppQRPage() {
                 </div>
               )}
 
-              {!qrImageData && (
+              {!qrImageData && !error && (
                 <div className="flex justify-center mb-4">
-                  <Loader2 className="h-12 w-12 animate-spin text-slate-400" />
+                  <div className="flex flex-col items-center gap-2">
+                    <Loader2 className="h-12 w-12 animate-spin text-slate-400" />
+                    <p className="text-xs text-slate-500">Generating QR code...</p>
+                  </div>
                 </div>
               )}
 
@@ -331,6 +375,19 @@ export default function WhatsAppQRPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Error Display */}
+              {error && (
+                <div className="rounded-lg bg-red-50 border border-red-200 p-3">
+                  <div className="flex items-start gap-2">
+                    <span className="text-red-600 text-xs">❌</span>
+                    <div className="flex-1">
+                      <p className="text-xs font-semibold text-red-900 mb-1">Error:</p>
+                      <p className="text-xs text-red-700">{error}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Cancel Button */}
               <div className="mt-4">

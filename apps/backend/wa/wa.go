@@ -1,11 +1,13 @@
 package wa
 
 import (
+	"bytes"
 	"context"
-	"errors"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
-	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -14,255 +16,73 @@ import (
 	"encore.app/backend/llm"
 	"encore.dev/beta/auth"
 	"encore.dev/beta/errs"
-
-	"go.mau.fi/whatsmeow"
-	waProto "go.mau.fi/whatsmeow/binary/proto"
-	"go.mau.fi/whatsmeow/store/sqlstore"
-	"go.mau.fi/whatsmeow/types"
-	waevents "go.mau.fi/whatsmeow/types/events"
-	walog "go.mau.fi/whatsmeow/util/log"
-	"google.golang.org/protobuf/proto"
-
-	_ "modernc.org/sqlite"
 )
 
-// projectClient manages a WhatsApp client for a specific project
-type projectClient struct {
-	client    *whatsmeow.Client
-	store     *sqlstore.Container
+const (
+	// Default aimeow API URL
+	DefaultAimeowURL = "http://localhost:7031/api/v1"
+)
+
+// aimeowClient represents a WhatsApp client managed by aimeow service
+type aimeowClient struct {
+	clientID  string
 	projectID string
 	tenantID  string
 	lastQR    string
 	lastQRAt  time.Time
+	connected bool
+	loggedIn  bool
 	lastError string
 }
 
 //encore:service
 type Service struct {
 	mu      sync.RWMutex
-	clients map[string]*projectClient // projectID -> client
+	clients map[string]*aimeowClient // projectID -> client
+	http    *http.Client
 }
 
 func initService() (*Service, error) {
 	return &Service{
-		clients: make(map[string]*projectClient),
+		clients: make(map[string]*aimeowClient),
+		http:    &http.Client{Timeout: 30 * time.Second},
 	}, nil
 }
 
-// getOrCreateClient retrieves or creates a WhatsApp client for a project
-func (s *Service) getOrCreateClient(ctx context.Context, tenantID, projectID string) (*projectClient, error) {
+// getAimeowURL returns the aimeow API URL from environment or default
+func (s *Service) getAimeowURL() string {
+	url := os.Getenv("AIMEOW_API_URL")
+	if url == "" {
+		return DefaultAimeowURL
+	}
+	return url
+}
+
+// getOrCreateClient retrieves or creates a WhatsApp client reference for a project
+func (s *Service) getOrCreateClient(projectID string) *aimeowClient {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if pc, exists := s.clients[projectID]; exists {
-		return pc, nil
+		return pc
 	}
 
-	// Create new client for this project
-	store, err := setupProjectStore(ctx, tenantID, projectID)
-	if err != nil {
-		return nil, fmt.Errorf("setup store: %w", err)
-	}
-
-	logger := walog.Stdout(fmt.Sprintf("wa-%s", projectID), "INFO", true)
-	device, err := store.GetFirstDevice(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("load device: %w", err)
-	}
-
-	client := whatsmeow.NewClient(device, logger)
-	pc := &projectClient{
-		client:    client,
-		store:     store,
+	// Create a client reference (actual client is managed by aimeow)
+	pc := &aimeowClient{
+		clientID:  fmt.Sprintf("proj-%s", projectID),
 		projectID: projectID,
-		tenantID:  tenantID,
+		connected: false,
+		loggedIn:  false,
 	}
-
-	// Set up event handler with project context
-	client.AddEventHandler(func(evt interface{}) {
-		s.handleEvent(ctx, pc, evt)
-	})
 
 	s.clients[projectID] = pc
-	return pc, nil
+	return pc
 }
 
-// setupProjectStore creates a WhatsApp store in the project's wa_meta directory
-func setupProjectStore(ctx context.Context, tenantID, projectID string) (*sqlstore.Container, error) {
-	// Get data directory from environment or default
-	dataDir := os.Getenv("DATA_DIR")
-	if dataDir == "" {
-		exePath, err := os.Executable()
-		if err != nil {
-			return nil, fmt.Errorf("get executable path: %w", err)
-		}
-		dataDir = filepath.Join(filepath.Dir(exePath), "data")
-	}
-
-	// Build path to project's wa_meta directory
-	waMetaPath := filepath.Join(dataDir, "tenants", tenantID, "projects", projectID, "wa_meta")
-	if err := os.MkdirAll(waMetaPath, 0755); err != nil {
-		return nil, fmt.Errorf("create wa_meta dir: %w", err)
-	}
-
-	dbPath := filepath.Join(waMetaPath, "whatsmeow.db")
-	logger := walog.Stdout(fmt.Sprintf("wa-store-%s", projectID), "INFO", true)
-
-	// Open database connection with foreign keys enabled
-	// The modernc.org/sqlite driver needs _pragma parameter for foreign keys
-	dsn := dbPath + "?_pragma=foreign_keys(1)"
-	store, err := sqlstore.New(ctx, "sqlite", dsn, logger)
-	if err != nil {
-		return nil, fmt.Errorf("open store: %w", err)
-	}
-
-	return store, nil
-}
-
-func (s *Service) handleEvent(ctx context.Context, pc *projectClient, evt interface{}) {
-	switch v := evt.(type) {
-	case *waevents.Message:
-		if v.Info.IsFromMe {
-			return
-		}
-		text := extractText(v.Message)
-		if text == "" {
-			return
-		}
-		go s.reply(context.Background(), pc, v.Info.Chat, text)
-	case *waevents.LoggedOut:
-		pc.lastError = fmt.Sprintf("logged out: %v", v.Reason)
-	case *waevents.ConnectFailure:
-		pc.lastError = fmt.Sprintf("connection failed: %v", v.Reason)
-	case *waevents.Disconnected:
-		pc.lastError = fmt.Sprintf("disconnected")
-	}
-}
-
-func extractText(msg *waProto.Message) string {
-	if msg == nil {
-		return ""
-	}
-	if text := strings.TrimSpace(msg.GetConversation()); text != "" {
-		return text
-	}
-	if ext := msg.GetExtendedTextMessage(); ext != nil {
-		if text := strings.TrimSpace(ext.GetText()); text != "" {
-			return text
-		}
-	}
-	if img := msg.GetImageMessage(); img != nil {
-		if text := strings.TrimSpace(img.GetCaption()); text != "" {
-			return text
-		}
-	}
-	return ""
-}
-
-func (s *Service) reply(ctx context.Context, pc *projectClient, jid types.JID, text string) {
-	if pc.client == nil || !pc.client.IsConnected() {
-		return
-	}
-
-	// Load project context from IAM service
-	projectCtx, err := s.loadProjectContext(ctx, pc.tenantID, pc.projectID)
-	if err != nil {
-		pc.lastError = fmt.Sprintf("load project context: %v", err)
-		return
-	}
-
-	// Generate response using LLM with project context
-	resp, err := llm.Generate(ctx, &llm.GenerateParams{
-		Prompt:         text,
-		ProjectContext: projectCtx,
-	})
-	if err != nil {
-		pc.lastError = fmt.Sprintf("llm generate: %v", err)
-		return
-	}
-
-	content := strings.TrimSpace(resp.Content)
-	if content == "" {
-		return
-	}
-
-	_, err = pc.client.SendMessage(ctx, jid, &waProto.Message{Conversation: proto.String(content)})
-	if err != nil {
-		pc.lastError = fmt.Sprintf("send reply: %v", err)
-	}
-}
-
-// loadProjectContext retrieves project context for LLM
-func (s *Service) loadProjectContext(ctx context.Context, tenantID, projectID string) (*llm.ProjectContext, error) {
-	// Get project details from IAM
-	// Note: This assumes we have a way to get project info. For now, we'll fetch the context.md
-	contextResp, err := iam.GetProjectContext(ctx, projectID)
-	if err != nil {
-		// If no context file exists yet, use defaults
-		return &llm.ProjectContext{
-			ProjectID:    projectID,
-			ProjectName:  projectID,
-			Instructions: "You are a helpful AI assistant for this project.",
-			Tone:         "professional",
-			Language:     "english",
-			Extensions:   []string{},
-			Metadata:     map[string]string{"tenant_id": tenantID},
-		}, nil
-	}
-
-	return &llm.ProjectContext{
-		ProjectID:    projectID,
-		ProjectName:  projectID,
-		Instructions: contextResp.Content,
-		Tone:         "professional",
-		Language:     "english",
-		Extensions:   []string{},
-		Metadata:     map[string]string{"tenant_id": tenantID},
-	}, nil
-}
-
-func (pc *projectClient) updateQR(code string) {
-	// Be very conservative with QR updates to prevent flipping
-
-	// Case 1: New QR code received
-	if code != "" {
-		// Only update if we don't have a QR yet, or this is genuinely different
-		if pc.lastQR == "" || (pc.lastQR != code && len(code) > 50) {
-			pc.lastQR = code
-			pc.lastQRAt = time.Now()
-
-			// Display QR code in terminal
-			fmt.Printf("\n========================================\n")
-			fmt.Printf("WhatsApp QR Code - Project: %s\n", pc.projectID)
-			fmt.Printf("========================================\n")
-			fmt.Printf("Scan this QR code with your WhatsApp:\n")
-			fmt.Printf("\n")
-			fmt.Printf("%s\n", code)
-			fmt.Printf("\n")
-			fmt.Printf("1. Open WhatsApp on your phone\n")
-			fmt.Printf("2. Tap Menu or Settings > Linked Devices\n")
-			fmt.Printf("3. Tap 'Link a Device'\n")
-			fmt.Printf("4. Scan the QR code above\n")
-			fmt.Printf("========================================\n\n")
-		}
-		return
-	}
-
-	// Case 2: Clear QR (empty code)
-	// Only clear if we have a stored device (logged in)
-	if pc.client != nil && pc.client.Store != nil && pc.client.Store.ID != nil {
-		// Successfully logged in, clear the QR
-		pc.lastQR = ""
-		pc.lastQRAt = time.Now()
-		fmt.Printf("\n✓ WhatsApp connected successfully for project: %s\n\n", pc.projectID)
-	}
-	// Otherwise, keep the existing QR code - don't clear it
-}
-
-// Start connects to WhatsApp for a specific project. If not logged in, it starts a QR session.
+// Start creates a new WhatsApp client via aimeow API
 //
 //encore:api auth method=POST path=/projects/:projectID/wa/start
-func (s *Service) Start(ctx context.Context, projectID string) (*StatusResponse, error) {
+func (s *Service) Start(ctx context.Context, projectID string, req *StartRequest) (*StatusResponse, error) {
 	// Get auth data
 	raw := auth.Data()
 	data, ok := raw.(*iam.AuthData)
@@ -270,38 +90,55 @@ func (s *Service) Start(ctx context.Context, projectID string) (*StatusResponse,
 		return nil, &errs.Error{Code: errs.Unauthenticated, Message: "authentication required"}
 	}
 
-	// Get or create client for this project
-	pc, err := s.getOrCreateClient(ctx, data.TenantID, projectID)
+	// Get or create client reference
+	pc := s.getOrCreateClient(projectID)
+	pc.tenantID = data.TenantID
+
+	// Call aimeow API to create client
+	aimeowURL := s.getAimeowURL()
+	createURL := fmt.Sprintf("%s/clients/new", aimeowURL)
+
+	payload := map[string]interface{}{
+		"id":      pc.clientID,
+		"os_name": fmt.Sprintf("project-%s", projectID),
+	}
+
+	if req != nil && req.Type != "" {
+		payload["type"] = req.Type
+	}
+
+	body, err := json.Marshal(payload)
 	if err != nil {
-		return nil, &errs.Error{Code: errs.Internal, Message: fmt.Sprintf("client init: %v", err)}
+		return nil, &errs.Error{Code: errs.Internal, Message: fmt.Sprintf("marshal request: %v", err)}
 	}
 
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if pc.client == nil {
-		return nil, &errs.Error{Code: errs.Internal, Message: "client not initialized"}
-	}
-	if pc.client.IsConnected() {
-		return pc.status(), nil
+	httpReq, err := http.NewRequestWithContext(ctx, "POST", createURL, bytes.NewReader(body))
+	if err != nil {
+		return nil, &errs.Error{Code: errs.Internal, Message: fmt.Sprintf("create request: %v", err)}
 	}
 
-	if pc.client.Store == nil || pc.client.Store.ID == nil {
-		qrChan, err := pc.client.GetQRChannel(ctx)
-		if err != nil {
-			return nil, &errs.Error{Code: errs.Internal, Message: fmt.Sprintf("qr channel: %v", err)}
-		}
-		go pc.watchQR(qrChan)
+	httpReq.Header.Set("Content-Type", "application/json")
+
+	resp, err := s.http.Do(httpReq)
+	if err != nil {
+		pc.lastError = fmt.Sprintf("aimeow connection failed: %v", err)
+		return nil, &errs.Error{Code: errs.Unavailable, Message: fmt.Sprintf("aimeow unavailable: %v", err)}
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		respBody, _ := io.ReadAll(resp.Body)
+		pc.lastError = fmt.Sprintf("aimeow returned %d: %s", resp.StatusCode, string(respBody))
+		return nil, &errs.Error{Code: errs.Internal, Message: fmt.Sprintf("aimeow error: %s", string(respBody))}
 	}
 
-	if err := pc.client.Connect(); err != nil {
-		return nil, &errs.Error{Code: errs.Internal, Message: fmt.Sprintf("connect: %v", err)}
-	}
+	pc.connected = true
+	pc.lastError = ""
 
 	return pc.status(), nil
 }
 
-// Stop disconnects the WhatsApp client for a project.
+// Stop disconnects the WhatsApp client for a project via aimeow API
 //
 //encore:api auth method=POST path=/projects/:projectID/wa/stop
 func (s *Service) Stop(ctx context.Context, projectID string) (*StatusResponse, error) {
@@ -313,25 +150,34 @@ func (s *Service) Stop(ctx context.Context, projectID string) (*StatusResponse, 
 		return &StatusResponse{Connected: false, LoggedIn: false}, nil
 	}
 
-	if pc.client != nil {
-		if pc.client.IsConnected() {
-			pc.client.Disconnect()
-		}
+	// Call aimeow API to delete client
+	aimeowURL := s.getAimeowURL()
+	deleteURL := fmt.Sprintf("%s/clients/%s", aimeowURL, pc.clientID)
 
-		// Clear the store ID to force new QR code on next start
-		if pc.client.Store != nil {
-			pc.client.Store.ID = nil
-		}
-
-		// Clear last QR code
-		pc.lastQR = ""
-		pc.lastQRAt = time.Time{}
+	httpReq, err := http.NewRequestWithContext(ctx, "DELETE", deleteURL, http.NoBody)
+	if err != nil {
+		return nil, &errs.Error{Code: errs.Internal, Message: fmt.Sprintf("create request: %v", err)}
 	}
+
+	resp, err := s.http.Do(httpReq)
+	if err != nil {
+		// Log error but don't fail - client might not exist
+		fmt.Printf("Failed to delete client from aimeow: %v\n", err)
+	} else {
+		resp.Body.Close()
+	}
+
+	// Clear client state
+	pc.connected = false
+	pc.loggedIn = false
+	pc.lastQR = ""
+	pc.lastQRAt = time.Time{}
+	pc.lastError = ""
 
 	return pc.status(), nil
 }
 
-// QR returns the latest QR code for a project if login is required.
+// QR returns the latest QR code for a project
 //
 //encore:api auth method=GET path=/projects/:projectID/wa/qr
 func (s *Service) QR(ctx context.Context, projectID string) (*QRResponse, error) {
@@ -342,20 +188,86 @@ func (s *Service) QR(ctx context.Context, projectID string) (*QRResponse, error)
 		return nil, &errs.Error{Code: errs.Unauthenticated, Message: "authentication required"}
 	}
 
-	// Get or create client for this project
-	pc, err := s.getOrCreateClient(ctx, data.TenantID, projectID)
+	s.mu.Lock()
+	pc := s.getOrCreateClient(projectID)
+	pc.tenantID = data.TenantID
+	s.mu.Unlock()
+
+	// Fetch QR code from aimeow
+	aimeowURL := s.getAimeowURL()
+	clientURL := fmt.Sprintf("%s/clients/%s", aimeowURL, pc.clientID)
+
+	httpReq, err := http.NewRequestWithContext(ctx, "GET", clientURL, http.NoBody)
 	if err != nil {
-		return nil, &errs.Error{Code: errs.Internal, Message: fmt.Sprintf("client init: %v", err)}
+		return nil, &errs.Error{Code: errs.Internal, Message: fmt.Sprintf("create request: %v", err)}
+	}
+
+	resp, err := s.http.Do(httpReq)
+	if err != nil {
+		pc.lastError = fmt.Sprintf("aimeow connection failed: %v", err)
+		return &QRResponse{
+			Code:      "",
+			UpdatedAt: pc.lastQRAt,
+			Connected: false,
+		}, nil
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		respBody, _ := io.ReadAll(resp.Body)
+		pc.lastError = fmt.Sprintf("aimeow returned %d: %s", resp.StatusCode, string(respBody))
+		return &QRResponse{
+			Code:      "",
+			UpdatedAt: pc.lastQRAt,
+			Connected: false,
+		}, nil
+	}
+
+	var clientData struct {
+		QRCode    string `json:"qrCode"`
+		Connected bool   `json:"connected"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&clientData); err != nil {
+		pc.lastError = fmt.Sprintf("decode response: %v", err)
+		return &QRResponse{
+			Code:      "",
+			UpdatedAt: pc.lastQRAt,
+			Connected: false,
+		}, nil
+	}
+
+	// Update QR code if available
+	if clientData.QRCode != "" && clientData.QRCode != pc.lastQR {
+		pc.lastQR = clientData.QRCode
+		pc.lastQRAt = time.Now()
+		pc.connected = true
+		pc.loggedIn = false
+		pc.lastError = ""
+
+		// Display QR code in terminal
+		fmt.Printf("\n========================================\n")
+		fmt.Printf("WhatsApp QR Code - Project: %s\n", pc.projectID)
+		fmt.Printf("========================================\n")
+		fmt.Printf("Scan this QR code with your WhatsApp:\n")
+		fmt.Printf("\n")
+		fmt.Printf("%s\n", pc.lastQR)
+		fmt.Printf("\n")
+		fmt.Printf("1. Open WhatsApp on your phone\n")
+		fmt.Printf("2. Tap Menu or Settings > Linked Devices\n")
+		fmt.Printf("3. Tap 'Link a Device'\n")
+		fmt.Printf("4. Scan the QR code above\n")
+		fmt.Printf("========================================\n\n")
 	}
 
 	return &QRResponse{
 		Code:      pc.lastQR,
 		UpdatedAt: pc.lastQRAt,
-		Connected: pc.client != nil && pc.client.IsConnected(),
+		Connected: pc.connected,
 	}, nil
 }
 
-// Status returns service and connection state for a project.
+// Status returns service and connection state for a project
 //
 //encore:api auth method=GET path=/projects/:projectID/wa/status
 func (s *Service) Status(ctx context.Context, projectID string) (*StatusResponse, error) {
@@ -371,6 +283,50 @@ func (s *Service) Status(ctx context.Context, projectID string) (*StatusResponse
 		}, nil
 	}
 
+	// Fetch fresh status from aimeow
+	aimeowURL := s.getAimeowURL()
+	clientURL := fmt.Sprintf("%s/clients/%s", aimeowURL, pc.clientID)
+
+	httpReq, err := http.NewRequestWithContext(ctx, "GET", clientURL, http.NoBody)
+	if err != nil {
+		return pc.status(), nil
+	}
+
+	resp, err := s.http.Do(httpReq)
+	if err != nil {
+		pc.lastError = fmt.Sprintf("aimeow connection failed: %v", err)
+		return pc.status(), nil
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return pc.status(), nil
+	}
+
+	var clientData struct {
+		QRCode    string `json:"qrCode"`
+		Connected bool   `json:"connected"`
+		LoggedIn  bool   `json:"loggedIn"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&clientData); err != nil {
+		return pc.status(), nil
+	}
+
+	// Update client state
+	pc.connected = clientData.Connected
+	pc.loggedIn = clientData.LoggedIn
+
+	if clientData.QRCode != "" && clientData.QRCode != pc.lastQR {
+		pc.lastQR = clientData.QRCode
+		pc.lastQRAt = time.Now()
+	}
+
+	// If logged in, clear QR
+	if pc.loggedIn {
+		pc.lastQR = ""
+	}
+
 	status := pc.status()
 
 	llmStatus, err := llm.Status(ctx)
@@ -382,7 +338,7 @@ func (s *Service) Status(ctx context.Context, projectID string) (*StatusResponse
 	return status, nil
 }
 
-// Send sends a text message to a WhatsApp user for a specific project.
+// Send sends a text message to a WhatsApp user for a specific project
 //
 //encore:api auth method=POST path=/projects/:projectID/wa/send
 func (s *Service) Send(ctx context.Context, projectID string, p *SendParams) (*SendResponse, error) {
@@ -396,33 +352,129 @@ func (s *Service) Send(ctx context.Context, projectID string, p *SendParams) (*S
 		return nil, badRequest("message is required")
 	}
 
-	jid, err := parseJID(p.To)
-	if err != nil {
-		return nil, badRequest(fmt.Sprintf("invalid recipient: %v", err))
-	}
-
 	s.mu.RLock()
 	pc, exists := s.clients[projectID]
 	s.mu.RUnlock()
 
-	if !exists || pc.client == nil || !pc.client.IsConnected() {
+	if !exists || !pc.connected {
 		return nil, &errs.Error{Code: errs.Unavailable, Message: "client not connected"}
 	}
 
-	msg := &waProto.Message{Conversation: proto.String(p.Message)}
-	_, err = pc.client.SendMessage(ctx, jid, msg)
+	// Send via aimeow API
+	aimeowURL := s.getAimeowURL()
+	sendURL := fmt.Sprintf("%s/clients/%s/send-message", aimeowURL, pc.clientID)
+
+	payload := map[string]interface{}{
+		"chat_id": p.To,
+		"text":    p.Message,
+	}
+
+	body, err := json.Marshal(payload)
 	if err != nil {
+		return nil, &errs.Error{Code: errs.Internal, Message: fmt.Sprintf("marshal request: %v", err)}
+	}
+
+	httpReq, err := http.NewRequestWithContext(ctx, "POST", sendURL, bytes.NewReader(body))
+	if err != nil {
+		return nil, &errs.Error{Code: errs.Internal, Message: fmt.Sprintf("create request: %v", err)}
+	}
+
+	httpReq.Header.Set("Content-Type", "application/json")
+
+	resp, err := s.http.Do(httpReq)
+	if err != nil {
+		pc.lastError = fmt.Sprintf("send failed: %v", err)
 		return nil, &errs.Error{Code: errs.Internal, Message: fmt.Sprintf("send failed: %v", err)}
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		respBody, _ := io.ReadAll(resp.Body)
+		pc.lastError = fmt.Sprintf("send failed: %s", string(respBody))
+		return nil, &errs.Error{Code: errs.Internal, Message: fmt.Sprintf("send failed: %s", string(respBody))}
 	}
 
 	return &SendResponse{Status: "ok"}, nil
 }
 
-// Health returns a basic health status.
+// Health returns a basic health status
 //
 //encore:api public method=GET path=/wa/health
 func (s *Service) Health(ctx context.Context) (*HealthResponse, error) {
-	return &HealthResponse{Status: "ok"}, nil
+	// Check if aimeow is reachable
+	aimeowURL := s.getAimeowURL()
+	healthURL := fmt.Sprintf("%s/health", aimeowURL)
+
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	httpReq, err := http.NewRequestWithContext(ctx, "GET", healthURL, http.NoBody)
+	if err != nil {
+		return &HealthResponse{Status: "degraded", AimeowConnected: false}, nil
+	}
+
+	resp, err := s.http.Do(httpReq)
+	if err != nil {
+		return &HealthResponse{Status: "degraded", AimeowConnected: false}, nil
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusOK {
+		return &HealthResponse{Status: "ok", AimeowConnected: true}, nil
+	}
+
+	return &HealthResponse{Status: "degraded", AimeowConnected: false}, nil
+}
+
+// Webhook receives status updates from aimeow service
+//
+//encore:api public method=POST path=/wa/webhook
+func (s *Service) Webhook(ctx context.Context, payload *WebhookPayload) (*WebhookResponse, error) {
+	if payload == nil || payload.ClientID == "" {
+		return nil, badRequest("missing client_id")
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	// Find the client by clientID
+	var pc *aimeowClient
+	for _, client := range s.clients {
+		if client.clientID == payload.ClientID {
+			pc = client
+			break
+		}
+	}
+
+	if pc == nil {
+		return &WebhookResponse{Success: true}, nil
+	}
+
+	// Update client state based on event
+	switch payload.Event {
+	case "connected":
+		pc.connected = true
+		pc.loggedIn = true
+		pc.lastQR = ""
+		fmt.Printf("\n✓ WhatsApp connected successfully for project: %s\n\n", pc.projectID)
+	case "disconnected":
+		pc.connected = false
+		pc.loggedIn = false
+		pc.lastError = "disconnected"
+	case "qr_code":
+		if payload.QRCode != "" {
+			pc.lastQR = payload.QRCode
+			pc.lastQRAt = time.Now()
+		}
+	case "qr_timeout":
+		pc.lastQR = ""
+	}
+
+	return &WebhookResponse{Success: true}, nil
+}
+
+type StartRequest struct {
+	Type string `json:"type"`
 }
 
 type SendParams struct {
@@ -452,22 +504,24 @@ type StatusResponse struct {
 }
 
 type HealthResponse struct {
-	Status string `json:"status"`
+	Status          string `json:"status"`
+	AimeowConnected bool   `json:"aimeow_connected"`
 }
 
-func (pc *projectClient) status() *StatusResponse {
-	loggedIn := false
-	if pc.client != nil && pc.client.Store != nil && pc.client.Store.ID != nil {
-		loggedIn = true
-	}
+type WebhookPayload struct {
+	ClientID string `json:"client_id"`
+	Event    string `json:"event"`
+	QRCode   string `json:"qr_code,omitempty"`
+}
 
-	// Connected = true if we have a QR code OR if we're logged in
-	// This provides a more stable "connected" status
-	connected := loggedIn || (pc.lastQR != "" && pc.lastQR != "\"")
+type WebhookResponse struct {
+	Success bool `json:"success"`
+}
 
+func (pc *aimeowClient) status() *StatusResponse {
 	return &StatusResponse{
-		Connected: connected,
-		LoggedIn:  loggedIn,
+		Connected: pc.connected,
+		LoggedIn:  pc.loggedIn,
 		ProjectID: pc.projectID,
 		LastQR:    pc.lastQR,
 		LastQRAt:  pc.lastQRAt,
@@ -475,34 +529,6 @@ func (pc *projectClient) status() *StatusResponse {
 		LLMError:  "",
 		LastError: pc.lastError,
 	}
-}
-
-func (pc *projectClient) watchQR(ch <-chan whatsmeow.QRChannelItem) {
-	for item := range ch {
-		switch item.Event {
-		case "code":
-			pc.updateQR(item.Code)
-		case "success":
-			pc.updateQR("")
-		}
-	}
-}
-
-func parseJID(value string) (types.JID, error) {
-	value = strings.TrimSpace(value)
-	if value == "" {
-		return types.JID{}, errors.New("empty recipient")
-	}
-
-	jid, err := types.ParseJID(value)
-	if err == nil && jid.Server != "" {
-		return jid, nil
-	}
-	if strings.Contains(value, "@") {
-		return types.JID{}, errors.New("invalid JID")
-	}
-
-	return types.NewJID(value, types.DefaultUserServer), nil
 }
 
 func badRequest(message string) error {
