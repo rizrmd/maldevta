@@ -27,12 +27,6 @@ import {
   CardContent,
 } from "@/components/ui/card";
 
-type ApiError = {
-  message: string;
-  status?: number;
-  code?: string;
-};
-
 type FileItem = {
   id: string;
   name: string;
@@ -43,50 +37,6 @@ type FileItem = {
   url?: string;
   preview?: string;
 };
-
-async function parseError(response: Response): Promise<ApiError> {
-  let payload: unknown = null;
-  try {
-    payload = await response.json();
-  } catch {
-    payload = null;
-  }
-
-  if (payload && typeof payload === "object") {
-    const record = payload as { message?: string; code?: string };
-    return {
-      message: record.message || `${response.status} ${response.statusText}`,
-      status: response.status,
-      code: record.code,
-    };
-  }
-
-  return {
-    message: `${response.status} ${response.statusText}`,
-    status: response.status,
-  };
-}
-
-async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(path, {
-    ...init,
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers || {}),
-    },
-  });
-
-  if (!response.ok) {
-    throw await parseError(response);
-  }
-
-  if (response.status === 204) {
-    return undefined as T;
-  }
-
-  return response.json() as Promise<T>;
-}
 
 function formatFileSize(bytes: number): string {
   if (bytes === 0) return "0 Bytes";

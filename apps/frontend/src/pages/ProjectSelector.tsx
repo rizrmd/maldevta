@@ -259,20 +259,39 @@ export default function ProjectSelectorPage() {
                 <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100">
                   <Plus className="h-8 w-8 text-slate-400" />
                 </div>
-                <h3 className="text-lg font-semibold text-slate-900">No projects yet</h3>
-                <p className="mt-2 text-center text-sm text-muted-foreground">
-                  {isAdmin
-                    ? "Create your first project to get started with AI conversations."
-                    : "Waiting for an admin to create a project."}
-                </p>
-                {isAdmin && (
-                  <Button
-                    onClick={() => openDialog("create-project")}
-                    className="mt-4"
-                  >
-                    <Plus className="mr-2 h-4 w-4 shrink-0" />
-                    Create Project
-                  </Button>
+                <h3 className="text-lg font-semibold text-slate-900">
+                  {isAdmin ? "No projects yet" : "No project assigned"}
+                </h3>
+                {isAdmin ? (
+                  <>
+                    <p className="mt-2 text-center text-sm text-muted-foreground">
+                      Create your first project to get started with AI conversations.
+                    </p>
+                    <Button
+                      onClick={() => openDialog("create-project")}
+                      className="mt-4"
+                    >
+                      <Plus className="mr-2 h-4 w-4 shrink-0" />
+                      Create Project
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <p className="mt-2 text-center text-sm text-muted-foreground">
+                      Your account cannot create projects and there are no projects available for your tenant.
+                    </p>
+                    <p className="mt-1 text-center text-sm text-muted-foreground">
+                      Please contact your tenant admin to create a project, then refresh this page.
+                    </p>
+                    <div className="mt-4 flex gap-2">
+                      <Button variant="outline" onClick={() => loadProjects()}>
+                        Refresh
+                      </Button>
+                      <Button variant="ghost" onClick={handleLogout}>
+                        Log out
+                      </Button>
+                    </div>
+                  </>
                 )}
               </CardContent>
             </Card>

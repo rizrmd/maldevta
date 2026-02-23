@@ -1,6 +1,6 @@
 import * as React from "react";
 import { ChevronRight, type LucideIcon } from "lucide-react";
-import { useLocation } from "wouter";
+import { Link, useLocation } from "wouter";
 
 import {
   Collapsible,
@@ -74,12 +74,12 @@ export function NavMain({
                   tooltip={item.title}
                   isActive={isActive}
                 >
-                  <a href={item.url}>
+                  <Link href={item.url}>
                     {item.icon && <item.icon className="!size-5" />}
                     {!isCollapsed && (
                       <span className="font-medium">{item.title}</span>
                     )}
-                  </a>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             );
@@ -129,9 +129,9 @@ export function NavMain({
                           isActive={location.startsWith(subItem.url)}
                           className="transition-colors duration-200"
                         >
-                          <a href={subItem.url}>
+                          <Link href={subItem.url}>
                             <span>{subItem.title}</span>
-                          </a>
+                          </Link>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                     ))}

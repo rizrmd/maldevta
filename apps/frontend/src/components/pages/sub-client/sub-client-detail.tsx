@@ -6,10 +6,8 @@ import AppLayout from "@/components/app-layout";
 import {
   Breadcrumb,
   BreadcrumbItem,
-  BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbPage,
-  BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import {
   Card,
@@ -64,10 +62,7 @@ import {
   Building2,
   Trash2,
   User as UserIcon,
-  Check,
-  X,
   AlertCircle,
-  QrCode,
 } from "lucide-react";
 import QRCodeLib from "qrcode";
 
@@ -190,7 +185,7 @@ const formatPhoneNumber = (phone: string | null | undefined): string => {
 export default function SubClientDetailPage() {
   const { projectId, subClientId } = useParams<{ projectId: string; subClientId: string }>();
   const [, setLocation] = useLocation();
-  const { user } = useAuth();
+  const { user: authUser } = useAuth();
   const { currentProject, projects } = useProjectStore();
   const { toast } = useToast();
 
@@ -835,32 +830,32 @@ export default function SubClientDetailPage() {
                   </Card>
                 ) : (
                   <div className="space-y-3">
-                    {subClient.users.map((user) => (
-                      <Card key={user.id}>
+                    {subClient.users.map((member) => (
+                      <Card key={member.id}>
                         <CardContent className="p-4">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
                               <div className={`flex h-10 w-10 items-center justify-center rounded-full ${
-                                user.role === 'admin'
+                                member.role === 'admin'
                                   ? 'bg-primary/10 text-primary'
                                   : 'bg-muted'
                               }`}>
-                                {user.role === 'admin' ? (
+                                {member.role === 'admin' ? (
                                   <Shield className="h-5 w-5" />
                                 ) : (
                                   <UserIcon className="h-5 w-5" />
                                 )}
                               </div>
                               <div>
-                                <p className="font-medium">{user.username}</p>
-                                <p className="text-sm text-muted-foreground">{user.email}</p>
+                                <p className="font-medium">{member.username}</p>
+                                <p className="text-sm text-muted-foreground">{member.email}</p>
                               </div>
-                              <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
-                                {user.role === 'admin' ? 'Admin' : 'User'}
+                              <Badge variant={member.role === 'admin' ? 'default' : 'secondary'}>
+                                {member.role === 'admin' ? 'Admin' : 'User'}
                               </Badge>
                             </div>
 
-                            {user.id !== user?.userId && (
+                            {String(member.id) !== String(authUser?.userId || "") && (
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <Button variant="ghost" size="sm">
@@ -868,20 +863,20 @@ export default function SubClientDetailPage() {
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
-                                  {user.role === 'admin' ? (
-                                    <DropdownMenuItem onClick={() => handleUpdateRole(user, 'user')}>
+                                  {member.role === 'admin' ? (
+                                    <DropdownMenuItem onClick={() => handleUpdateRole(member, 'user')}>
                                       <UserIcon className="h-4 w-4 mr-2" />
                                       Change to User
                                     </DropdownMenuItem>
                                   ) : (
-                                    <DropdownMenuItem onClick={() => handleUpdateRole(user, 'admin')}>
+                                    <DropdownMenuItem onClick={() => handleUpdateRole(member, 'admin')}>
                                       <Shield className="h-4 w-4 mr-2" />
                                       Change to Admin
                                     </DropdownMenuItem>
                                   )}
                                   <DropdownMenuItem
                                     onClick={() => {
-                                      setUserToDelete(user);
+                                      setUserToDelete(member);
                                       setDeleteUserDialogOpen(true);
                                     }}
                                     className="text-red-600 focus:text-red-600"
@@ -995,7 +990,7 @@ export default function SubClientDetailPage() {
                       ) : (
                         <div className="flex flex-col items-center gap-4 p-6 border rounded-lg bg-white">
                           <img
-                            src={qrCodeImage}
+                            src={qrCodeImage ?? undefined}
                             alt="WhatsApp QR Code"
                             className="w-64 h-64"
                           />

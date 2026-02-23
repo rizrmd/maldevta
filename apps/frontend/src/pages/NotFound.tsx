@@ -1,3 +1,4 @@
+import { Link } from "wouter";
 import AppLayout from "@/components/app-layout";
 
 import {
@@ -37,12 +38,12 @@ export default function NotFoundPage() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                <a
+                <Link
                   href="/"
                   className="font-medium text-primary hover:underline"
                 >
                   Go back to home
-                </a>
+                </Link>
               </p>
             </CardContent>
           </Card>

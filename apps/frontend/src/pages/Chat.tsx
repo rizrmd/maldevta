@@ -600,8 +600,6 @@ export default function ChatPage() {
         addMessage({
           role: "system",
           content: confirmationMessage,
-          conversationId: currentConversation?.id || "",
-          projectId: projectIdRef.current,
         });
 
         // Save to localStorage for Files page
@@ -668,8 +666,6 @@ export default function ChatPage() {
       addMessage({
         role: "system",
         content: confirmationMessage,
-        conversationId: currentConversation?.id || "",
-        projectId: projectIdRef.current,
       });
 
       // Save to localStorage for Files page

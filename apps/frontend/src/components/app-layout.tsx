@@ -23,15 +23,15 @@ export default function AppLayout({
 }) {
   if (!showSidebar) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background flex flex-col">
         <header className="flex h-16 shrink-0 items-center border-b">
           <div className="flex w-full items-center gap-2 px-4">
             <div className="flex-1">{header}</div>
             {headerRight}
           </div>
         </header>
-        <div className="flex flex-1 pt-0 overflow-auto relative">
-          <main className="absolute inset-0 px-4 pb-4 flex flex-col">
+        <div className="flex flex-1 min-h-0 pt-0 overflow-auto">
+          <main className="w-full px-4 pb-4 pt-4 flex flex-col min-h-0">
             <div
               className={cn(
                 "relative flex-1 rounded-2xl border bg-white min-h-0",
