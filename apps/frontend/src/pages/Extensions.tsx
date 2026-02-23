@@ -40,8 +40,6 @@ import {
   Edit,
   Power,
   RotateCcw,
-  MessageSquare,
-  Layers,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useUIStore } from "@/stores";
@@ -107,7 +105,7 @@ export default function ExtensionsPage() {
         id: "pdf",
         name: "PDF",
         description: "Extract text content from PDF documents",
-        author: "AIBase",
+        author: "Maldevta",
         version: "1.0.0",
         category: "Documents",
         enabled: true,
@@ -118,7 +116,7 @@ export default function ExtensionsPage() {
         id: "excel",
         name: "Excel",
         description: "Extract data from Excel spreadsheets (.xlsx) with SQL support via DuckDB",
-        author: "AIBase",
+        author: "Maldevta",
         version: "1.0.0",
         category: "Documents",
         enabled: true,
@@ -129,7 +127,7 @@ export default function ExtensionsPage() {
         id: "word",
         name: "Word",
         description: "Extract text from Word documents (.docx)",
-        author: "AIBase",
+        author: "Maldevta",
         version: "1.0.0",
         category: "Documents",
         enabled: true,
@@ -140,7 +138,7 @@ export default function ExtensionsPage() {
         id: "image",
         name: "Image",
         description: "Analyze images using AI vision (OpenAI Vision API)",
-        author: "AIBase",
+        author: "Maldevta",
         version: "1.0.0",
         category: "Documents",
         enabled: false,
@@ -151,7 +149,7 @@ export default function ExtensionsPage() {
         id: "powerpoint",
         name: "PowerPoint",
         description: "Extract text from PowerPoint presentations (.pptx, .ppt)",
-        author: "AIBase",
+        author: "Maldevta",
         version: "1.0.0",
         category: "Documents",
         enabled: false,
@@ -163,7 +161,7 @@ export default function ExtensionsPage() {
         id: "search",
         name: "Search",
         description: "Web and image search using Brave Search API",
-        author: "AIBase",
+        author: "Maldevta",
         version: "1.0.0",
         category: "Web",
         enabled: false,
@@ -175,7 +173,7 @@ export default function ExtensionsPage() {
         id: "postgresql",
         name: "PostgreSQL",
         description: "Query PostgreSQL databases with secure credential storage",
-        author: "AIBase",
+        author: "Maldevta",
         version: "1.0.0",
         category: "Database",
         enabled: false,
@@ -186,7 +184,7 @@ export default function ExtensionsPage() {
         id: "clickhouse",
         name: "ClickHouse",
         description: "Query ClickHouse databases",
-        author: "AIBase",
+        author: "Maldevta",
         version: "1.0.0",
         category: "Database",
         enabled: false,
@@ -197,7 +195,7 @@ export default function ExtensionsPage() {
         id: "trino",
         name: "Trino",
         description: "Query Trino databases",
-        author: "AIBase",
+        author: "Maldevta",
         version: "1.0.0",
         category: "Database",
         enabled: false,
@@ -209,7 +207,7 @@ export default function ExtensionsPage() {
         id: "chart",
         name: "Chart",
         description: "Display interactive charts (bar, line, pie, area) using ECharts",
-        author: "AIBase",
+        author: "Maldevta",
         version: "1.0.0",
         category: "Visualization",
         enabled: false,
@@ -220,7 +218,7 @@ export default function ExtensionsPage() {
         id: "table",
         name: "Table",
         description: "Display tabular data with sortable columns",
-        author: "AIBase",
+        author: "Maldevta",
         version: "1.0.0",
         category: "Visualization",
         enabled: false,
@@ -231,7 +229,7 @@ export default function ExtensionsPage() {
         id: "mermaid",
         name: "Mermaid",
         description: "Render Mermaid diagrams (flowcharts, sequence diagrams)",
-        author: "AIBase",
+        author: "Maldevta",
         version: "1.0.0",
         category: "Visualization",
         enabled: false,
@@ -243,7 +241,7 @@ export default function ExtensionsPage() {
         id: "chat-logger",
         name: "Chat Logger",
         description: "Log chat messages for analytics (read-only)",
-        author: "AIBase",
+        author: "Maldevta",
         version: "1.0.0",
         category: "Chat",
         enabled: false,
@@ -254,7 +252,7 @@ export default function ExtensionsPage() {
         id: "profanity-filter",
         name: "Profanity Filter",
         description: "Filter inappropriate content from user messages",
-        author: "AIBase",
+        author: "Maldevta",
         version: "1.0.0",
         category: "Chat",
         enabled: false,
@@ -265,7 +263,7 @@ export default function ExtensionsPage() {
         id: "response-enhancer",
         name: "Response Enhancer",
         description: "Add formatting and disclaimers to AI responses",
-        author: "AIBase",
+        author: "Maldevta",
         version: "1.0.0",
         category: "Chat",
         enabled: false,
@@ -277,7 +275,7 @@ export default function ExtensionsPage() {
         id: "context-manager",
         name: "Context Manager",
         description: "Read/modify conversation context and compaction settings",
-        author: "AIBase",
+        author: "Maldevta",
         version: "1.0.0",
         category: "Context",
         enabled: false,
@@ -289,7 +287,7 @@ export default function ExtensionsPage() {
         id: "peek",
         name: "Peek",
         description: "Paginated view of large outputs",
-        author: "AIBase",
+        author: "Maldevta",
         version: "1.0.0",
         category: "Utilities",
         enabled: false,
@@ -300,7 +298,7 @@ export default function ExtensionsPage() {
         id: "extension-creator",
         name: "Extension Creator",
         description: "Create extensions via natural language",
-        author: "AIBase",
+        author: "Maldevta",
         version: "1.0.0",
         category: "Utilities",
         enabled: false,
@@ -681,14 +679,7 @@ export default function ExtensionsPage() {
     { id: "utilities", label: "Utilities", icon: Wrench },
     { id: "visualization", label: "Visualization", icon: BarChart3 },
     { id: "web", label: "Web", icon: Globe },
-    { id: "chat", label: "Chat", icon: MessageSquare },
-    { id: "context", label: "Context", icon: Layers },
   ];
-
-  const getCategoryCount = (categoryId: string) => {
-    if (categoryId === "all") return extensions.length;
-    return extensions.filter(ext => ext.category.toLowerCase() === categoryId.toLowerCase()).length;
-  };
 
   const getCapabilityTagColor = (capability: string) => {
     const lower = capability.toLowerCase();
@@ -755,7 +746,6 @@ export default function ExtensionsPage() {
         <div className="flex flex-wrap gap-2">
           {categoryConfig.map((cat) => {
             const Icon = cat.icon;
-            const count = getCategoryCount(cat.id);
             return (
               <Button
                 key={cat.id}
@@ -764,7 +754,7 @@ export default function ExtensionsPage() {
                 className={selectedCategory === cat.id ? "bg-black text-white hover:bg-gray-800" : ""}
               >
                 {Icon && <Icon className="mr-2 h-4 w-4" />}
-                {cat.label} ({count})
+                {cat.label}
               </Button>
             );
           })}
@@ -773,7 +763,10 @@ export default function ExtensionsPage() {
         {/* Extension Cards */}
         {loading ? (
           <div className="flex h-64 items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+            <div className="text-center">
+              <div className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-slate-200 border-t-slate-600" />
+              <p className="mt-4 text-sm text-slate-600">Loading Extensions...</p>
+            </div>
           </div>
         ) : filteredExtensions.length === 0 ? (
           <div className="py-12 text-center">
@@ -794,7 +787,7 @@ export default function ExtensionsPage() {
                     : "border-gray-200"
                 }`}
               >
-                <CardContent className="p-4">
+                <CardContent className="p-2">
                   <div className="flex flex-col">
                     {/* Header: Icon, Title, Description */}
                     <div className="flex items-start gap-3">
@@ -806,12 +799,12 @@ export default function ExtensionsPage() {
                       {/* Title and Description - SEJAJAR */}
                       <div className="flex min-w-0 flex-1 flex-col">
                         <h3 className="font-semibold text-gray-900 text-base">{ext.name}</h3>
-                        <p className="text-sm text-gray-600 line-clamp-2 mt-1">
+                        <p className="text-sm text-gray-600 line-clamp-2 mt-0.5">
                           {ext.description}
                         </p>
 
                         {/* Version, Provider - SEJAJAR DESKRIPSI */}
-                        <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
+                        <div className="flex items-center gap-2 mt-1.5 text-xs text-gray-500">
                           <span>v1.0.0</span>
                           <span>•</span>
                           <span>Maldevta</span>
@@ -819,7 +812,7 @@ export default function ExtensionsPage() {
 
                         {/* Built-in Badge - DI BAWAH VERSI, BARIS BARU */}
                         {ext.is_default && (
-                          <div className="mt-2">
+                          <div className="mt-1.5">
                             <span className="px-2 py-0.5 rounded border border-gray-300 text-gray-600 text-xs">
                               Built-in
                             </span>
@@ -828,30 +821,34 @@ export default function ExtensionsPage() {
                       </div>
                     </div>
 
-                    {/* GARIS PEMBATAS 1 - Sebelum Capabilities */}
-                    <div className="border-t border-gray-100 my-3"></div>
-
-                    {/* Capabilities Tags */}
+                    {/* Capabilities Tags - dengan border di atas hanya jika ada capabilities */}
                     {ext.capabilities && ext.capabilities.length > 0 && (
-                      <div className="flex flex-wrap items-center gap-1.5 mb-3">
-                        {ext.capabilities.slice(0, 3).map((cap, idx) => (
-                          <span
-                            key={idx}
-                            className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium text-white ${getCapabilityTagColor(cap)}`}
-                          >
-                            {cap}
-                          </span>
-                        ))}
-                        {ext.capabilities.length > 3 && (
-                          <span className="text-xs text-gray-500">
-                            +{ext.capabilities.length - 3} more
-                          </span>
-                        )}
-                      </div>
+                      <>
+                        <div className="border-t border-gray-100 my-2"></div>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {ext.capabilities.slice(0, 3).map((cap, idx) => (
+                            <span
+                              key={idx}
+                              className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium text-white ${getCapabilityTagColor(cap)}`}
+                            >
+                              {cap}
+                            </span>
+                          ))}
+                          {ext.capabilities.length > 3 && (
+                            <span className="text-xs text-gray-500">
+                              +{ext.capabilities.length - 3} more
+                            </span>
+                          )}
+                        </div>
+                      </>
                     )}
 
-                    {/* GARIS PEMBATAS 2 - Sebelum Action Buttons */}
-                    <div className="border-t border-gray-100 my-3"></div>
+                    {/* Border sebelum Action Buttons */}
+                    {ext.capabilities && ext.capabilities.length > 0 ? (
+                      <div className="border-t border-gray-100 my-2"></div>
+                    ) : (
+                      <div className="border-t border-gray-100 my-2"></div>
+                    )}
 
                     {/* Action Buttons */}
                     <div className="flex items-center gap-2">
