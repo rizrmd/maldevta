@@ -19,6 +19,7 @@ import { EmbedSettings } from "@/components/pages/developer/embed-settings";
 import SettingsPage from "@/pages/Settings";
 import SubClientSettingsPage from "@/pages/SubClientSettings";
 import SubClientManagementPage from "@/pages/SubClientManagement";
+import { SubClientDetailPage } from "@/components/pages/sub-client";
 // import SupportPage from "@/pages/Support"; // TODO: Create SupportPage
 import BillingPage from "@/pages/Billing";
 import PaymentPage from "@/pages/Payment";
@@ -170,6 +171,8 @@ function App() {
             <Route path="/extensions/:projectId" component={ExtensionsPage} />
             <Route path="/sub-clients/settings/:projectId" component={SubClientSettingsPage} />
             <Route path="/sub-clients/management/:projectId" component={SubClientManagementPage} />
+            <Route path="/projects/:projectId/sub-clients/:subClientId" component={SubClientDetailPage} />
+            <Route path="/sub-clients/:subClientId" component={SubClientDetailPage} />
 
             {/* Legacy routes without projectId - redirect or fallback */}
             <Route path="/whatsapp" component={WhatsAppPage} />

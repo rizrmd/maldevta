@@ -668,7 +668,7 @@ export default function SubClientManagementPage() {
                                   {/* Name and Description */}
                                   <div className="flex items-center gap-2 flex-wrap">
                                     <button
-                                      onClick={() => setLocation(`/sub-clients/${subClient.id}`)}
+                                      onClick={() => setLocation(`/projects/${projectId}/sub-clients/${subClient.id}`)}
                                       className="text-lg font-semibold text-slate-900 hover:text-primary transition-colors text-left"
                                     >
                                       {subClient.name}
@@ -741,7 +741,7 @@ export default function SubClientManagementPage() {
                                         Edit
                                       </DropdownMenuItem>
                                       <DropdownMenuItem
-                                        onClick={() => setLocation(`/sub-clients/${subClient.id}`)}
+                                        onClick={() => setLocation(`/projects/${projectId}/sub-clients/${subClient.id}`)}
                                       >
                                         <ExternalLink className="h-4 w-4 mr-2" />
                                         Manage
