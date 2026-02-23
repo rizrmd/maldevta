@@ -4,7 +4,6 @@ import {
   ChevronRightIcon,
   MoreHorizontalIcon,
 } from "lucide-react";
-import { Link } from "wouter";
 
 import { cn } from "@/lib/utils";
 import { buttonVariants, type Button } from "@/components/ui/button";
@@ -50,7 +49,7 @@ function PaginationLink({
   ...props
 }: PaginationLinkProps) {
   return (
-    <Link
+    <a
       aria-current={isActive ? "page" : undefined}
       data-slot="pagination-link"
       data-active={isActive}

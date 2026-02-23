@@ -1,7 +1,6 @@
 import * as React from "react";
 import { ChevronRight, MoreHorizontal } from "lucide-react";
 import { Slot } from "radix-ui";
-import { Link } from "wouter";
 
 import { cn } from "@/lib/utils";
 
@@ -39,10 +38,21 @@ function BreadcrumbLink({
 }: React.ComponentProps<"a"> & {
   asChild?: boolean;
 }) {
-  const Comp = asChild ? Slot.Root : Link;
+  if (asChild) {
+    return (
+      <Slot.Root
+        data-slot="breadcrumb-link"
+        className={cn(
+          "hover:text-foreground transition-colors inline-flex items-center gap-1.5",
+          className,
+        )}
+        {...(props as React.ComponentProps<typeof Slot.Root>)}
+      />
+    );
+  }
 
   return (
-    <Comp
+    <a
       data-slot="breadcrumb-link"
       className={cn("hover:text-foreground transition-colors inline-flex items-center gap-1.5", className)}
       {...props}
