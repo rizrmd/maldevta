@@ -30,6 +30,7 @@ export default function EmbedWidgetPage() {
   const [searchParams] = useSearchParams();
   const projectId = searchParams.get("projectId");
   const embedToken = searchParams.get("embedToken");
+  // @ts-expect-error - uid parameter for future use
   const uid = searchParams.get("uid") || "";
 
   const [loading, setLoading] = useState(true);
