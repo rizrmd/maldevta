@@ -118,8 +118,8 @@ type AuthData struct {
 }
 
 type authParams struct {
-	SessionCookie *http.Cookie `cookie:"aicore_session"`
-	Host          string       `header:"Host"`
+	SessionCookie string `cookie:"aicore_session"`
+	Host          string `header:"Host"`
 }
 
 type licenseVerifyResponse struct {
@@ -133,11 +133,11 @@ type licenseVerifyResponse struct {
 
 //encore:authhandler
 func AuthHandler(ctx context.Context, p *authParams) (auth.UID, *AuthData, error) {
-	if p == nil || p.SessionCookie == nil || p.SessionCookie.Value == "" {
+	if p == nil || p.SessionCookie == "" {
 		return "", nil, &errs.Error{Code: errs.Unauthenticated, Message: "missing session"}
 	}
 
-	tokenHash := hashToken(p.SessionCookie.Value)
+	tokenHash := hashToken(p.SessionCookie)
 	session, err := q().GetSession(ctx, tokenHash)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -495,6 +495,28 @@ func SetupCreateTenant(ctx context.Context, p *setupCreateTenantParams) (*setupC
 		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "invalid license"}
 	}
 
+	// Install license to database
+	licenseID := newID("lic")
+	whatsappEnabled := int64(0)
+	if verified.WhatsappEnabled {
+		whatsappEnabled = 1
+	}
+	subclientEnabled := int64(0)
+	if verified.SubclientEnabled {
+		subclientEnabled = 1
+	}
+	err = q().InsertLicense(ctx, iamdb.InsertLicenseParams{
+		ID:                   licenseID,
+		LicenseKey:           p.LicenseKey,
+		MaxProjectsPerTenant: int64(verified.MaxProjectsPerTenant),
+		WhatsappEnabled:      whatsappEnabled,
+		SubclientEnabled:     subclientEnabled,
+		TenantName:           strings.TrimSpace(p.Name),
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	// Create tenant
 	tenantID := newID("tnt")
 	domain := normalizeHost(p.Domain)
@@ -585,6 +607,79 @@ func SetupCreateAdmin(ctx context.Context, p *setupCreateAdminParams) (*setupCre
 	}
 
 	return &setupCreateAdminResponse{
+		UserID:   userID,
+		Username: p.Username,
+	}, nil
+}
+
+type setupCreateTenantAdminParams struct {
+	LicenseKey string `json:"license_key"`
+	TenantID   string `json:"tenant_id"`
+	Username   string `json:"username"`
+	Password   string `json:"password"`
+}
+
+type setupCreateTenantAdminResponse struct {
+	UserID   string `json:"user_id"`
+	Username string `json:"username"`
+}
+
+// SetupCreateTenantAdmin creates a tenant-level admin user during setup wizard.
+// Unlike SetupCreateAdmin which creates a system admin, this creates a tenant admin
+// who can create projects and manage the tenant.
+//
+//encore:api public method=POST path=/auth/setup/tenant-admin
+func SetupCreateTenantAdmin(ctx context.Context, p *setupCreateTenantAdminParams) (*setupCreateTenantAdminResponse, error) {
+	if p == nil || p.LicenseKey == "" || p.TenantID == "" {
+		return nil, badRequest("license_key and tenant_id are required")
+	}
+	if p.Username == "" || p.Password == "" {
+		return nil, badRequest("username and password are required")
+	}
+
+	// Verify tenant exists
+	_, err := q().GetTenantByID(ctx, p.TenantID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, &errs.Error{Code: errs.NotFound, Message: "tenant not found"}
+		}
+		return nil, err
+	}
+
+	// Verify license
+	verified, err := verifyLicenseWithHub(ctx, p.LicenseKey)
+	if err != nil {
+		return nil, err
+	}
+	if !verified.Valid {
+		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "invalid license"}
+	}
+
+	passwordHash, err := hashPassword(p.Password)
+	if err != nil {
+		return nil, err
+	}
+
+	userID := newID("usr")
+	now := time.Now().UTC()
+	err = q().CreateUser(ctx, iamdb.CreateUserParams{
+		ID:           userID,
+		// Tenant-bound admin user (can create projects for this tenant)
+		TenantID:     sql.NullString{String: p.TenantID, Valid: true},
+		Username:     p.Username,
+		Email:        sql.NullString{},
+		PasswordHash: sql.NullString{String: passwordHash, Valid: true},
+		Role:         string(roleAdmin),
+		Source:       "manual",
+		CreatedAt:    now,
+		UpdatedAt:    now.Unix(),
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &setupCreateTenantAdminResponse{
 		UserID:   userID,
 		Username: p.Username,
 	}, nil
@@ -1106,8 +1201,8 @@ type logoutResponse struct {
 //
 //encore:api public method=POST path=/auth/logout
 func Logout(ctx context.Context, p *authParams) (*logoutResponse, error) {
-	if p != nil && p.SessionCookie != nil && p.SessionCookie.Value != "" {
-		tokenHash := hashToken(p.SessionCookie.Value)
+	if p != nil && p.SessionCookie != "" {
+		tokenHash := hashToken(p.SessionCookie)
 		_ = q().DeleteSession(ctx, tokenHash)
 	}
 

@@ -227,7 +227,7 @@ export function EmbedSettings() {
 
   const generateIframeCode = (): string => {
     if (!projectId || !embedToken) return "";
-    const embedUrl = `${window.location.origin}/embed?projectId=${encodeURIComponent(projectId)}&embedToken=${encodeURIComponent(embedToken)}`;
+    const embedUrl = `${window.location.origin}/embed/chat/${encodeURIComponent(projectId)}`;
 
     return `<iframe
   src="${embedUrl}"
@@ -241,7 +241,7 @@ export function EmbedSettings() {
 
   const generateJavaScriptCode = (): string => {
     if (!projectId || !embedToken) return "";
-    const embedUrl = `${window.location.origin}/embed?projectId=${encodeURIComponent(projectId)}&embedToken=${encodeURIComponent(embedToken)}`;
+    const embedUrl = `${window.location.origin}/embed/chat/${encodeURIComponent(projectId)}`;
 
     return `<div id="maldevta-chat"></div>
 <script>
@@ -273,6 +273,27 @@ export function EmbedSettings() {
     } catch {
       showToast("Failed to copy to clipboard", "error");
       setIsCopying(false);
+    }
+  };
+
+  const handleCopyToken = async () => {
+    if (!embedToken) return;
+    try {
+      await navigator.clipboard.writeText(embedToken);
+      showToast("Embed token copied to clipboard!");
+    } catch {
+      showToast("Failed to copy to clipboard", "error");
+    }
+  };
+
+  const handleCopyUrl = async () => {
+    if (!embedToken || !projectId) return;
+    const embedUrl = `${window.location.origin}/embed?projectId=${encodeURIComponent(projectId)}&embedToken=${encodeURIComponent(embedToken)}`;
+    try {
+      await navigator.clipboard.writeText(embedUrl);
+      showToast("Embed URL copied to clipboard!");
+    } catch {
+      showToast("Failed to copy to clipboard", "error");
     }
   };
 
@@ -481,11 +502,21 @@ export function EmbedSettings() {
                       </p>
                     </div>
                   </div>
-                  <Input
-                    value={embedToken || ""}
-                    readOnly
-                    className="font-mono text-sm bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700"
-                  />
+                  <div className="relative">
+                    <Input
+                      value={embedToken || ""}
+                      readOnly
+                      className="font-mono text-sm bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 pr-24"
+                    />
+                    <Button
+                      onClick={handleCopyToken}
+                      size="sm"
+                      variant="ghost"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-8 px-3 hover:bg-slate-100 dark:hover:bg-slate-700"
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
 
                 {/* Embed URL */}
@@ -502,11 +533,21 @@ export function EmbedSettings() {
                     </div>
                   </div>
                   <div className="space-y-3">
-                    <Input
-                      value={embedToken ? `${window.location.origin}/embed?projectId=${encodeURIComponent(projectId)}&embedToken=${encodeURIComponent(embedToken)}` : ""}
-                      readOnly
-                      className="font-mono text-sm bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700"
-                    />
+                    <div className="relative">
+                      <Input
+                        value={embedToken ? `${window.location.origin}/embed?projectId=${encodeURIComponent(projectId)}&embedToken=${encodeURIComponent(embedToken)}` : ""}
+                        readOnly
+                        className="font-mono text-sm bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 pr-24"
+                      />
+                      <Button
+                        onClick={handleCopyUrl}
+                        size="sm"
+                        variant="ghost"
+                        className="absolute right-1 top-1/2 -translate-y-1/2 h-8 px-3 hover:bg-slate-100 dark:hover:bg-slate-700"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
                     <p className="text-sm text-slate-500 dark:text-slate-400">
                       Use this URL to directly access your embedded chat or open in a new tab.
                     </p>

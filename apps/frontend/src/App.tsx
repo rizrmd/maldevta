@@ -37,6 +37,7 @@ import WhatsAppPage from "@/pages/WhatsApp";
 import WhatsAppQRPage from "@/pages/WhatsAppQR";
 import { SetupRequired } from "@/components/setup-required";
 import AdminSetupPage from "@/pages/AdminSetup";
+import EmbedWidgetPage from "@/pages/EmbedWidget";
 
 //take out hardcode license true
 function LoadingScreen() {
@@ -135,18 +136,22 @@ function App() {
   }
 
   return (
-    <LicenseCheck>
-      <Switch>
-        {/* Public routes - license setup */}
-        <Route path="/license/setup" component={LicenseSetupPage} />
-        <Route path="/license/verify" component={LicenseVerifyPage} />
-        <Route path="/admin-setup" component={RedirectToLogin} />
+    <Switch>
+      {/* Public embed chat widget - no auth, no license required */}
+      <Route path="/embed" component={EmbedWidgetPage} />
 
-        {/* Login route - accessible when licensed but not authenticated */}
-        <Route path="/login" component={LoginPage} />
+      <LicenseCheck>
+        <Switch>
+          {/* Public routes - license setup */}
+          <Route path="/license/setup" component={LicenseSetupPage} />
+          <Route path="/license/verify" component={LicenseVerifyPage} />
+          <Route path="/admin-setup" component={RedirectToLogin} />
 
-        {/* Protected routes - require authentication */}
-        <ProtectedRoute>
+          {/* Login route - accessible when licensed but not authenticated */}
+          <Route path="/login" component={LoginPage} />
+
+          {/* Protected routes - require authentication */}
+          <ProtectedRoute>
           <Switch>
             <Route path="/" component={ProjectSelectorPage} />
             <Route path="/projects-selector" component={ProjectSelectorPage} />
@@ -206,8 +211,9 @@ function App() {
 
         {/* 404 */}
         <Route component={NotFoundPage} />
-      </Switch>
-    </LicenseCheck>
+        </Switch>
+      </LicenseCheck>
+    </Switch>
   );
 }
 

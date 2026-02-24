@@ -2,7 +2,6 @@ package files
 
 import (
 	"context"
-	"net/http"
 )
 
 //encore:service
@@ -45,7 +44,8 @@ func (s *Service) ListFiles(ctx context.Context, project string) (*ListFilesResp
 // UploadFile uploads a file to a project.
 //
 //encore:api public method=POST path=/files/:project/upload
-func (s *Service) UploadFile(ctx context.Context, project string, req *http.Request) (*UploadFileResponse, error) {
+func (s *Service) UploadFile(ctx context.Context, project string) (*UploadFileResponse, error) {
+	// TODO: Implement file upload
 	return &UploadFileResponse{}, nil
 }
 
@@ -59,6 +59,7 @@ func (s *Service) DeleteFile(ctx context.Context, project string, file string) (
 // DownloadFile downloads a file.
 //
 //encore:api public method=GET path=/files/:project/:file/download
-func (s *Service) DownloadFile(ctx context.Context, project string, file string, req *http.Request) (*http.Response, error) {
-	return nil, nil
+func (s *Service) DownloadFile(ctx context.Context, project string, file string) (*UploadFileResponse, error) {
+	// TODO: Implement file download
+	return &UploadFileResponse{}, nil
 }
