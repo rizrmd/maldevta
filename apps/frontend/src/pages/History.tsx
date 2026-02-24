@@ -193,9 +193,15 @@ export default function HistoryPage() {
     }
   };
 
-  const openConversation = () => {
+  const openConversation = (conversationId?: string) => {
     if (selectedProjectId) {
-      setLocation(`/chat/${selectedProjectId}`);
+      if (conversationId) {
+        // Navigate to specific conversation
+        setLocation(`/projects/${selectedProjectId}/chat/${conversationId}`);
+      } else {
+        // Navigate to new chat
+        setLocation(`/chat/${selectedProjectId}`);
+      }
     }
   };
 
@@ -301,7 +307,7 @@ export default function HistoryPage() {
                               <div
                                 key={conv.id}
                                 className="group relative flex items-center gap-3 py-3 px-2 -mx-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
-                                onClick={openConversation}
+                                onClick={() => openConversation(conv.id)}
                               >
                                 {/* Content */}
                                 <div className="flex-1 min-w-0">
@@ -319,6 +325,13 @@ export default function HistoryPage() {
 
                                 {/* Metadata & Actions */}
                                 <div className="flex items-center gap-2 shrink-0">
+                                  {/* Message count badge */}
+                                  {conv.message_count > 0 && (
+                                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                      <MessageSquare className="h-3 w-3" />
+                                      <span>{conv.message_count}</span>
+                                    </div>
+                                  )}
                                   <span className="text-xs text-muted-foreground">
                                     {new Date(conv.updated_at).toLocaleDateString('en-US', {
                                       month: 'short',

@@ -159,8 +159,20 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       createdAt: new Date(),
     };
 
+    let success = false;
+
     set((state) => {
-      if (!state.currentConversation) return state;
+      if (!state.currentConversation) {
+        console.error("[chatStore] addMessage: no current conversation, message not added", message);
+        return state; // Return unchanged state
+      }
+
+      success = true;
+      console.log("[chatStore] addMessage: adding message to conversation", {
+        conversationId: state.currentConversation.id,
+        messageCount: state.currentConversation.messages.length,
+        newMessageRole: message.role
+      });
 
       const updatedConversation = {
         ...state.currentConversation,
@@ -176,6 +188,13 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       };
     });
 
+    if (!success) {
+      console.error("[chatStore] addMessage: failed - no conversation", message);
+      // Return null or throw error to indicate failure
+      return { ...message, content: "[ERROR] Failed to add message - no conversation" };
+    }
+
+    console.log("[chatStore] addMessage: success", { messageId: message.id });
     return message;
   },
 

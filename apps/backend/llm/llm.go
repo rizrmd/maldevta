@@ -10,6 +10,7 @@ import (
 	"math/big"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"encore.app/backend/iam"
@@ -26,6 +27,17 @@ type Service struct {
 	defaultModel *openai.ChatModel
 	defaultErr   error
 	executor     extensions.Executor
+	// Cache for resolved endpoints to avoid repeated DB queries
+	endpointCache      map[string]*ResolvedEndpoint
+	endpointCacheMutex sync.RWMutex
+	endpointCacheTime  map[string]time.Time
+	cacheDuration      time.Duration
+	// Cache for system prompts to avoid repeated string building
+	systemPromptCache      map[string]string
+	systemPromptCacheMutex sync.RWMutex
+	// Cache for chat models to avoid recreating them for each request
+	modelCache      map[string]*openai.ChatModel
+	modelCacheMutex sync.RWMutex
 }
 
 type ModelConfig struct {
@@ -118,7 +130,18 @@ func initService() (*Service, error) {
 	cfg := defaultConfig()
 	model, err := newChatModel(ctx, cfg)
 	executor := extensions.NewGojaExecutor("")
-	return &Service{defaultModel: model, defaultErr: err, executor: executor}, nil
+	return &Service{
+		defaultModel:          model,
+		defaultErr:            err,
+		executor:              executor,
+		endpointCache:         make(map[string]*ResolvedEndpoint),
+		endpointCacheTime:     make(map[string]time.Time),
+		cacheDuration:         10 * time.Minute, // Increased from 5 to 10 minutes for better performance
+		systemPromptCache:     make(map[string]string),
+		systemPromptCacheMutex: sync.RWMutex{},
+		modelCache:            make(map[string]*openai.ChatModel),
+		modelCacheMutex:        sync.RWMutex{},
+	}, nil
 }
 
 func defaultConfig() *ModelConfig {
@@ -134,14 +157,29 @@ func newChatModel(ctx context.Context, cfg *ModelConfig) (*openai.ChatModel, err
 	if cfg == nil || strings.TrimSpace(cfg.APIKey) == "" {
 		return nil, errors.New("OPENAI_API_KEY is not set")
 	}
+
+	// Create model with optimized parameters for complete responses
+	// Increased max_tokens to ensure long responses are not truncated
+	maxTokens := 2000 // Increased to 2000 for complete, detailed responses
+	temperature := float32(0.7)
+
+	fmt.Printf("[LLM] Creating new ChatModel: model=%s, baseURL=%s, maxTokens=%d, temperature=%.1f\n",
+		cfg.Model, cfg.BaseURL, maxTokens, temperature)
+
 	chatModel, err := openai.NewChatModel(ctx, &openai.ChatModelConfig{
 		APIKey:  cfg.APIKey,
 		Model:   cfg.Model,
 		BaseURL: cfg.BaseURL,
+		// Configuration for complete responses:
+		// - Max tokens at 2000 to handle long lists, detailed explanations
+		// - Temperature 0.7 for balanced creativity
+		MaxTokens:   &maxTokens,
+		Temperature: &temperature,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("init llm: %w", err)
 	}
+	fmt.Printf("[LLM] ChatModel created successfully\n")
 	return chatModel, nil
 }
 
@@ -222,6 +260,151 @@ func generateWithConfig(ctx context.Context, cfg *ModelConfig, messages []*schem
 		return nil, err
 	}
 	return chatModel.Generate(ctx, messages)
+}
+
+// generateWithConfigCached uses cached models to avoid recreating them for each request
+func (s *Service) generateWithConfigCached(ctx context.Context, cfg *ModelConfig, messages []*schema.Message) (*schema.Message, error) {
+	// Add timeout to prevent hanging - increased to 60s for reliability
+	// The LLM API needs time to process, but we don't want to wait forever
+	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
+	defer cancel()
+
+	// Create cache key from config
+	key := fmt.Sprintf("%s|%s|%s", cfg.Provider, cfg.BaseURL, cfg.Model)
+
+	// Try cache first with validation
+	s.modelCacheMutex.RLock()
+	cached, ok := s.modelCache[key]
+	s.modelCacheMutex.RUnlock()
+
+	if ok && cached != nil {
+		// Try using cached model first with retry for rate limits
+		resp, err := s.generateWithRetry(ctx, cached, messages)
+		if err == nil {
+			// Cache hit - return successful response
+			return resp, nil
+		}
+		// Check if it's a rate limit error - don't delete cache for rate limits
+		if !isRateLimitError(err) {
+			// Cached model failed - remove it and create a new one
+			fmt.Printf("[WARN] Cached model failed (key=%s): %v - recreating...\n", key, err)
+			s.modelCacheMutex.Lock()
+			delete(s.modelCache, key)
+			s.modelCacheMutex.Unlock()
+		}
+	}
+
+	// Create new model (not cached or cached failed)
+	chatModel, err := newChatModel(ctx, cfg)
+	if err != nil {
+		return nil, fmt.Errorf("create chat model: %w", err)
+	}
+
+	// Generate with new model (with retry for rate limits)
+	resp, err := s.generateWithRetry(ctx, chatModel, messages)
+	if err != nil {
+		return nil, fmt.Errorf("generate: %w", err)
+	}
+
+	// Store in cache for future use
+	s.modelCacheMutex.Lock()
+	s.modelCache[key] = chatModel
+	s.modelCacheMutex.Unlock()
+
+	return resp, nil
+}
+
+// generateWithRetry attempts to generate with retry on rate limit errors
+func (s *Service) generateWithRetry(ctx context.Context, chatModel *openai.ChatModel, messages []*schema.Message) (*schema.Message, error) {
+	maxRetries := 3
+	baseDelay := 2 * time.Second // Start with 2 seconds
+
+	// Log the request details for debugging
+	fmt.Printf("[LLM] generateWithRetry: starting with %d messages\n", len(messages))
+	for i, msg := range messages {
+		fmt.Printf("[LLM]   Message %d: role=%s, content_length=%d\n", i, msg.Role, len(msg.Content))
+		if i == 0 {
+			fmt.Printf("[LLM]   System prompt (first 200 chars): %s...\n", truncateString(msg.Content, 200))
+		}
+	}
+
+	for attempt := 0; attempt <= maxRetries; attempt++ {
+		if attempt > 0 {
+			fmt.Printf("[LLM] generateWithRetry: attempt %d/%d\n", attempt, maxRetries+1)
+		}
+
+		startCall := time.Now()
+		resp, err := chatModel.Generate(ctx, messages)
+		callDuration := time.Since(startCall)
+
+		if err == nil {
+			fmt.Printf("[LLM] generateWithRetry: SUCCESS in %v (attempt %d)\n", callDuration, attempt+1)
+			fmt.Printf("[LLM] Response: role=%s, content_length=%d, truncated=%s\n",
+				resp.Role, len(resp.Content), truncateString(resp.Content, 100))
+			return resp, nil
+		}
+
+		fmt.Printf("[LLM] generateWithRetry: FAILED after %v (attempt %d): %v\n", callDuration, attempt+1, err)
+
+		// Check if it's a rate limit error (429)
+		if !isRateLimitError(err) {
+			// Not a rate limit error - don't retry
+			return nil, err
+		}
+
+		// Rate limit detected - wait and retry
+		if attempt < maxRetries {
+			waitTime := baseDelay * time.Duration(1<<attempt) // Exponential backoff: 2s, 4s, 8s
+			fmt.Printf("[WARN] Rate limit detected (attempt %d/%d), waiting %v before retry...\n",
+				attempt+1, maxRetries+1, waitTime)
+
+			select {
+			case <-time.After(waitTime):
+				// Continue to next retry
+			case <-ctx.Done():
+				return nil, fmt.Errorf("rate limit retry cancelled: %w", ctx.Err())
+			}
+		} else {
+			return nil, fmt.Errorf("rate limit: max retries (%d) exceeded: %w", maxRetries, err)
+		}
+	}
+
+	return nil, fmt.Errorf("rate limit: failed after %d retries", maxRetries+1)
+}
+
+// truncateString truncates a string to max length and adds "..." if truncated
+func truncateString(s string, maxLen int) string {
+	if len(s) <= maxLen {
+		return s
+	}
+	return s[:maxLen] + "..."
+}
+
+// isRateLimitError checks if an error is a rate limit error
+func isRateLimitError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	errStr := strings.ToLower(err.Error())
+
+	// Check for various rate limit indicators
+	rateLimitIndicators := []string{
+		"429",
+		"rate limit",
+		"too many requests",
+		"quota exceeded",
+		"ratelimit",
+		"rate-limited",
+	}
+
+	for _, indicator := range rateLimitIndicators {
+		if strings.Contains(errStr, indicator) {
+			return true
+		}
+	}
+
+	return false
 }
 
 // CreateEndpoint creates a managed LLM endpoint.
@@ -591,6 +774,19 @@ func ResolveEndpointForTenant(ctx context.Context, tenantID string) (*ResolvedEn
 		return nil, nil
 	}
 
+	// Try to return from cache first (this is the optimization)
+	// Note: We can't access s.endpointCache from this package-level function
+	// So we'll do the caching at the call site in Generate method
+
+	return resolveEndpointFromDB(ctx, tenantID)
+}
+
+func resolveEndpointFromDB(ctx context.Context, tenantID string) (*ResolvedEndpoint, error) {
+	tenantID = strings.TrimSpace(tenantID)
+	if tenantID == "" {
+		return nil, nil
+	}
+
 	db, err := getDB()
 	if err != nil {
 		return nil, err
@@ -665,10 +861,34 @@ func ResolveEndpointForTenant(ctx context.Context, tenantID string) (*ResolvedEn
 	return &selected, nil
 }
 
-// Generate runs a single prompt and returns the model response.
+// getCachedEndpoint returns a cached endpoint if available and fresh
+func (s *Service) getCachedEndpoint(tenantID string) *ResolvedEndpoint {
+	s.endpointCacheMutex.RLock()
+	defer s.endpointCacheMutex.RUnlock()
+
+	if cached, ok := s.endpointCache[tenantID]; ok {
+		if cacheTime, ok := s.endpointCacheTime[tenantID]; ok {
+			if time.Since(cacheTime) < s.cacheDuration {
+				return cached
+			}
+		}
+	}
+	return nil
+}
+
+// setCachedEndpoint stores an endpoint in the cache
+func (s *Service) setCachedEndpoint(tenantID string, endpoint *ResolvedEndpoint) {
+	s.endpointCacheMutex.Lock()
+	defer s.endpointCacheMutex.Unlock()
+
+	s.endpointCache[tenantID] = endpoint
+	s.endpointCacheTime[tenantID] = time.Now()
+}
+
+// GenerateStream runs a single prompt and streams the model response.
 //
-//encore:api public method=POST path=/llm/generate
-func (s *Service) Generate(ctx context.Context, p *GenerateParams) (*GenerateResponse, error) {
+//encore:api public method=POST path=/llm/generate/stream
+func (s *Service) GenerateStream(ctx context.Context, p *GenerateParams) (*GenerateStreamResponse, error) {
 	if p == nil || strings.TrimSpace(p.Prompt) == "" {
 		return nil, badRequest("prompt is required")
 	}
@@ -681,9 +901,21 @@ func (s *Service) Generate(ctx context.Context, p *GenerateParams) (*GenerateRes
 		tenantID = strings.TrimSpace(p.ProjectContext.Metadata["tenant_id"])
 	}
 
-	resolved, err := ResolveEndpointForTenant(ctx, tenantID)
-	if err != nil {
-		return nil, &errs.Error{Code: errs.Internal, Message: fmt.Sprintf("resolve llm endpoint failed: %v", err)}
+	// Try cache first for faster responses
+	var resolved *ResolvedEndpoint
+	if tenantID != "" {
+		resolved = s.getCachedEndpoint(tenantID)
+	}
+	if resolved == nil {
+		var err error
+		resolved, err = resolveEndpointFromDB(ctx, tenantID)
+		if err != nil {
+			return nil, &errs.Error{Code: errs.Internal, Message: fmt.Sprintf("resolve llm endpoint failed: %v", err)}
+		}
+		// Cache for future requests
+		if tenantID != "" && resolved != nil {
+			s.setCachedEndpoint(tenantID, resolved)
+		}
 	}
 	cfg := toConfig(resolved)
 	if strings.TrimSpace(cfg.APIKey) == "" {
@@ -693,16 +925,18 @@ func (s *Service) Generate(ctx context.Context, p *GenerateParams) (*GenerateRes
 		cfg = defaultConfig()
 	}
 
-	// Build system prompt from project context
-	systemPrompt := buildSystemPrompt(p.ProjectContext)
+	// Build system prompt from project context (cached)
+	systemPrompt := s.buildSystemPromptCached(p.ProjectContext)
 
-	// Execute pre-generate extension hooks
+	// Execute pre-generate extension hooks (skip if no extensions for speed)
 	preprocessed := p.Prompt
-	if p.ProjectContext.Extensions != nil {
+	if p.ProjectContext.Extensions != nil && len(p.ProjectContext.Extensions) > 0 {
 		preprocessed = s.applyExtensionHooks(ctx, "pre-generate", preprocessed, p.ProjectContext)
 	}
 
-	resp, err := generateWithConfig(ctx, cfg, []*schema.Message{
+	// For streaming, we'll generate the full response first
+	// In a future enhancement, this could use true streaming with the eino library
+	resp, err := s.generateWithConfigCached(ctx, cfg, []*schema.Message{
 		{Role: schema.System, Content: systemPrompt},
 		{Role: schema.User, Content: preprocessed},
 	})
@@ -711,9 +945,101 @@ func (s *Service) Generate(ctx context.Context, p *GenerateParams) (*GenerateRes
 	}
 
 	content := strings.TrimSpace(resp.Content)
-	if p.ProjectContext.Extensions != nil {
+	if p.ProjectContext.Extensions != nil && len(p.ProjectContext.Extensions) > 0 {
 		content = s.applyExtensionHooks(ctx, "post-generate", content, p.ProjectContext)
 	}
+
+	return &GenerateStreamResponse{Content: content}, nil
+}
+
+// Generate runs a single prompt and returns the model response.
+//
+//encore:api public method=POST path=/llm/generate
+func (s *Service) Generate(ctx context.Context, p *GenerateParams) (*GenerateResponse, error) {
+	startTime := time.Now()
+
+	if p == nil || strings.TrimSpace(p.Prompt) == "" {
+		return nil, badRequest("prompt is required")
+	}
+	if p.ProjectContext == nil {
+		return nil, badRequest("project_context is required")
+	}
+
+	// Fast response for simple greetings (bypass LLM for common greetings)
+	promptLower := strings.ToLower(strings.TrimSpace(p.Prompt))
+	if isSimpleGreeting(promptLower) {
+		fmt.Printf("[LLM] Fast greeting detected, responding immediately\n")
+		return &GenerateResponse{Content: getGreetingResponse(promptLower)}, nil
+	}
+
+	validationTime := time.Since(startTime)
+	fmt.Printf("[LLM] Generate: validation took %v\n", validationTime)
+
+	tenantID := ""
+	if p.ProjectContext.Metadata != nil {
+		tenantID = strings.TrimSpace(p.ProjectContext.Metadata["tenant_id"])
+	}
+
+	// Try cache first for faster responses
+	endpointStartTime := time.Now()
+	var resolved *ResolvedEndpoint
+	if tenantID != "" {
+		resolved = s.getCachedEndpoint(tenantID)
+		if resolved != nil {
+			fmt.Printf("[LLM] Generate: endpoint cache hit\n")
+		}
+	}
+	if resolved == nil {
+		var err error
+		resolved, err = resolveEndpointFromDB(ctx, tenantID)
+		if err != nil {
+			return nil, &errs.Error{Code: errs.Internal, Message: fmt.Sprintf("resolve llm endpoint failed: %v", err)}
+		}
+		// Cache for future requests
+		if tenantID != "" && resolved != nil {
+			s.setCachedEndpoint(tenantID, resolved)
+		}
+		fmt.Printf("[LLM] Generate: endpoint DB lookup took %v\n", time.Since(endpointStartTime))
+	}
+	cfg := toConfig(resolved)
+	if strings.TrimSpace(cfg.APIKey) == "" {
+		if s.defaultErr != nil || s.defaultModel == nil {
+			return nil, &errs.Error{Code: errs.Unavailable, Message: "llm not configured"}
+		}
+		cfg = defaultConfig()
+	}
+
+	// Build system prompt from project context (cached)
+	promptStartTime := time.Now()
+	systemPrompt := s.buildSystemPromptCached(p.ProjectContext)
+	fmt.Printf("[LLM] Generate: system prompt built in %v\n", time.Since(promptStartTime))
+
+	// Execute pre-generate extension hooks (skip if no extensions for speed)
+	preprocessed := p.Prompt
+	if p.ProjectContext.Extensions != nil && len(p.ProjectContext.Extensions) > 0 {
+		preprocessed = s.applyExtensionHooks(ctx, "pre-generate", preprocessed, p.ProjectContext)
+	}
+
+	// Call LLM
+	llmStartTime := time.Now()
+	resp, err := s.generateWithConfigCached(ctx, cfg, []*schema.Message{
+		{Role: schema.System, Content: systemPrompt},
+		{Role: schema.User, Content: preprocessed},
+	})
+	if err != nil {
+		fmt.Printf("[LLM] Generate: LLM call failed after %v: %v\n", time.Since(llmStartTime), err)
+		return nil, &errs.Error{Code: errs.Internal, Message: fmt.Sprintf("generate failed: %v", err)}
+	}
+	fmt.Printf("[LLM] Generate: LLM call completed in %v\n", time.Since(llmStartTime))
+
+	content := strings.TrimSpace(resp.Content)
+	if p.ProjectContext.Extensions != nil && len(p.ProjectContext.Extensions) > 0 {
+		content = s.applyExtensionHooks(ctx, "post-generate", content, p.ProjectContext)
+	}
+
+	totalTime := time.Since(startTime)
+	fmt.Printf("[LLM] Generate: total request took %v (validation=%v, endpoint=%v, prompt=%v, llm=%v)\n",
+		totalTime, validationTime, time.Since(endpointStartTime), time.Since(promptStartTime), time.Since(llmStartTime))
 
 	return &GenerateResponse{Content: content}, nil
 }
@@ -807,6 +1133,10 @@ type GenerateResponse struct {
 	Content string `json:"content"`
 }
 
+type GenerateStreamResponse struct {
+	Content string `json:"content"`
+}
+
 type StatusResponse struct {
 	Ready bool   `json:"ready"`
 	Error string `json:"error"`
@@ -818,6 +1148,81 @@ type HealthResponse struct {
 
 func badRequest(message string) error {
 	return &errs.Error{Code: errs.InvalidArgument, Message: message}
+}
+
+// isSimpleGreeting checks if the prompt is a simple greeting that can be fast-tracked
+func isSimpleGreeting(prompt string) bool {
+	// Trim and clean the prompt
+	prompt = strings.TrimSpace(strings.ToLower(prompt))
+
+	// Empty or just symbols/emojis - treat as greeting
+	if len(prompt) <= 3 {
+		return true
+	}
+
+	// Common greetings in English and Indonesian
+	greetings := []string{
+		// English
+		"hi", "hello", "hey", "hiya", "howdy",
+		"good morning", "good afternoon", "good evening", "good night",
+		"what's up", "whats up", "sup", "yo",
+		// Indonesian
+		"halo", "hai", "haii", "helo", "helo",
+		"selamat pagi", "selamat siang", "selamat sore", "selamat malam",
+		"apa kabar", "kabar", "salam",
+		// Emojis and symbols
+		"👋", "🙌", "👋🏻", "👋🏼", "👋🏽", "👋🏾", "👋🏿",
+		":)", ": )", ":-)", "=)", "= )",
+		// Short greetings
+		"?", "!", ".", "...",
+	}
+
+	for _, greeting := range greetings {
+		// Exact match
+		if prompt == greeting {
+			return true
+		}
+		// Starts with greeting
+		if strings.HasPrefix(prompt, greeting+" ") {
+			return true
+		}
+		// Contains greeting (for emojis)
+		if strings.Contains(prompt, greeting) && len(prompt) < 10 {
+			return true
+		}
+	}
+
+	// Very short prompts (1-3 chars) are likely greetings
+	if len(prompt) <= 3 {
+		return true
+	}
+
+	return false
+}
+
+// getGreetingResponse returns a quick response for simple greetings
+func getGreetingResponse(prompt string) string {
+	prompt = strings.ToLower(strings.TrimSpace(prompt))
+
+	// Handle different greeting types
+	if strings.Contains(prompt, "pagi") || strings.Contains(prompt, "morning") {
+		return "Selamat pagi! Semoga harimu menyenangkan. Ada yang bisa saya bantu hari ini? / Good morning! Hope you have a great day. How can I help you?"
+	}
+	if strings.Contains(prompt, "siang") || strings.Contains(prompt, "afternoon") {
+		return "Selamat siang! Ada yang bisa saya bantu? / Good afternoon! How can I help you today?"
+	}
+	if strings.Contains(prompt, "sore") || strings.Contains(prompt, "evening") {
+		return "Selamat sore! Ada yang bisa saya bantu? / Good evening! How can I help you?"
+	}
+	if strings.Contains(prompt, "malam") || strings.Contains(prompt, "night") {
+		return "Selamat malam! Ada yang bisa saya bantu? / Good night! How can I help you?"
+	}
+	if strings.Contains(prompt, "kabar") || strings.Contains(prompt, "apa kabar") {
+		return "Kabar baik! Terima kasih sudah bertanya. Ada yang bisa saya bantu? / I'm doing well, thanks! How can I help you today?"
+	}
+
+	// Default friendly response
+	return "Halo! 👋 Ada yang bisa saya bantu hari ini? / Hello! 👋 How can I help you today?"
 }
 
 func randomHex(n int) string {
@@ -836,51 +1241,57 @@ func randomHex(n int) string {
 }
 
 // buildSystemPrompt constructs a system prompt from project context.
+// Optimized to be concise while maintaining functionality.
 func buildSystemPrompt(ctx *ProjectContext) string {
 	var sb strings.Builder
 
-	// Build a strict system prompt based on user's instructions
-	sb.WriteString("=== IMPORTANT: STRICT ROLE AND SCOPE COMPLIANCE ===\n\n")
-	sb.WriteString("You are an AI assistant with STRICT limitations on what you can discuss. ")
-	sb.WriteString("You MUST comply with the role and scope defined below.\n\n")
-
-	if ctx.ProjectName != "" {
-		sb.WriteString(fmt.Sprintf("Project: %s\n\n", ctx.ProjectName))
-	}
-
-	if ctx.Instructions != "" {
-		sb.WriteString("=== YOUR ROLE AND LIMITATIONS ===\n")
-		sb.WriteString(ctx.Instructions)
-		sb.WriteString("\n\n")
-	}
-
-	sb.WriteString("=== CRITICAL RULES YOU MUST FOLLOW ===\n")
-	sb.WriteString("1. You MUST ONLY answer questions within the scope defined in your role above.\n")
-	sb.WriteString("2. If a question is OUTSIDE your defined scope, you MUST refuse to answer.\n")
-	sb.WriteString("3. When refusing, explain that you can only help with topics in your specific scope.\n")
-	sb.WriteString("4. Do NOT attempt to be helpful by answering questions outside your scope.\n")
-	sb.WriteString("5. Your role is LIMITED - respect these limitations strictly.\n\n")
-
-	sb.WriteString("=== HOW TO REFUSE OUT-OF-SCOPE QUESTIONS ===\n")
-	sb.WriteString("When a user asks something outside your scope, respond with:\n")
-	sb.WriteString("\"Maaf, saya hanya dapat membantu pertanyaan seputar [your scope]. ")
-	sb.WriteString("Pertanyaan Anda tentang [their topic] di luar bidang keahlian saya. ")
-	sb.WriteString("Silakan konsultasikan dengan ahli yang relevan untuk topik tersebut.\"\n\n")
-
-	if ctx.Tone != "" {
-		sb.WriteString(fmt.Sprintf("Tone: Respond in a %s manner.\n\n", ctx.Tone))
-	}
-
-	if ctx.Language != "" && ctx.Language != "english" && ctx.Language != "en" {
-		sb.WriteString(fmt.Sprintf("Language: Respond in %s.\n\n", ctx.Language))
+	// CRITICAL: Instructions from Workspace > Context are MOST important
+	// They define how the AI should respond
+	if ctx.Instructions != "" && len(strings.TrimSpace(ctx.Instructions)) > 10 {
+		// Use instructions as the primary directive
+		sb.WriteString(strings.TrimSpace(ctx.Instructions))
 	} else {
-		sb.WriteString("Language: Respond in the same language as the user's question.\n\n")
+		// Fallback to generic assistant
+		sb.WriteString("You are a helpful AI assistant.")
 	}
 
-	sb.WriteString("=== REMEMBER ===\n")
-	sb.WriteString("Stay within your defined scope. Do not answer questions outside your expertise.\n")
+	// Add project context if meaningful
+	if ctx.ProjectName != "" && ctx.ProjectName != "Project" {
+		sb.WriteString(fmt.Sprintf("\n\nProject: %s", ctx.ProjectName))
+	}
 
 	return sb.String()
+}
+
+// buildSystemPromptCached constructs and caches system prompts for better performance.
+// Creates a cache key from the unique combination of context parameters.
+func (s *Service) buildSystemPromptCached(ctx *ProjectContext) string {
+	// Create cache key from relevant context fields
+	key := fmt.Sprintf("%s|%s|%s|%s|%s",
+		ctx.ProjectID,
+		ctx.ProjectName,
+		ctx.Instructions,
+		ctx.Tone,
+		ctx.Language,
+	)
+
+	// Try cache first
+	s.systemPromptCacheMutex.RLock()
+	if cached, ok := s.systemPromptCache[key]; ok {
+		s.systemPromptCacheMutex.RUnlock()
+		return cached
+	}
+	s.systemPromptCacheMutex.RUnlock()
+
+	// Build prompt if not cached
+	prompt := buildSystemPrompt(ctx)
+
+	// Store in cache
+	s.systemPromptCacheMutex.Lock()
+	s.systemPromptCache[key] = prompt
+	s.systemPromptCacheMutex.Unlock()
+
+	return prompt
 }
 
 // applyExtensionHooks calls extension handlers via the extension runtime.

@@ -56,7 +56,8 @@ function ChatMessage({ message, isGenerating }: { message: Message; isGenerating
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(message.content);
+      const content = message.content || "";
+      await navigator.clipboard.writeText(content);
       setCopied(true);
       addToast({ type: "success", title: "Copied to clipboard", duration: 2000 });
       setTimeout(() => setCopied(false), 2000);
@@ -80,6 +81,9 @@ function ChatMessage({ message, isGenerating }: { message: Message; isGenerating
 
   if (isSystem) return null;
 
+  // Safety check for null/undefined content
+  const messageContent = message.content || "";
+
   return (
     <div className={clsx("flex gap-3", isUser ? "justify-end" : "justify-start")}>
       {!isUser && (
@@ -97,7 +101,7 @@ function ChatMessage({ message, isGenerating }: { message: Message; isGenerating
         )}
       >
         <div className="prose prose-sm max-w-none">
-          <p className="whitespace-pre-wrap break-words">{message.content}</p>
+          <p className="whitespace-pre-wrap break-words">{messageContent}</p>
         </div>
 
         {isGenerating && !isUser && (
@@ -413,45 +417,52 @@ export default function ChatPage() {
 
     const currentProjectId = projectIdRef.current;
 
-    // Create backend conversation if it doesn't exist
-    let convId = backendConversationId;
-    if (!convId) {
-      const title = messageContent.slice(0, 50) + (messageContent.length > 50 ? "..." : "");
-      convId = await createBackendConversation(title, currentProjectId);
-      if (convId) {
-        setBackendConversationId(convId);
-        // Update current conversation ID in store to match backend
-        if (currentConversation) {
-          setCurrentConversation({
-            ...currentConversation,
-            id: convId,
-            title: title,
-          });
-        }
-      }
+    console.log("[Chat] handleSubmit: starting", { currentProjectId, hasConversation: !!currentConversation });
+
+    // CRITICAL: Ensure conversation exists before adding messages
+    // Check fresh state from store instead of using cached reference
+    let conv = useChatStore.getState().currentConversation;
+    if (!conv) {
+      console.log("[Chat] handleSubmit: creating new conversation");
+      const newConv = await createConversation(currentProjectId, messageContent.slice(0, 50));
+      console.log("[Chat] handleSubmit: conversation created", { id: newConv.id, hasConversation: !!newConv });
+      // Use the returned conversation directly
+      conv = newConv;
     }
 
-    // Check if we have a current conversation, if not create one in store
-    if (!currentConversation) {
-      await createConversation(currentProjectId, messageContent.slice(0, 50));
+    if (!conv) {
+      console.error("[Chat] handleSubmit: failed to get conversation after creation");
+      addToast({
+        type: "error",
+        title: "Failed to create conversation",
+        duration: 5000,
+      });
+      return;
     }
 
     // Add user message to UI first for instant feedback
-    addMessage({
+    console.log("[Chat] handleSubmit: adding user message");
+    const userMsg = addMessage({
       role: "user",
       content: messageContent,
+    });
+    console.log("[Chat] handleSubmit: user message added", { id: userMsg.id });
+
+    // Verify user message was actually added
+    const stateAfterUserMsg = useChatStore.getState();
+    console.log("[Chat] State after user message:", {
+      hasConversation: !!stateAfterUserMsg.currentConversation,
+      messageCount: stateAfterUserMsg.currentConversation?.messages.length || 0,
+      lastMessageRole: stateAfterUserMsg.currentConversation?.messages[
+        (stateAfterUserMsg.currentConversation?.messages.length || 1) - 1
+      ]?.role
     });
 
     clearFiles();
     setIsGenerating(true);
 
     try {
-      // Save user message to backend
-      if (convId) {
-        await addBackendMessage("user", messageContent, currentProjectId, convId);
-      }
-
-      // Get project context for LLM
+      // Get project context for LLM (prepare in parallel)
       const currentProject = projects.find(p => p.id === currentProjectId);
       const projectContext = {
         project_id: currentProjectId,
@@ -463,85 +474,122 @@ export default function ChatPage() {
         metadata: {},
       };
 
-      // Note: Role-based scope enforcement is now handled by the LLM system prompt
-      // The system prompt contains explicit instructions to refuse out-of-scope questions
+      console.log("[Chat] Starting LLM request with context:", projectContext);
 
-      // Call LLM API with timeout and retry
-      let lastError = null;
-      let responseContent = "";
-      const maxRetries = 3;
-      const timeoutMs = 120000; // 120 second timeout for complex requests
+      // CRITICAL: Start LLM call IMMEDIATELY without waiting for backend ops
+      // This is the key optimization - don't block on conversation creation or message saving
+      const llmStartTime = Date.now();
+      const llmResponse = await fetch("/llm/generate", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: messageContent,
+          project_context: projectContext,
+        }),
+        // Add timeout to prevent hanging - sync with backend timeout
+        signal: AbortSignal.timeout(70000), // 70 second timeout (backend is 60s + buffer)
+      });
 
-      for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-          // Update retry count for UI
-          if (attempt > 1) {
-            setRetryCount(attempt - 1);
-          }
+      const llmDuration = Date.now() - llmStartTime;
+      console.log(`[Chat] LLM request completed in ${llmDuration}ms`);
 
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+      if (!llmResponse.ok) {
+        const errorData = await llmResponse.json().catch(() => ({}));
+        console.error("[Chat] LLM API error:", errorData);
 
-          const llmResponse = await fetch("/llm/generate", {
-            method: "POST",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              prompt: messageContent,
-              project_context: projectContext,
-            }),
-            signal: controller.signal,
-          });
-
-          clearTimeout(timeoutId);
-
-          if (!llmResponse.ok) {
-            const errorData = await llmResponse.json().catch(() => ({}));
-            throw new Error(errorData.message || `HTTP ${llmResponse.status}`);
-          }
-
-          const llmData = await llmResponse.json();
-          responseContent = llmData.content || "No response from AI.";
-          break; // Success, exit retry loop
-        } catch (error) {
-          lastError = error;
-          console.error(`LLM attempt ${attempt} failed:`, error);
-
-          // Don't retry if it's a client error (4xx) or abort
-          if (error instanceof Error && (
-            error.message.includes("400") ||
-            error.name === "AbortError"
-          )) {
-            break;
-          }
-
-          // Wait before retry (exponential backoff)
-          if (attempt < maxRetries) {
-            await new Promise(resolve => setTimeout(resolve, Math.min(1000 * Math.pow(2, attempt - 1), 5000)));
-            addToast({
-              type: "info",
-              title: `Connection lost. Retrying... (${attempt}/${maxRetries})`,
-              duration: 1500,
-            });
-          }
+        // Special handling for rate limit errors
+        if (llmResponse.status === 429 || errorData.message?.toLowerCase().includes('rate limit')) {
+          throw new Error("The AI service is experiencing high traffic. Please wait a moment and try again. (Rate limit exceeded)");
         }
+
+        throw new Error(errorData.message || `HTTP ${llmResponse.status}`);
       }
 
-      // Check if we got a valid response after all retries
-      if (!responseContent) {
-        throw lastError || new Error("Failed to get AI response after multiple attempts");
+      const llmData = await llmResponse.json();
+      const responseContent = llmData.content || "No response from AI.";
+      console.log("[Chat] LLM response received, content length:", responseContent.length);
+      console.log("[Chat] Response preview (first 500 chars):", responseContent.substring(0, 500));
+      console.log("[Chat] Response preview (last 200 chars):", responseContent.substring(Math.max(0, responseContent.length - 200)));
+      console.log("[Chat] Full response:", responseContent);
+
+      // CRITICAL: Double-check conversation exists before adding assistant message
+      const convBeforeAdd = useChatStore.getState().currentConversation;
+      console.log("[Chat] Current conversation before adding assistant:", {
+        hasConversation: !!convBeforeAdd,
+        messageCount: convBeforeAdd?.messages.length || 0,
+        conversationId: convBeforeAdd?.id
+      });
+
+      if (!convBeforeAdd) {
+        console.error("[Chat] No current conversation when trying to add assistant message");
+        throw new Error("Conversation was lost during request");
       }
 
-      // Add assistant message to UI
+      // Add assistant message to UI - this should work now
+      console.log("[Chat] Adding assistant message to UI");
       addMessage({
         role: "assistant",
         content: responseContent,
       });
+      console.log("[Chat] Assistant message added successfully");
 
-      // Save assistant message to backend
-      if (convId) {
-        await addBackendMessage("assistant", responseContent, currentProjectId, convId);
-      }
+      // Verify message was added
+      const convAfterAdd = useChatStore.getState().currentConversation;
+      console.log("[Chat] Conversation after adding assistant:", {
+        messageCount: convAfterAdd?.messages.length || 0,
+        lastMessageRole: convAfterAdd?.messages[convAfterAdd.messages.length - 1]?.role
+      });
+
+      // Fire-and-forget: Save everything to backend in background
+      // CRITICAL: Use fresh state from store, not stale closure references
+      (async () => {
+        try {
+          console.log("[Chat] Background save: starting...");
+
+          // Get fresh conversation from store
+          const freshConv = useChatStore.getState().currentConversation;
+          if (!freshConv) {
+            console.error("[Chat] Background save: no conversation to save");
+            return;
+          }
+
+          // Create conversation if needed
+          let finalConvId = backendConversationId;
+          if (!finalConvId) {
+            const title = messageContent.slice(0, 50) + (messageContent.length > 50 ? "..." : "");
+            console.log("[Chat] Background save: creating conversation...");
+            finalConvId = await createBackendConversation(title, currentProjectId);
+            if (finalConvId) {
+              console.log("[Chat] Background save: conversation created with ID:", finalConvId);
+              setBackendConversationId(finalConvId);
+
+              // Update conversation ID in store using FRESH reference
+              const store = useChatStore.getState();
+              if (store.currentConversation) {
+                store.setCurrentConversation({
+                  ...store.currentConversation, // Use fresh conversation from store
+                  id: finalConvId,
+                  title: title,
+                });
+              }
+            } else {
+              console.error("[Chat] Background save: failed to create conversation");
+            }
+          }
+
+          // Save both messages
+          if (finalConvId) {
+            console.log("[Chat] Background save: saving user message...");
+            await addBackendMessage("user", messageContent, currentProjectId, finalConvId);
+            console.log("[Chat] Background save: saving assistant message...");
+            await addBackendMessage("assistant", responseContent, currentProjectId, finalConvId);
+            console.log("[Chat] Background save: completed successfully");
+          }
+        } catch (err) {
+          console.error("[Chat] Background save failed:", err);
+        }
+      })();
 
       // Show success toast
       addToast({
@@ -553,8 +601,9 @@ export default function ChatPage() {
       // Reset retry count on success
       setRetryCount(0);
     } catch (error) {
-      console.error("Failed to send message:", error);
+      console.error("[Chat] Error in handleSubmit:", error);
       const errorMessage = error instanceof Error ? error.message : "Failed to get AI response";
+      console.error("[Chat] Error message:", errorMessage);
 
       // Add error message to UI
       addMessage({
@@ -771,7 +820,8 @@ export default function ChatPage() {
     return currentConversation.messages
       .map((msg) => {
         const role = msg.role === "user" ? "You" : "AI";
-        return `## ${role}\n\n${msg.content}\n`;
+        const content = msg.content || "";
+        return `## ${role}\n\n${content}\n`;
       })
       .join("\n---\n\n");
   };
@@ -784,7 +834,7 @@ export default function ChatPage() {
         createdAt: currentConversation.createdAt,
         messages: currentConversation.messages.map((msg) => ({
           role: msg.role,
-          content: msg.content,
+          content: msg.content || "",
           timestamp: msg.createdAt,
         })),
       },
@@ -920,7 +970,7 @@ export default function ChatPage() {
                             <span className="text-xs font-medium text-muted-foreground">Est. Tokens</span>
                           </div>
                           <p className="text-2xl font-semibold text-slate-900">
-                            {currentConversation.messages.reduce((acc, msg) => acc + Math.ceil(msg.content.length / 4), 0).toLocaleString()}
+                            {currentConversation.messages.reduce((acc, msg) => acc + (msg.content ? Math.ceil(msg.content.length / 4) : 0), 0).toLocaleString()}
                           </p>
                         </div>
                       </div>
@@ -931,7 +981,7 @@ export default function ChatPage() {
                         <div className="max-h-[240px] overflow-y-auto space-y-2">
                           {currentConversation.messages.map((message) => {
                             const isUser = message.role === "user";
-                            const estimatedTokens = Math.ceil(message.content.length / 4);
+                            const estimatedTokens = message.content ? Math.ceil(message.content.length / 4) : 0;
                             return (
                               <div
                                 key={message.id}
@@ -954,7 +1004,7 @@ export default function ChatPage() {
                                       {isUser ? "You" : "AI Assistant"}
                                     </p>
                                     <p className="text-[10px] text-muted-foreground truncate">
-                                      {message.content.slice(0, 50)}{message.content.length > 50 ? "..." : ""}
+                                      {message.content ? (message.content.slice(0, 50) + (message.content.length > 50 ? "..." : "")) : "(empty)"}
                                     </p>
                                   </div>
                                 </div>
@@ -982,7 +1032,7 @@ export default function ChatPage() {
                           <div className="flex items-center gap-2">
                             <Coins className="h-5 w-5 text-amber-500" />
                             <span className="text-xl font-bold text-slate-900">
-                              {currentConversation.messages.reduce((acc, msg) => acc + Math.ceil(msg.content.length / 4), 0).toLocaleString()}
+                              {currentConversation.messages.reduce((acc, msg) => acc + (msg.content ? Math.ceil(msg.content.length / 4) : 0), 0).toLocaleString()}
                             </span>
                           </div>
                         </div>
@@ -1242,7 +1292,7 @@ export default function ChatPage() {
             onDragLeave={handleDragLeave}
           >
             <div className="mx-auto max-w-3xl space-y-6">
-              {currentConversation?.messages.length === 0 ? (
+              {!currentConversation || !currentConversation.messages || currentConversation.messages.length === 0 ? (
                 <div className="flex h-[50vh] flex-col items-center justify-center text-center">
                   <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-[#ffd7a8] to-[#9fe7d4]">
                     <span className="text-2xl">💬</span>
@@ -1256,11 +1306,22 @@ export default function ChatPage() {
                 </div>
               ) : (
                 <>
-                  {currentConversation?.messages.map((message) => (
-                    <div key={message.id} className="group">
-                      <ChatMessage message={message} />
-                    </div>
-                  ))}
+                  {currentConversation.messages.map((message, index) => {
+                    // Additional safety check for each message
+                    if (!message) {
+                      console.warn("[Chat] Skipping null message at index", index);
+                      return null;
+                    }
+                    if (!message.content && message.content !== "") {
+                      console.warn("[Chat] Skipping message with invalid content:", message);
+                      return null;
+                    }
+                    return (
+                      <div key={message.id || `msg-${index}`} className="group">
+                        <ChatMessage message={message} isGenerating={isGenerating && index === currentConversation.messages.length - 1 && message.role === "assistant"} />
+                      </div>
+                    );
+                  })}
 
                   {/* Loading indicator */}
                   {isGenerating && (
