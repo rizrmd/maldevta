@@ -2,6 +2,7 @@ import { Route, Switch, useLocation } from "wouter";
 import { useEffect, useState } from "react";
 import { useAuthStore } from "@/stores/authStore";
 
+import LandingPage from "@/pages/Landing";
 import ProjectSelectorPage from "@/pages/ProjectSelector";
 import LoginPage from "@/pages/Login";
 import ChatPage from "@/pages/Chat";
@@ -123,6 +124,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function App() {
   const loading = useAuthStore((state) => state.loading);
+  const user = useAuthStore((state) => state.user);
   const checkSession = useAuthStore((state) => state.checkSession);
 
   // Check session on app mount
@@ -137,6 +139,9 @@ function App() {
   return (
     <LicenseCheck>
       <Switch>
+        {/* Public routes - landing page (always accessible) */}
+        <Route path="/landing" component={LandingPage} />
+
         {/* Public routes - license setup */}
         <Route path="/license/setup" component={LicenseSetupPage} />
         <Route path="/license/verify" component={LicenseVerifyPage} />
@@ -145,10 +150,14 @@ function App() {
         {/* Login route - accessible when licensed but not authenticated */}
         <Route path="/login" component={LoginPage} />
 
+        {/* Root route - redirect based on auth status */}
+        <Route path="/">
+          {user ? <ProjectSelectorPage /> : <LandingPage />}
+        </Route>
+
         {/* Protected routes - require authentication */}
         <ProtectedRoute>
           <Switch>
-            <Route path="/" component={ProjectSelectorPage} />
             <Route path="/projects-selector" component={ProjectSelectorPage} />
             <Route path="/chat" component={ChatPage} />
             <Route path="/chat/:projectId" component={ChatPage} />

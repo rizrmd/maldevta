@@ -43,10 +43,13 @@ func (s *Service) ListFiles(ctx context.Context, project string) (*ListFilesResp
 }
 
 // UploadFile uploads a file to a project.
+// This is a raw endpoint for handling file uploads.
 //
-//encore:api public method=POST path=/files/:project/upload
-func (s *Service) UploadFile(ctx context.Context, project string, req *http.Request) (*UploadFileResponse, error) {
-	return &UploadFileResponse{}, nil
+//encore:api public raw method=POST path=/files/:project/upload
+func (s *Service) UploadFile(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"file": {}, "error": ""}`))
 }
 
 // DeleteFile deletes a file.
@@ -57,8 +60,9 @@ func (s *Service) DeleteFile(ctx context.Context, project string, file string) (
 }
 
 // DownloadFile downloads a file.
+// This is a raw endpoint for handling file downloads.
 //
-//encore:api public method=GET path=/files/:project/:file/download
-func (s *Service) DownloadFile(ctx context.Context, project string, file string, req *http.Request) (*http.Response, error) {
-	return nil, nil
+//encore:api public raw method=GET path=/files/:project/:file/download
+func (s *Service) DownloadFile(w http.ResponseWriter, req *http.Request) {
+	w.WriteHeader(http.StatusOK)
 }
