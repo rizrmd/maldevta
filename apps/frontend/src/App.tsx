@@ -2,7 +2,6 @@ import { Route, Switch, useLocation } from "wouter";
 import { useEffect, useState } from "react";
 import { useAuthStore } from "@/stores/authStore";
 
-import LandingPage from "@/pages/Landing";
 import ProjectSelectorPage from "@/pages/ProjectSelector";
 import LoginPage from "@/pages/Login";
 import ChatPage from "@/pages/Chat";
@@ -38,6 +37,8 @@ import WhatsAppPage from "@/pages/WhatsApp";
 import WhatsAppQRPage from "@/pages/WhatsAppQR";
 import { SetupRequired } from "@/components/setup-required";
 import AdminSetupPage from "@/pages/AdminSetup";
+import EmbedWidgetPage from "@/pages/EmbedWidget";
+import LandingPage from "@/pages/Landing";
 
 //take out hardcode license true
 function LoadingScreen() {
@@ -124,7 +125,6 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function App() {
   const loading = useAuthStore((state) => state.loading);
-  const user = useAuthStore((state) => state.user);
   const checkSession = useAuthStore((state) => state.checkSession);
 
   // Check session on app mount
@@ -137,27 +137,28 @@ function App() {
   }
 
   return (
-    <LicenseCheck>
-      <Switch>
-        {/* Public routes - landing page (always accessible) */}
-        <Route path="/landing" component={LandingPage} />
+    <Switch>
+      {/* Public landing page */}
+      <Route path="/landing" component={LandingPage} />
 
-        {/* Public routes - license setup */}
-        <Route path="/license/setup" component={LicenseSetupPage} />
-        <Route path="/license/verify" component={LicenseVerifyPage} />
-        <Route path="/admin-setup" component={RedirectToLogin} />
+      {/* Public embed chat widget - no auth, no license required */}
+      <Route path="/embed" component={EmbedWidgetPage} />
 
-        {/* Login route - accessible when licensed but not authenticated */}
-        <Route path="/login" component={LoginPage} />
+      <LicenseCheck>
+        <Switch>
+          {/* Public routes - license setup */}
+          <Route path="/license/setup" component={LicenseSetupPage} />
+          <Route path="/license/verify" component={LicenseVerifyPage} />
+          <Route path="/admin-setup" component={RedirectToLogin} />
 
-        {/* Root route - redirect based on auth status */}
-        <Route path="/">
-          {user ? <ProjectSelectorPage /> : <LandingPage />}
-        </Route>
+          {/* Login route - accessible when licensed but not authenticated */}
+          <Route path="/login" component={LoginPage} />
 
-        {/* Protected routes - require authentication */}
-        <ProtectedRoute>
+          {/* Protected routes - require authentication */}
+          <ProtectedRoute>
           <Switch>
+            <Route path="/" component={ProjectSelectorPage} />
+            <Route path="/landing" component={LandingPage} />
             <Route path="/projects-selector" component={ProjectSelectorPage} />
             <Route path="/chat" component={ChatPage} />
             <Route path="/chat/:projectId" component={ChatPage} />
@@ -215,8 +216,9 @@ function App() {
 
         {/* 404 */}
         <Route component={NotFoundPage} />
-      </Switch>
-    </LicenseCheck>
+        </Switch>
+      </LicenseCheck>
+    </Switch>
   );
 }
 

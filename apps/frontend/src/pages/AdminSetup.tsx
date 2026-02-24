@@ -10,21 +10,19 @@ import { Separator } from "@/components/ui/separator";
 type WizardStep = "license" | "tenant" | "admin" | "complete";
 
 export default function AdminSetupPage() {
-  // setLocation removed as unused
   const [step, setStep] = useState<WizardStep>("license");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Data state
   const [licenseKey, setLicenseKey] = useState("");
-  // licenseInfo removed as unused
-  
+
   const [tenantName, setTenantName] = useState("");
   const [domain, setDomain] = useState("");
   const [tenantId, setTenantId] = useState("");
 
   const [adminUser, setAdminUser] = useState({
-    username: "system",
+    username: "admin",
     password: "",
   });
 
@@ -40,18 +38,17 @@ export default function AdminSetupPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ license_key: licenseKey }),
       });
-      
+
       const data = await res.json();
-      
+
       if (!res.ok) {
         throw new Error(data.message || data.error || "License verification failed");
       }
-      
+
       if (!data.valid) {
         throw new Error("Invalid license key");
       }
 
-      // setLicenseInfo removed
       setStep("tenant");
     } catch (err: any) {
       setError(err.message);
@@ -92,14 +89,15 @@ export default function AdminSetupPage() {
     }
   };
 
-  // STEP 3: CREATE ADMIN USER
+  // STEP 3: CREATE ADMIN USER AND COMPLETE SETUP
   const handleCreateAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
     try {
-      const res = await fetch("/auth/setup/admin", {
+      // Create tenant admin user
+      const res = await fetch("/auth/setup/tenant-admin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -116,41 +114,32 @@ export default function AdminSetupPage() {
         throw new Error(data.message || data.error || "Failed to create admin user");
       }
 
-      // Automatically complete setup after creating admin
-      await handleCompleteSetup(data.user_id);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // STEP 4: COMPLETE SETUP
-  const handleCompleteSetup = async (userId: string) => {
-    try {
-      const res = await fetch("/auth/setup/complete", {
+      // Complete setup
+      const completeRes = await fetch("/auth/setup/complete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           license_key: licenseKey,
-          user_id: userId,
+          user_id: data.user_id,
           tenant_id: tenantId,
         }),
       });
 
-      const data = await res.json();
+      const completeData = await completeRes.json();
 
-      if (!res.ok) {
-        throw new Error(data.message || data.error || "Failed to finalize setup");
+      if (!completeRes.ok) {
+        throw new Error(completeData.message || completeData.error || "Failed to complete setup");
       }
 
       setStep("complete");
-      // Wait a moment then redirect
+
+      // Wait a moment then redirect to login
       setTimeout(() => {
-        window.location.href = "/"; // Full refresh to clear setup state
+        window.location.href = "/login";
       }, 2000);
     } catch (err: any) {
       setError(err.message);
+    } finally {
       setLoading(false);
     }
   };
@@ -172,10 +161,10 @@ export default function AdminSetupPage() {
             {step === "license" && "Enter your license key to verify your subscription."}
             {step === "tenant" && "Create your workspace (tenant) to organize your projects."}
             {step === "admin" && "Create your administrator account."}
-            {step === "complete" && "Setup complete! Redirecting..."}
+            {step === "complete" && "Setup complete! Redirecting to login..."}
           </CardDescription>
         </CardHeader>
-        
+
         <Separator />
 
         <CardContent className="pt-6">
@@ -232,7 +221,7 @@ export default function AdminSetupPage() {
                     disabled={loading}
                   />
                   <p className="text-xs text-muted-foreground">
-                    Used for branding and subdomains.
+                    Leave empty to allow all hosts.
                   </p>
                 </div>
               </div>
@@ -250,7 +239,7 @@ export default function AdminSetupPage() {
                   <Label htmlFor="username">Username</Label>
                   <Input
                     id="username"
-                    placeholder="system"
+                    placeholder="admin"
                     value={adminUser.username}
                     onChange={(e) => setAdminUser({ ...adminUser, username: e.target.value })}
                     disabled={loading}
@@ -270,7 +259,7 @@ export default function AdminSetupPage() {
               </div>
               <Button type="submit" className="w-full" disabled={loading || !adminUser.username || !adminUser.password}>
                 {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <User className="mr-2 h-4 w-4" />}
-                Create Admin Account
+                Complete Setup
               </Button>
             </form>
           )}
@@ -283,7 +272,7 @@ export default function AdminSetupPage() {
               <div className="space-y-2">
                 <h3 className="text-xl font-bold">Setup Complete!</h3>
                 <p className="text-muted-foreground">
-                  Redirecting you to the dashboard...
+                  Redirecting you to login page...
                 </p>
               </div>
             </div>

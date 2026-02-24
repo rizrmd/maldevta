@@ -187,6 +187,11 @@ SELECT COUNT(*) FROM users WHERE tenant_id = ? AND subclient_id IS NULL;
 SELECT * FROM projects
 WHERE id = ? AND tenant_id = ?;
 
+-- name: GetProjectByID :one
+SELECT id, tenant_id, name, whatsapp_enabled, subclient_enabled, created_by_user_id, created_at, show_history, use_client_uid, allowed_origins
+FROM projects
+WHERE id = ?;
+
 -- name: GetEmbedCSS :one
 SELECT custom_css FROM embed_css
 WHERE project_id = ?;
