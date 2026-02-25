@@ -195,12 +195,14 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
   setError: (error) => set({ error }),
 
   updateProjectSubClientSettings: async (projectId: string, settings: { sub_clients_enabled?: boolean; sub_clients_registration_enabled?: boolean }) => {
+    console.log("[updateProjectSubClientSettings] Updating project:", projectId, "with settings:", settings);
     set({ isLoading: true, error: null });
     try {
-      await apiRequest(`/projects/${projectId}`, {
+      const response = await apiRequest(`/projects/${projectId}`, {
         method: "PUT",
         body: JSON.stringify(settings),
       });
+      console.log("[updateProjectSubClientSettings] Update successful, response:", response);
 
       set((state) => ({
         projects: state.projects.map((p) =>
@@ -212,7 +214,9 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
             : state.currentProject,
         isLoading: false,
       }));
+      console.log("[updateProjectSubClientSettings] Store updated");
     } catch (err) {
+      console.error("[updateProjectSubClientSettings] Error:", err);
       const apiError = err as ApiError;
       set({ error: apiError.message || "Failed to update settings", isLoading: false });
       throw err;

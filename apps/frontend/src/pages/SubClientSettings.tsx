@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "wouter";
 import { useProjectStore } from "@/stores/projectStore";
-import { useSubClientStore } from "@/stores/subClientStore";
 import { useAuth } from "@/hooks/useAuth";
 import AppLayout from "@/components/app-layout";
 import {
@@ -28,7 +27,6 @@ export default function SubClientSettingsPage() {
   const { projectId } = useParams<{ projectId: string }>();
   const { user } = useAuth();
   const { projects, loadProjects, hasInitialized, currentProject, updateProjectSubClientSettings, error } = useProjectStore();
-  const { enabled, setEnabled } = useSubClientStore();
 
   const [isLoading, setIsLoading] = useState(true);
   const [isToggling, setIsToggling] = useState(false);
@@ -52,7 +50,7 @@ export default function SubClientSettingsPage() {
     loadData();
   }, [hasInitialized, loadProjects]);
 
-  // Find project from list or use currentProject
+  // Find project from list or use currentProject - also sync when projects change
   useEffect(() => {
     if (currentProject?.id === projectId) {
       setProject(currentProject);
@@ -62,20 +60,21 @@ export default function SubClientSettingsPage() {
         setProject(foundProject);
       }
     }
-  }, [projectId, currentProject, projects]);
+  }, [projectId, currentProject, projects]); // Re-run when projects array changes
 
   // Check if user is project owner
   const isProjectOwner = project?.created_by_user_id === user?.userId;
 
-  // Sync enabled state from project
+  // Get enabled state for current project - use project data as source of truth
+  const enabled = project?.sub_clients_enabled ?? false;
+
+  // Sync registration enabled state from project
   useEffect(() => {
     if (project) {
-      const projectEnabled = project.sub_clients_enabled ?? false;
-      setEnabled(projectEnabled);
       const projectRegistrationEnabled = project.sub_clients_registration_enabled ?? true;
       setRegistrationEnabled(projectRegistrationEnabled);
     }
-  }, [project, setEnabled]);
+  }, [project]);
 
   const handleToggleSubClients = async (checked: boolean) => {
     if (!project || !isProjectOwner) return;
@@ -85,8 +84,10 @@ export default function SubClientSettingsPage() {
       await updateProjectSubClientSettings(project.id, {
         sub_clients_enabled: checked,
       });
-      setEnabled(checked);
-      setProject({ ...project, sub_clients_enabled: checked });
+
+      // Note: updateProjectSubClientSettings already updates the store
+      // The useEffect above will automatically sync our local project state
+
       toast({
         title: checked ? "Sub-clients enabled" : "Sub-clients disabled",
         description: checked

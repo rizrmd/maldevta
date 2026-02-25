@@ -118,8 +118,8 @@ type AuthData struct {
 }
 
 type authParams struct {
-	SessionCookie string `cookie:"aicore_session"`
-	Host          string `header:"Host"`
+	SessionCookie *http.Cookie `cookie:"aicore_session"`
+	Host          string       `header:"Host"`
 }
 
 type licenseVerifyResponse struct {
@@ -133,11 +133,11 @@ type licenseVerifyResponse struct {
 
 //encore:authhandler
 func AuthHandler(ctx context.Context, p *authParams) (auth.UID, *AuthData, error) {
-	if p == nil || p.SessionCookie == "" {
+	if p == nil || p.SessionCookie == nil || p.SessionCookie.Value == "" {
 		return "", nil, &errs.Error{Code: errs.Unauthenticated, Message: "missing session"}
 	}
 
-	tokenHash := hashToken(p.SessionCookie)
+	tokenHash := hashToken(p.SessionCookie.Value)
 	session, err := q().GetSession(ctx, tokenHash)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -495,28 +495,6 @@ func SetupCreateTenant(ctx context.Context, p *setupCreateTenantParams) (*setupC
 		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "invalid license"}
 	}
 
-	// Install license to database
-	licenseID := newID("lic")
-	whatsappEnabled := int64(0)
-	if verified.WhatsappEnabled {
-		whatsappEnabled = 1
-	}
-	subclientEnabled := int64(0)
-	if verified.SubclientEnabled {
-		subclientEnabled = 1
-	}
-	err = q().InsertLicense(ctx, iamdb.InsertLicenseParams{
-		ID:                   licenseID,
-		LicenseKey:           p.LicenseKey,
-		MaxProjectsPerTenant: int64(verified.MaxProjectsPerTenant),
-		WhatsappEnabled:      whatsappEnabled,
-		SubclientEnabled:     subclientEnabled,
-		TenantName:           strings.TrimSpace(p.Name),
-	})
-	if err != nil {
-		return nil, err
-	}
-
 	// Create tenant
 	tenantID := newID("tnt")
 	domain := normalizeHost(p.Domain)
@@ -607,79 +585,6 @@ func SetupCreateAdmin(ctx context.Context, p *setupCreateAdminParams) (*setupCre
 	}
 
 	return &setupCreateAdminResponse{
-		UserID:   userID,
-		Username: p.Username,
-	}, nil
-}
-
-type setupCreateTenantAdminParams struct {
-	LicenseKey string `json:"license_key"`
-	TenantID   string `json:"tenant_id"`
-	Username   string `json:"username"`
-	Password   string `json:"password"`
-}
-
-type setupCreateTenantAdminResponse struct {
-	UserID   string `json:"user_id"`
-	Username string `json:"username"`
-}
-
-// SetupCreateTenantAdmin creates a tenant-level admin user during setup wizard.
-// Unlike SetupCreateAdmin which creates a system admin, this creates a tenant admin
-// who can create projects and manage the tenant.
-//
-//encore:api public method=POST path=/auth/setup/tenant-admin
-func SetupCreateTenantAdmin(ctx context.Context, p *setupCreateTenantAdminParams) (*setupCreateTenantAdminResponse, error) {
-	if p == nil || p.LicenseKey == "" || p.TenantID == "" {
-		return nil, badRequest("license_key and tenant_id are required")
-	}
-	if p.Username == "" || p.Password == "" {
-		return nil, badRequest("username and password are required")
-	}
-
-	// Verify tenant exists
-	_, err := q().GetTenantByID(ctx, p.TenantID)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, &errs.Error{Code: errs.NotFound, Message: "tenant not found"}
-		}
-		return nil, err
-	}
-
-	// Verify license
-	verified, err := verifyLicenseWithHub(ctx, p.LicenseKey)
-	if err != nil {
-		return nil, err
-	}
-	if !verified.Valid {
-		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "invalid license"}
-	}
-
-	passwordHash, err := hashPassword(p.Password)
-	if err != nil {
-		return nil, err
-	}
-
-	userID := newID("usr")
-	now := time.Now().UTC()
-	err = q().CreateUser(ctx, iamdb.CreateUserParams{
-		ID:           userID,
-		// Tenant-bound admin user (can create projects for this tenant)
-		TenantID:     sql.NullString{String: p.TenantID, Valid: true},
-		Username:     p.Username,
-		Email:        sql.NullString{},
-		PasswordHash: sql.NullString{String: passwordHash, Valid: true},
-		Role:         string(roleAdmin),
-		Source:       "manual",
-		CreatedAt:    now,
-		UpdatedAt:    now.Unix(),
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &setupCreateTenantAdminResponse{
 		UserID:   userID,
 		Username: p.Username,
 	}, nil
@@ -845,17 +750,20 @@ type createProjectParams struct {
 }
 
 type projectResponse struct {
-	ID               string   `json:"id"`
-	TenantID         string   `json:"tenant_id"`
-	Name             string   `json:"name"`
-	WhatsappEnabled  bool     `json:"whatsapp_enabled"`
-	SubclientEnabled bool     `json:"subclient_enabled"`
-	CreatedByUserID  string   `json:"created_by_user_id"`
-	CreatedAt        string   `json:"created_at"`
-	ShowHistory      bool     `json:"show_history"`
-	UseClientUID     bool     `json:"use_client_uid"`
-	AllowedOrigins   []string `json:"allowed_origins"`
-	ContextRole      string   `json:"context_role"`
+	ID                               string   `json:"id"`
+	TenantID                         string   `json:"tenant_id"`
+	Name                             string   `json:"name"`
+	WhatsappEnabled                  bool     `json:"whatsapp_enabled"`
+	SubclientEnabled                 bool     `json:"subclient_enabled"`
+	SubClientsEnabled                bool     `json:"sub_clients_enabled"` // Alias for frontend compatibility
+	SubclientRegistrationEnabled     bool     `json:"subclient_registration_enabled"`
+	SubClientsRegistrationEnabled    bool     `json:"sub_clients_registration_enabled"` // Alias for frontend compatibility
+	CreatedByUserID                  string   `json:"created_by_user_id"`
+	CreatedAt                        string   `json:"created_at"`
+	ShowHistory                      bool     `json:"show_history"`
+	UseClientUID                     bool     `json:"use_client_uid"`
+	AllowedOrigins                   []string `json:"allowed_origins"`
+	ContextRole                      string   `json:"context_role"`
 }
 
 type listProjectsResponse struct {
@@ -1201,8 +1109,8 @@ type logoutResponse struct {
 //
 //encore:api public method=POST path=/auth/logout
 func Logout(ctx context.Context, p *authParams) (*logoutResponse, error) {
-	if p != nil && p.SessionCookie != "" {
-		tokenHash := hashToken(p.SessionCookie)
+	if p != nil && p.SessionCookie != nil && p.SessionCookie.Value != "" {
+		tokenHash := hashToken(p.SessionCookie.Value)
 		_ = q().DeleteSession(ctx, tokenHash)
 	}
 
@@ -1237,25 +1145,29 @@ func ListProjects(ctx context.Context) (*listProjectsResponse, error) {
 
 	out := make([]*projectResponse, len(projects))
 	for i, p := range projects {
-		// Get context_role for each project
+		// Get context_role and subclient_registration_enabled for each project
 		var contextRole string
-		_ = db.QueryRowContext(ctx, "SELECT COALESCE(context_role, 'general') FROM projects WHERE id = ?", p.ID).Scan(&contextRole)
+		var subclientRegistrationEnabled int64 = 1 // Default to enabled
+		_ = db.QueryRowContext(ctx, "SELECT COALESCE(context_role, 'general'), COALESCE(subclient_registration_enabled, 1) FROM projects WHERE id = ?", p.ID).Scan(&contextRole, &subclientRegistrationEnabled)
 		if contextRole == "" {
 			contextRole = "general"
 		}
 
 		out[i] = &projectResponse{
-			ID:               p.ID,
-			TenantID:         p.TenantID,
-			Name:             p.Name,
-			WhatsappEnabled:  p.WhatsappEnabled == 1,
-			SubclientEnabled: p.SubclientEnabled == 1,
-			CreatedByUserID:  p.CreatedByUserID,
-			CreatedAt:        p.CreatedAt.Format(time.RFC3339),
-			ShowHistory:      false,      // Default value
-			UseClientUID:     false,      // Default value
-			AllowedOrigins:   []string{}, // Default value
-			ContextRole:      contextRole,
+			ID:                            p.ID,
+			TenantID:                      p.TenantID,
+			Name:                          p.Name,
+			WhatsappEnabled:               p.WhatsappEnabled == 1,
+			SubclientEnabled:              p.SubclientEnabled == 1,
+			SubClientsEnabled:             p.SubclientEnabled == 1, // Same value, different field name
+			SubclientRegistrationEnabled:  subclientRegistrationEnabled == 1,
+			SubClientsRegistrationEnabled: subclientRegistrationEnabled == 1, // Same value, different field name
+			CreatedByUserID:               p.CreatedByUserID,
+			CreatedAt:                     p.CreatedAt.Format(time.RFC3339),
+			ShowHistory:                   false,      // Default value
+			UseClientUID:                  false,      // Default value
+			AllowedOrigins:                []string{}, // Default value
+			ContextRole:                   contextRole,
 		}
 	}
 
@@ -1272,6 +1184,9 @@ func GetProject(ctx context.Context, projectID string) (*projectResponseWrapper,
 		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "tenant session required"}
 	}
 
+	// Query project with all fields including subclient_registration_enabled
+	var allowedOriginsStr sql.NullString
+	var subclientRegistrationEnabled int64
 	project, err := q().GetProject(ctx, iamdb.GetProjectParams{
 		ID:       projectID,
 		TenantID: data.TenantID,
@@ -1283,10 +1198,20 @@ func GetProject(ctx context.Context, projectID string) (*projectResponseWrapper,
 		return nil, err
 	}
 
+	// Get additional fields that might not be in the model yet
+	err = db.QueryRowContext(ctx, `
+		SELECT allowed_origins, COALESCE(subclient_registration_enabled, 1)
+		FROM projects WHERE id = ? AND tenant_id = ?
+	`, projectID, data.TenantID).Scan(&allowedOriginsStr, &subclientRegistrationEnabled)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		// If column doesn't exist yet, use default value
+		subclientRegistrationEnabled = 1
+	}
+
 	// Parse allowed_origins from comma-separated string
 	var allowedOrigins []string
-	if project.AllowedOrigins.Valid {
-		origins := strings.Split(project.AllowedOrigins.String, ",")
+	if allowedOriginsStr.Valid {
+		origins := strings.Split(allowedOriginsStr.String, ",")
 		for _, origin := range origins {
 			trimmed := strings.TrimSpace(origin)
 			if trimmed != "" {
@@ -1298,16 +1223,19 @@ func GetProject(ctx context.Context, projectID string) (*projectResponseWrapper,
 	return &projectResponseWrapper{
 		Success: true,
 		Data: &projectResponse{
-			ID:               project.ID,
-			TenantID:         project.TenantID,
-			Name:             project.Name,
-			WhatsappEnabled:  project.WhatsappEnabled == 1,
-			SubclientEnabled: project.SubclientEnabled == 1,
-			CreatedByUserID:  project.CreatedByUserID,
-			CreatedAt:        project.CreatedAt.Format(time.RFC3339),
-			ShowHistory:      project.ShowHistory == 1,
-			UseClientUID:     project.UseClientUid == 1,
-			AllowedOrigins:   allowedOrigins,
+			ID:                            project.ID,
+			TenantID:                      project.TenantID,
+			Name:                          project.Name,
+			WhatsappEnabled:               project.WhatsappEnabled == 1,
+			SubclientEnabled:              project.SubclientEnabled == 1,
+			SubClientsEnabled:             project.SubclientEnabled == 1, // Same value, different field name
+			SubclientRegistrationEnabled:  subclientRegistrationEnabled == 1,
+			SubClientsRegistrationEnabled: subclientRegistrationEnabled == 1, // Same value, different field name
+			CreatedByUserID:               project.CreatedByUserID,
+			CreatedAt:                     project.CreatedAt.Format(time.RFC3339),
+			ShowHistory:                   project.ShowHistory == 1,
+			UseClientUID:                  project.UseClientUid == 1,
+			AllowedOrigins:                allowedOrigins,
 		},
 	}, nil
 }
@@ -1318,9 +1246,11 @@ type projectResponseWrapper struct {
 }
 
 type updateProjectParams struct {
-	ShowHistory    bool     `json:"show_history"`
-	UseClientUID   bool     `json:"use_client_uid"`
-	AllowedOrigins []string `json:"allowed_origins"`
+	ShowHistory                      bool     `json:"show_history"`
+	UseClientUID                     bool     `json:"use_client_uid"`
+	AllowedOrigins                   []string `json:"allowed_origins"`
+	SubClientsEnabled                bool     `json:"sub_clients_enabled"`
+	SubClientsRegistrationEnabled    bool     `json:"sub_clients_registration_enabled"`
 }
 
 // UpdateProjectSettings updates project embed settings.
@@ -1358,12 +1288,33 @@ func UpdateProjectSettings(ctx context.Context, projectID string, p *updateProje
 		useClientUID = 1
 	}
 
-	// Update project embed settings
+	subClientsEnabled := int64(0)
+	if p.SubClientsEnabled {
+		subClientsEnabled = 1
+	}
+
+	subClientsRegistrationEnabled := int64(1)
+	if !p.SubClientsRegistrationEnabled {
+		subClientsRegistrationEnabled = 0
+	}
+
+	// Update project settings including sub-client settings
+	// Try with subclient_registration_enabled first
 	_, err = db.ExecContext(ctx, `
 		UPDATE projects
-		SET show_history = ?, use_client_uid = ?, allowed_origins = ?
+		SET show_history = ?, use_client_uid = ?, allowed_origins = ?, subclient_enabled = ?, subclient_registration_enabled = ?
 		WHERE id = ? AND tenant_id = ?
-	`, showHistory, useClientUID, allowedOriginsStr, projectID, data.TenantID)
+	`, showHistory, useClientUID, allowedOriginsStr, subClientsEnabled, subClientsRegistrationEnabled, projectID, data.TenantID)
+
+	// If the column doesn't exist (older databases), try without it
+	if err != nil && strings.Contains(err.Error(), "no such column") {
+		_, err = db.ExecContext(ctx, `
+			UPDATE projects
+			SET show_history = ?, use_client_uid = ?, allowed_origins = ?, subclient_enabled = ?
+			WHERE id = ? AND tenant_id = ?
+		`, showHistory, useClientUID, allowedOriginsStr, subClientsEnabled, projectID, data.TenantID)
+	}
+
 	if err != nil {
 		return nil, err
 	}
