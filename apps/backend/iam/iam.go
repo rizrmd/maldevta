@@ -163,8 +163,11 @@ func AuthHandler(ctx context.Context, p *authParams) (auth.UID, *AuthData, error
 	}
 
 	if session.ScopeType == string(scopeTenant) {
-		if err := ensureTenantHost(ctx, session.ScopeID, host); err != nil {
-			return "", nil, err
+		// Skip host validation in development mode
+		if encore.Meta().Environment.Type != "development" {
+			if err := ensureTenantHost(ctx, session.ScopeID, host); err != nil {
+				return "", nil, err
+			}
 		}
 	}
 
@@ -499,7 +502,8 @@ func SetupCreateTenant(ctx context.Context, p *setupCreateTenantParams) (*setupC
 	tenantID := newID("tnt")
 	domain := normalizeHost(p.Domain)
 	if domain == "" {
-		domain = "*"
+		// Generate unique domain from tenant ID if not provided
+		domain = "tenant-" + tenantID
 	}
 	err = q().InsertTenant(ctx, iamdb.InsertTenantParams{
 		ID:     tenantID,
@@ -585,6 +589,79 @@ func SetupCreateAdmin(ctx context.Context, p *setupCreateAdminParams) (*setupCre
 	}
 
 	return &setupCreateAdminResponse{
+		UserID:   userID,
+		Username: p.Username,
+	}, nil
+}
+
+type setupCreateTenantAdminParams struct {
+	LicenseKey string `json:"license_key"`
+	TenantID   string `json:"tenant_id"`
+	Username   string `json:"username"`
+	Password   string `json:"password"`
+}
+
+type setupCreateTenantAdminResponse struct {
+	UserID   string `json:"user_id"`
+	Username string `json:"username"`
+}
+
+// SetupCreateTenantAdmin creates a tenant-bound admin user during setup wizard.
+//
+//encore:api public method=POST path=/auth/setup/tenant-admin
+func SetupCreateTenantAdmin(ctx context.Context, p *setupCreateTenantAdminParams) (*setupCreateTenantAdminResponse, error) {
+	if p == nil || p.LicenseKey == "" {
+		return nil, badRequest("license_key is required")
+	}
+	if p.TenantID == "" {
+		return nil, badRequest("tenant_id is required")
+	}
+	if p.Username == "" || p.Password == "" {
+		return nil, badRequest("username and password are required")
+	}
+
+	// Verify license
+	verified, err := verifyLicenseWithHub(ctx, p.LicenseKey)
+	if err != nil {
+		return nil, err
+	}
+	if !verified.Valid {
+		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "invalid license"}
+	}
+
+	// Verify tenant exists
+	tenant, err := q().GetTenantDetail(ctx, p.TenantID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, &errs.Error{Code: errs.NotFound, Message: "tenant not found"}
+		}
+		return nil, err
+	}
+
+	passwordHash, err := hashPassword(p.Password)
+	if err != nil {
+		return nil, err
+	}
+
+	userID := newID("usr")
+	now := time.Now().UTC()
+	err = q().CreateUser(ctx, iamdb.CreateUserParams{
+		ID:           userID,
+		TenantID:     sql.NullString{String: tenant.ID, Valid: true},
+		Username:     p.Username,
+		Email:        sql.NullString{},
+		PasswordHash: sql.NullString{String: passwordHash, Valid: true},
+		Role:         string(roleAdmin),
+		Source:       "manual",
+		CreatedAt:    now,
+		UpdatedAt:    now.Unix(),
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &setupCreateTenantAdminResponse{
 		UserID:   userID,
 		Username: p.Username,
 	}, nil
@@ -1808,7 +1885,8 @@ func ensureTenantHost(ctx context.Context, tenantID, host string) error {
 		}
 		return err
 	}
-	if domain == "*" || domain == host {
+	// Allow if domain is wildcard, exact match, or host is localhost (for development)
+	if domain == "*" || domain == host || isLocalhost(host) {
 		return nil
 	}
 	return &errs.Error{Code: errs.PermissionDenied, Message: "host not allowed for tenant"}
@@ -1988,6 +2066,12 @@ func normalizeHost(host string) string {
 		return ""
 	}
 	return host
+}
+
+// isLocalhost checks if a host is a localhost address (for development/testing)
+func isLocalhost(host string) bool {
+	h := normalizeHost(host)
+	return h == "localhost" || h == "127.0.0.1" || h == "::1" || strings.HasPrefix(h, "localhost:")
 }
 
 func toString(value interface{}) string {
