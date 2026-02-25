@@ -931,9 +931,9 @@ func CreateProject(ctx context.Context, p *createProjectParams) (*projectRespons
 
 // RenameProject updates the name of a project.
 //
-//encore:api auth method=PATCH path=/projects/:projectID
-func RenameProject(ctx context.Context, projectID string, p *RenameProjectParams) error {
-	fmt.Printf("RenameProject: ID=%s payload=%+v\n", projectID, p)
+//encore:api auth method=PATCH path=/projects/:projectId
+func RenameProject(ctx context.Context, projectId string, p *RenameProjectParams) error {
+	fmt.Printf("RenameProject: ID=%s payload=%+v\n", projectId, p)
 	if p == nil || strings.TrimSpace(p.Name) == "" {
 		return &errs.Error{Code: errs.InvalidArgument, Message: "project name is required"}
 	}
@@ -945,7 +945,7 @@ func RenameProject(ctx context.Context, projectID string, p *RenameProjectParams
 	}
 
 	// Verify project exists and belongs to tenant
-	ok, _, _, err := projectOwnedByTenant(ctx, projectID, data.TenantID)
+	ok, _, _, err := projectOwnedByTenant(ctx, projectId, data.TenantID)
 	if err != nil {
 		return err
 	}
@@ -954,7 +954,7 @@ func RenameProject(ctx context.Context, projectID string, p *RenameProjectParams
 	}
 
 	return q().UpdateProject(ctx, iamdb.UpdateProjectParams{
-		ID:       projectID,
+		ID:       projectId,
 		TenantID: data.TenantID,
 		Name:     strings.TrimSpace(p.Name),
 	})
@@ -962,8 +962,8 @@ func RenameProject(ctx context.Context, projectID string, p *RenameProjectParams
 
 // DeleteProject deletes a project and all its sub-resources (admin only).
 //
-//encore:api auth method=DELETE path=/projects/:projectID
-func DeleteProject(ctx context.Context, projectID string) error {
+//encore:api auth method=DELETE path=/projects/:projectId
+func DeleteProject(ctx context.Context, projectId string) error {
 	raw := auth.Data()
 	data, _ := raw.(*AuthData)
 	if data == nil || data.ScopeType != scopeTenant {
@@ -974,7 +974,7 @@ func DeleteProject(ctx context.Context, projectID string) error {
 	}
 
 	// Verify project exists and belongs to tenant
-	ok, _, _, err := projectOwnedByTenant(ctx, projectID, data.TenantID)
+	ok, _, _, err := projectOwnedByTenant(ctx, projectId, data.TenantID)
 	if err != nil {
 		return err
 	}
@@ -983,7 +983,7 @@ func DeleteProject(ctx context.Context, projectID string) error {
 	}
 
 	return q().DeleteProject(ctx, iamdb.DeleteProjectParams{
-		ID:       projectID,
+		ID:       projectId,
 		TenantID: data.TenantID,
 	})
 }
@@ -1253,8 +1253,8 @@ func ListProjects(ctx context.Context) (*listProjectsResponse, error) {
 
 // GetProject retrieves a single project by ID.
 //
-//encore:api auth method=GET path=/projects/:projectID
-func GetProject(ctx context.Context, projectID string) (*projectResponseWrapper, error) {
+//encore:api auth method=GET path=/projects/:projectId
+func GetProject(ctx context.Context, projectId string) (*projectResponseWrapper, error) {
 	raw := auth.Data()
 	data, _ := raw.(*AuthData)
 	if data == nil || data.ScopeType != scopeTenant {
@@ -1265,7 +1265,7 @@ func GetProject(ctx context.Context, projectID string) (*projectResponseWrapper,
 	var allowedOriginsStr sql.NullString
 	var subclientRegistrationEnabled int64
 	project, err := q().GetProject(ctx, iamdb.GetProjectParams{
-		ID:       projectID,
+		ID:       projectId,
 		TenantID: data.TenantID,
 	})
 	if err != nil {
@@ -1279,7 +1279,7 @@ func GetProject(ctx context.Context, projectID string) (*projectResponseWrapper,
 	err = db.QueryRowContext(ctx, `
 		SELECT allowed_origins, COALESCE(subclient_registration_enabled, 1)
 		FROM projects WHERE id = ? AND tenant_id = ?
-	`, projectID, data.TenantID).Scan(&allowedOriginsStr, &subclientRegistrationEnabled)
+	`, projectId, data.TenantID).Scan(&allowedOriginsStr, &subclientRegistrationEnabled)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		// If column doesn't exist yet, use default value
 		subclientRegistrationEnabled = 1
@@ -1332,8 +1332,8 @@ type updateProjectParams struct {
 
 // UpdateProjectSettings updates project embed settings.
 //
-//encore:api auth method=PUT path=/projects/:projectID
-func UpdateProjectSettings(ctx context.Context, projectID string, p *updateProjectParams) (*successResponse, error) {
+//encore:api auth method=PUT path=/projects/:projectId
+func UpdateProjectSettings(ctx context.Context, projectId string, p *updateProjectParams) (*successResponse, error) {
 	raw := auth.Data()
 	data, _ := raw.(*AuthData)
 	if data == nil || data.ScopeType != scopeTenant {
@@ -1341,7 +1341,7 @@ func UpdateProjectSettings(ctx context.Context, projectID string, p *updateProje
 	}
 
 	// Verify project exists and belongs to tenant
-	ok, _, _, err := projectOwnedByTenant(ctx, projectID, data.TenantID)
+	ok, _, _, err := projectOwnedByTenant(ctx, projectId, data.TenantID)
 	if err != nil {
 		return nil, err
 	}
@@ -1381,7 +1381,7 @@ func UpdateProjectSettings(ctx context.Context, projectID string, p *updateProje
 		UPDATE projects
 		SET show_history = ?, use_client_uid = ?, allowed_origins = ?, subclient_enabled = ?, subclient_registration_enabled = ?
 		WHERE id = ? AND tenant_id = ?
-	`, showHistory, useClientUID, allowedOriginsStr, subClientsEnabled, subClientsRegistrationEnabled, projectID, data.TenantID)
+	`, showHistory, useClientUID, allowedOriginsStr, subClientsEnabled, subClientsRegistrationEnabled, projectId, data.TenantID)
 
 	// If the column doesn't exist (older databases), try without it
 	if err != nil && strings.Contains(err.Error(), "no such column") {
@@ -1389,7 +1389,7 @@ func UpdateProjectSettings(ctx context.Context, projectID string, p *updateProje
 			UPDATE projects
 			SET show_history = ?, use_client_uid = ?, allowed_origins = ?, subclient_enabled = ?
 			WHERE id = ? AND tenant_id = ?
-		`, showHistory, useClientUID, allowedOriginsStr, subClientsEnabled, projectID, data.TenantID)
+		`, showHistory, useClientUID, allowedOriginsStr, subClientsEnabled, projectId, data.TenantID)
 	}
 
 	if err != nil {
@@ -1405,8 +1405,8 @@ type successResponse struct {
 
 // GetEmbedCSS retrieves custom CSS for a project.
 //
-//encore:api auth method=GET path=/projects/:projectID/embed/css
-func GetEmbedCSS(ctx context.Context, projectID string) (*embedCSSResponse, error) {
+//encore:api auth method=GET path=/projects/:projectId/embed/css
+func GetEmbedCSS(ctx context.Context, projectId string) (*embedCSSResponse, error) {
 	raw := auth.Data()
 	data, _ := raw.(*AuthData)
 	if data == nil || data.ScopeType != scopeTenant {
@@ -1414,7 +1414,7 @@ func GetEmbedCSS(ctx context.Context, projectID string) (*embedCSSResponse, erro
 	}
 
 	// Verify project exists and belongs to tenant
-	ok, _, _, err := projectOwnedByTenant(ctx, projectID, data.TenantID)
+	ok, _, _, err := projectOwnedByTenant(ctx, projectId, data.TenantID)
 	if err != nil {
 		return nil, err
 	}
@@ -1422,7 +1422,7 @@ func GetEmbedCSS(ctx context.Context, projectID string) (*embedCSSResponse, erro
 		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "project not found"}
 	}
 
-	css, err := q().GetEmbedCSS(ctx, projectID)
+	css, err := q().GetEmbedCSS(ctx, projectId)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			// No CSS saved yet, return empty
@@ -1459,8 +1459,8 @@ type saveEmbedCSSParams struct {
 
 // SaveEmbedCSS saves custom CSS for a project.
 //
-//encore:api auth method=POST path=/projects/:projectID/embed/css
-func SaveEmbedCSS(ctx context.Context, projectID string, p *saveEmbedCSSParams) (*successResponse, error) {
+//encore:api auth method=POST path=/projects/:projectId/embed/css
+func SaveEmbedCSS(ctx context.Context, projectId string, p *saveEmbedCSSParams) (*successResponse, error) {
 	raw := auth.Data()
 	data, _ := raw.(*AuthData)
 	if data == nil || data.ScopeType != scopeTenant {
@@ -1468,7 +1468,7 @@ func SaveEmbedCSS(ctx context.Context, projectID string, p *saveEmbedCSSParams) 
 	}
 
 	// Verify project exists and belongs to tenant
-	ok, _, _, err := projectOwnedByTenant(ctx, projectID, data.TenantID)
+	ok, _, _, err := projectOwnedByTenant(ctx, projectId, data.TenantID)
 	if err != nil {
 		return nil, err
 	}
@@ -1482,7 +1482,7 @@ func SaveEmbedCSS(ctx context.Context, projectID string, p *saveEmbedCSSParams) 
 	}
 
 	_, err = q().UpsertEmbedCSS(ctx, iamdb.UpsertEmbedCSSParams{
-		ProjectID: projectID,
+		ProjectID: projectId,
 		CustomCss: p.CustomCSS,
 	})
 	if err != nil {
@@ -1490,6 +1490,774 @@ func SaveEmbedCSS(ctx context.Context, projectID string, p *saveEmbedCSSParams) 
 	}
 
 	return &successResponse{Success: true}, nil
+}
+
+// ============================================================================
+// Project Sub-Clients Management
+// ============================================================================
+
+// SubClientUser represents a user in a sub-client
+type SubClientUser struct {
+	ID       string `json:"id"`
+	Username string `json:"username"`
+	Email    string `json:"email"`
+	Role     string `json:"role"`
+}
+
+// SubClientDetail represents a detailed sub-client
+type SubClientDetail struct {
+	ID                   string          `json:"id"`
+	ProjectID            string          `json:"project_id"`
+	Name                 string          `json:"name"`
+	Description          string          `json:"description"`
+	ShortID              string          `json:"short_id"`
+	Pathname             string          `json:"pathname"`
+	RegistrationEnabled  bool            `json:"registration_enabled"`
+	Suspended            bool            `json:"suspended"`
+	WhatsappClientID     string          `json:"whatsapp_client_id"`
+	Users                []SubClientUser `json:"users"`
+	CreatedAt            int64           `json:"created_at"`
+	UpdatedAt            int64           `json:"updated_at"`
+}
+
+type listProjectSubClientsResponse struct {
+	Success bool                `json:"success"`
+	Data    *listSubClientsData `json:"data"`
+}
+
+type listSubClientsData struct {
+	SubClients []SubClientDetail `json:"subClients"`
+	Enabled    bool              `json:"enabled"`
+}
+
+// ListProjectSubClients returns sub-clients for a project.
+// API path: /projects/:projectId/sub-clients
+//
+//encore:api auth method=GET path=/projects/:projectId/sub-clients
+func ListProjectSubClients(ctx context.Context, projectId string) (*listProjectSubClientsResponse, error) {
+	raw := auth.Data()
+	data, _ := raw.(*AuthData)
+	if data == nil {
+		return nil, &errs.Error{Code: errs.Unauthenticated, Message: "authentication required"}
+	}
+
+	// Verify project exists and belongs to tenant
+	ok, _, _, err := projectOwnedByTenant(ctx, projectId, data.TenantID)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, &errs.Error{Code: errs.NotFound, Message: "project not found"}
+	}
+
+	// Get project to check if sub-clients are enabled
+	project, err := q().GetProject(ctx, iamdb.GetProjectParams{
+		ID:       projectId,
+		TenantID: data.TenantID,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Get sub-clients
+	subclients, err := getProjectSubClients(ctx, projectId)
+	if err != nil {
+		return nil, err
+	}
+
+	return &listProjectSubClientsResponse{
+		Success: true,
+		Data: &listSubClientsData{
+			SubClients: subclients,
+			Enabled:    project.SubclientEnabled == 1,
+		},
+	}, nil
+}
+
+type createSubClientRequest struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
+type createSubClientResponse struct {
+	Success bool                `json:"success"`
+	Data    *createSubClientData `json:"data"`
+}
+
+type createSubClientData struct {
+	SubClient SubClientDetail `json:"subClient"`
+}
+
+// CreateProjectSubClient creates a new sub-client for a project.
+// API path: /projects/:projectId/sub-clients
+//
+//encore:api auth method=POST path=/projects/:projectId/sub-clients
+func CreateProjectSubClient(ctx context.Context, projectId string, p *createSubClientRequest) (*createSubClientResponse, error) {
+	raw := auth.Data()
+	data, _ := raw.(*AuthData)
+	if data == nil {
+		return nil, &errs.Error{Code: errs.Unauthenticated, Message: "authentication required"}
+	}
+
+	if p == nil || strings.TrimSpace(p.Name) == "" {
+		return nil, &errs.Error{Code: errs.InvalidArgument, Message: "name is required"}
+	}
+
+	// Verify project exists and belongs to tenant
+	ok, subClientEnabled, _, err := projectOwnedByTenant(ctx, projectId, data.TenantID)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, &errs.Error{Code: errs.NotFound, Message: "project not found"}
+	}
+	if !subClientEnabled {
+		return nil, &errs.Error{Code: errs.FailedPrecondition, Message: "sub-clients not enabled for this project"}
+	}
+
+	// Generate sub-client ID
+	subClientID := newID("scl")
+
+	// Generate short ID (4 characters)
+	shortID := generateShortID()
+
+	// Generate pathname from name
+	pathname := generatePathname(p.Name)
+
+	now := time.Now().Unix()
+
+	// Insert sub-client
+	_, err = db.ExecContext(ctx, `
+		INSERT INTO subclients (id, project_id, name, description, short_id, pathname, registration_enabled, suspended, created_by_user_id, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, 1, 0, ?, ?, ?)
+	`, subClientID, projectId, strings.TrimSpace(p.Name), nullStringFromString(p.Description), shortID, pathname, data.UserID, now, now)
+
+	if err != nil {
+		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
+			if strings.Contains(err.Error(), "short_id") {
+				return nil, &errs.Error{Code: errs.AlreadyExists, Message: "short ID already exists, please try again"}
+			}
+			return nil, &errs.Error{Code: errs.AlreadyExists, Message: "sub-client with this name already exists"}
+		}
+		return nil, fmt.Errorf("failed to create sub-client: %w", err)
+	}
+
+	// Get the created sub-client
+	subClients, err := getProjectSubClients(ctx, projectId)
+	if err != nil {
+		return nil, err
+	}
+
+	var created *SubClientDetail
+	for _, sc := range subClients {
+		if sc.ID == subClientID {
+			created = &sc
+			break
+		}
+	}
+
+	if created == nil {
+		return nil, &errs.Error{Code: errs.Internal, Message: "failed to retrieve created sub-client"}
+	}
+
+	return &createSubClientResponse{
+		Success: true,
+		Data: &createSubClientData{
+			SubClient: *created,
+		},
+	}, nil
+}
+
+type updateSubClientRequest struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Pathname    string `json:"pathname"`
+	Suspended   *bool  `json:"suspended"`
+}
+
+type updateSubClientResponse struct {
+	Success bool                `json:"success"`
+	Data    *updateSubClientData `json:"data"`
+}
+
+type updateSubClientData struct {
+	SubClient SubClientDetail `json:"subClient"`
+}
+
+// UpdateProjectSubClient updates a sub-client.
+// API path: /projects/:projectId/sub-clients/:subClientId
+//
+//encore:api auth method=PUT path=/projects/:projectId/sub-clients/:subClientId
+func UpdateProjectSubClient(ctx context.Context, projectId, subClientId string, p *updateSubClientRequest) (*updateSubClientResponse, error) {
+	raw := auth.Data()
+	data, _ := raw.(*AuthData)
+	if data == nil {
+		return nil, &errs.Error{Code: errs.Unauthenticated, Message: "authentication required"}
+	}
+
+	if p == nil {
+		return nil, &errs.Error{Code: errs.InvalidArgument, Message: "invalid request"}
+	}
+
+	// Verify project exists and belongs to tenant
+	ok, _, _, err := projectOwnedByTenant(ctx, projectId, data.TenantID)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, &errs.Error{Code: errs.NotFound, Message: "project not found"}
+	}
+
+	// Verify sub-client exists and belongs to project
+	subClient, err := getSubClientByID(ctx, subClientId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, &errs.Error{Code: errs.NotFound, Message: "sub-client not found"}
+		}
+		return nil, err
+	}
+	if subClient.ProjectID != projectId {
+		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "sub-client does not belong to this project"}
+	}
+
+	// Build updates
+	updates := []string{}
+	values := []interface{}{}
+
+	if p.Name != "" {
+		updates = append(updates, "name = ?")
+		values = append(values, strings.TrimSpace(p.Name))
+
+		// Update pathname if not explicitly provided
+		if p.Pathname == "" {
+			updates = append(updates, "pathname = ?")
+			values = append(values, generatePathname(p.Name))
+		}
+	}
+
+	if p.Pathname != "" {
+		// Validate pathname format
+		if !isValidPathname(p.Pathname) {
+			return nil, &errs.Error{Code: errs.InvalidArgument, Message: "pathname must contain only lowercase letters, numbers, and hyphens"}
+		}
+		updates = append(updates, "pathname = ?")
+		values = append(values, p.Pathname)
+	}
+
+	if p.Description != "" {
+		updates = append(updates, "description = ?")
+		values = append(values, nullStringFromString(p.Description))
+	}
+
+	if p.Suspended != nil {
+		suspended := 0
+		if *p.Suspended {
+			suspended = 1
+		}
+		updates = append(updates, "suspended = ?")
+		values = append(values, suspended)
+	}
+
+	if len(updates) == 0 {
+		// No updates, return current sub-client
+		resp, err := getSubClientDetailResponse(ctx, projectId, subClientId)
+		if err != nil {
+			return nil, err
+		}
+		return &updateSubClientResponse{
+			Success: resp.Success,
+			Data:    &updateSubClientData{SubClient: resp.Data.SubClient},
+		}, nil
+	}
+
+	updates = append(updates, "updated_at = ?")
+	values = append(values, time.Now().Unix())
+	values = append(values, subClientId)
+
+	query := fmt.Sprintf("UPDATE subclients SET %s WHERE id = ?", strings.Join(updates, ", "))
+	_, err = db.ExecContext(ctx, query, values...)
+	if err != nil {
+		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
+			return nil, &errs.Error{Code: errs.AlreadyExists, Message: "pathname already exists"}
+		}
+		return nil, fmt.Errorf("failed to update sub-client: %w", err)
+	}
+
+	resp, err := getSubClientDetailResponse(ctx, projectId, subClientId)
+	if err != nil {
+		return nil, err
+	}
+	return &updateSubClientResponse{
+		Success: resp.Success,
+		Data:    &updateSubClientData{SubClient: resp.Data.SubClient},
+	}, nil
+}
+
+// DeleteProjectSubClient deletes a sub-client.
+// API path: /projects/:projectId/sub-clients/:subClientId
+//
+//encore:api auth method=DELETE path=/projects/:projectId/sub-clients/:subClientId
+func DeleteProjectSubClient(ctx context.Context, projectId, subClientId string) (*successResponse, error) {
+	raw := auth.Data()
+	data, _ := raw.(*AuthData)
+	if data == nil {
+		return nil, &errs.Error{Code: errs.Unauthenticated, Message: "authentication required"}
+	}
+
+	// Verify project exists and belongs to tenant
+	ok, _, _, err := projectOwnedByTenant(ctx, projectId, data.TenantID)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, &errs.Error{Code: errs.NotFound, Message: "project not found"}
+	}
+
+	// Verify sub-client exists and belongs to project
+	subClient, err := getSubClientByID(ctx, subClientId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, &errs.Error{Code: errs.NotFound, Message: "sub-client not found"}
+		}
+		return nil, err
+	}
+	if subClient.ProjectID != projectId {
+		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "sub-client does not belong to this project"}
+	}
+
+	// Check if suspended before allowing deletion
+	if !subClient.Suspended {
+		return nil, &errs.Error{Code: errs.FailedPrecondition, Message: "cannot delete active sub-client. Suspend it first."}
+	}
+
+	// Delete sub-client (cascade will handle users, etc.)
+	_, err = db.ExecContext(ctx, "DELETE FROM subclients WHERE id = ?", subClientId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to delete sub-client: %w", err)
+	}
+
+	return &successResponse{Success: true}, nil
+}
+
+// GetProjectSubClientDetail gets a single sub-client detail.
+// API path: /projects/:projectId/sub-clients/:subClientId
+//
+//encore:api auth method=GET path=/projects/:projectId/sub-clients/:subClientId
+func GetProjectSubClientDetail(ctx context.Context, projectId, subClientId string) (*createSubClientResponse, error) {
+	raw := auth.Data()
+	data, _ := raw.(*AuthData)
+	if data == nil {
+		return nil, &errs.Error{Code: errs.Unauthenticated, Message: "authentication required"}
+	}
+
+	// Verify project exists and belongs to tenant
+	ok, _, _, err := projectOwnedByTenant(ctx, projectId, data.TenantID)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, &errs.Error{Code: errs.NotFound, Message: "project not found"}
+	}
+
+	// Verify sub-client exists and belongs to project
+	subClient, err := getSubClientByID(ctx, subClientId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, &errs.Error{Code: errs.NotFound, Message: "sub-client not found"}
+		}
+		return nil, err
+	}
+	if subClient.ProjectID != projectId {
+		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "sub-client does not belong to this project"}
+	}
+
+	return getSubClientDetailResponse(ctx, projectId, subClientId)
+}
+
+// ============================================================================
+// Sub-Client User Management
+// ============================================================================
+
+type listSubClientUsersResponse struct {
+	Success bool                `json:"success"`
+	Data    *listSubClientUsers `json:"data"`
+}
+
+type listSubClientUsers struct {
+	Users []SubClientUser `json:"users"`
+}
+
+// ListSubClientUsers lists users for a sub-client.
+// API path: /projects/:projectId/sub-clients/:subClientId/users
+//
+//encore:api auth method=GET path=/projects/:projectId/sub-clients/:subClientId/users
+func ListSubClientUsers(ctx context.Context, projectId, subClientId string) (*listSubClientUsersResponse, error) {
+	raw := auth.Data()
+	data, _ := raw.(*AuthData)
+	if data == nil {
+		return nil, &errs.Error{Code: errs.Unauthenticated, Message: "authentication required"}
+	}
+
+	// Verify project exists and belongs to tenant
+	ok, _, _, err := projectOwnedByTenant(ctx, projectId, data.TenantID)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, &errs.Error{Code: errs.NotFound, Message: "project not found"}
+	}
+
+	// Verify sub-client exists and belongs to project
+	subClient, err := getSubClientByID(ctx, subClientId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, &errs.Error{Code: errs.NotFound, Message: "sub-client not found"}
+		}
+		return nil, err
+	}
+	if subClient.ProjectID != projectId {
+		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "sub-client does not belong to this project"}
+	}
+
+	// Get users for this sub-client
+	users, err := getSubClientUsers(ctx, subClientId)
+	if err != nil {
+		return nil, err
+	}
+
+	return &listSubClientUsersResponse{
+		Success: true,
+		Data: &listSubClientUsers{
+			Users: users,
+		},
+	}, nil
+}
+
+type updateUserRoleRequest struct {
+	Role string `json:"role"`
+}
+
+type updateUserRoleResponse struct {
+	Success bool `json:"success"`
+}
+
+// UpdateSubClientUserRole updates a user's role in a sub-client.
+// API path: /projects/:projectId/sub-clients/:subClientId/users/:userId/role
+//
+//encore:api auth method=PUT path=/projects/:projectId/sub-clients/:subClientId/users/:userId/role
+func UpdateSubClientUserRole(ctx context.Context, projectId, subClientId, userId string, p *updateUserRoleRequest) (*updateUserRoleResponse, error) {
+	raw := auth.Data()
+	data, _ := raw.(*AuthData)
+	if data == nil {
+		return nil, &errs.Error{Code: errs.Unauthenticated, Message: "authentication required"}
+	}
+
+	if p == nil || p.Role == "" {
+		return nil, &errs.Error{Code: errs.InvalidArgument, Message: "role is required"}
+	}
+
+	// Validate role
+	role := strings.ToLower(p.Role)
+	if role != "admin" && role != "user" {
+		return nil, &errs.Error{Code: errs.InvalidArgument, Message: "role must be 'admin' or 'user'"}
+	}
+
+	// Verify project exists and belongs to tenant
+	ok, _, _, err := projectOwnedByTenant(ctx, projectId, data.TenantID)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, &errs.Error{Code: errs.NotFound, Message: "project not found"}
+	}
+
+	// Verify sub-client exists and belongs to project
+	subClient, err := getSubClientByID(ctx, subClientId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, &errs.Error{Code: errs.NotFound, Message: "sub-client not found"}
+		}
+		return nil, err
+	}
+	if subClient.ProjectID != projectId {
+		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "sub-client does not belong to this project"}
+	}
+
+	// Update user role
+	_, err = db.ExecContext(ctx, `
+		UPDATE users SET role = ?, updated_at = ?
+		WHERE id = ? AND subclient_id = ?
+	`, role, time.Now().Unix(), userId, subClientId)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to update user role: %w", err)
+	}
+
+	return &updateUserRoleResponse{Success: true}, nil
+}
+
+// DeleteSubClientUser deletes a user from a sub-client.
+// API path: /projects/:projectId/sub-clients/:subClientId/users/:userId
+//
+//encore:api auth method=DELETE path=/projects/:projectId/sub-clients/:subClientId/users/:userId
+func DeleteSubClientUser(ctx context.Context, projectId, subClientId, userId string) (*successResponse, error) {
+	raw := auth.Data()
+	data, _ := raw.(*AuthData)
+	if data == nil {
+		return nil, &errs.Error{Code: errs.Unauthenticated, Message: "authentication required"}
+	}
+
+	// Don't allow deleting yourself
+	if data.UserID == userId {
+		return nil, &errs.Error{Code: errs.FailedPrecondition, Message: "cannot delete yourself"}
+	}
+
+	// Verify project exists and belongs to tenant
+	ok, _, _, err := projectOwnedByTenant(ctx, projectId, data.TenantID)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, &errs.Error{Code: errs.NotFound, Message: "project not found"}
+	}
+
+	// Verify sub-client exists and belongs to project
+	subClient, err := getSubClientByID(ctx, subClientId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, &errs.Error{Code: errs.NotFound, Message: "sub-client not found"}
+		}
+		return nil, err
+	}
+	if subClient.ProjectID != projectId {
+		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "sub-client does not belong to this project"}
+	}
+
+	// Delete user
+	_, err = db.ExecContext(ctx, "DELETE FROM users WHERE id = ? AND subclient_id = ?", userId, subClientId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to delete user: %w", err)
+	}
+
+	return &successResponse{Success: true}, nil
+}
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+// getProjectSubClients retrieves all sub-clients for a project with their users
+func getProjectSubClients(ctx context.Context, projectID string) ([]SubClientDetail, error) {
+	rows, err := db.QueryContext(ctx, `
+		SELECT id, project_id, name, COALESCE(description, '') as description,
+		       COALESCE(short_id, '') as short_id, COALESCE(pathname, '') as pathname,
+		       COALESCE(registration_enabled, 1) as registration_enabled,
+		       COALESCE(suspended, 0) as suspended,
+		       COALESCE(whatsapp_client_id, '') as whatsapp_client_id,
+		       created_at, COALESCE(updated_at, 0) as updated_at
+		FROM subclients
+		WHERE project_id = ?
+		ORDER BY created_at DESC
+	`, projectID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var subClients []SubClientDetail
+	for rows.Next() {
+		var sc SubClientDetail
+		var description sql.NullString
+		var shortID, pathname, whatsappClientID sql.NullString
+		var createdAt sql.NullInt64
+		var registrationEnabled, suspended int
+
+		err := rows.Scan(&sc.ID, &sc.ProjectID, &sc.Name, &description,
+			&shortID, &pathname, &registrationEnabled, &suspended,
+			&whatsappClientID, &createdAt, &sc.UpdatedAt)
+		if err != nil {
+			return nil, err
+		}
+
+		sc.Description = description.String
+		sc.ShortID = shortID.String
+		sc.Pathname = pathname.String
+		sc.RegistrationEnabled = registrationEnabled == 1
+		sc.Suspended = suspended == 1
+		sc.WhatsappClientID = whatsappClientID.String
+		sc.CreatedAt = createdAt.Int64
+
+		// Get users for this sub-client
+		users, err := getSubClientUsers(ctx, sc.ID)
+		if err != nil {
+			return nil, err
+		}
+		sc.Users = users
+
+		subClients = append(subClients, sc)
+	}
+
+	return subClients, nil
+}
+
+// getSubClientByID retrieves a single sub-client by ID
+func getSubClientByID(ctx context.Context, subClientID string) (*SubClientDetail, error) {
+	var sc SubClientDetail
+	var description sql.NullString
+	var shortID, pathname, whatsappClientID sql.NullString
+	var createdAt sql.NullInt64
+	var registrationEnabled, suspended int
+
+	err := db.QueryRowContext(ctx, `
+		SELECT id, project_id, name, COALESCE(description, '') as description,
+		       COALESCE(short_id, '') as short_id, COALESCE(pathname, '') as pathname,
+		       COALESCE(registration_enabled, 1) as registration_enabled,
+		       COALESCE(suspended, 0) as suspended,
+		       COALESCE(whatsapp_client_id, '') as whatsapp_client_id,
+		       created_at, COALESCE(updated_at, 0) as updated_at
+		FROM subclients
+		WHERE id = ?
+	`, subClientID).Scan(&sc.ID, &sc.ProjectID, &sc.Name, &description,
+		&shortID, &pathname, &registrationEnabled, &suspended,
+		&whatsappClientID, &createdAt, &sc.UpdatedAt)
+
+	if err != nil {
+		return nil, err
+	}
+
+	sc.Description = description.String
+	sc.ShortID = shortID.String
+	sc.Pathname = pathname.String
+	sc.RegistrationEnabled = registrationEnabled == 1
+	sc.Suspended = suspended == 1
+	sc.WhatsappClientID = whatsappClientID.String
+	sc.CreatedAt = createdAt.Int64
+
+	return &sc, nil
+}
+
+// getSubClientUsers retrieves all users for a sub-client
+func getSubClientUsers(ctx context.Context, subClientID string) ([]SubClientUser, error) {
+	rows, err := db.QueryContext(ctx, `
+		SELECT id, username, COALESCE(email, '') as email, role
+		FROM users
+		WHERE subclient_id = ?
+		ORDER BY created_at DESC
+	`, subClientID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []SubClientUser
+	for rows.Next() {
+		var u SubClientUser
+		var email sql.NullString
+
+		err := rows.Scan(&u.ID, &u.Username, &email, &u.Role)
+		if err != nil {
+			return nil, err
+		}
+
+		u.Email = email.String
+		users = append(users, u)
+	}
+
+	return users, nil
+}
+
+// getSubClientDetailResponse returns a sub-client detail response
+func getSubClientDetailResponse(ctx context.Context, projectId, subClientId string) (*createSubClientResponse, error) {
+	subClient, err := getSubClientByID(ctx, subClientId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, &errs.Error{Code: errs.NotFound, Message: "sub-client not found"}
+		}
+		return nil, err
+	}
+
+	// Get users for this sub-client
+	users, err := getSubClientUsers(ctx, subClientId)
+	if err != nil {
+		return nil, err
+	}
+	subClient.Users = users
+
+	return &createSubClientResponse{
+		Success: true,
+		Data: &createSubClientData{
+			SubClient: *subClient,
+		},
+	}, nil
+}
+
+// generateShortID generates a 4-character short ID
+func generateShortID() string {
+	b := make([]byte, 2)
+	if _, err := rand.Read(b); err != nil {
+		// Fallback to timestamp-based ID
+		return fmt.Sprintf("%04x", time.Now().UnixNano()%0xFFFF)
+	}
+	return hex.EncodeToString(b)[:4]
+}
+
+// generatePathname generates a pathname from a name
+func generatePathname(name string) string {
+	// Convert to lowercase and replace spaces with hyphens
+	pathname := strings.ToLower(strings.TrimSpace(name))
+	pathname = strings.ReplaceAll(pathname, " ", "-")
+	pathname = strings.ReplaceAll(pathname, "_", "-")
+
+	// Remove all characters except lowercase letters, numbers, and hyphens
+	var result strings.Builder
+	for _, r := range pathname {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '-' {
+			result.WriteRune(r)
+		}
+	}
+
+	pathname = result.String()
+
+	// Remove consecutive hyphens
+	for strings.Contains(pathname, "--") {
+		pathname = strings.ReplaceAll(pathname, "--", "-")
+	}
+
+	// Remove leading/trailing hyphens
+	pathname = strings.Trim(pathname, "-")
+
+	// Limit to 50 characters
+	if len(pathname) > 50 {
+		pathname = pathname[:50]
+	}
+
+	// Ensure it's not empty
+	if pathname == "" {
+		pathname = "client"
+	}
+
+	return pathname
+}
+
+// isValidPathname validates pathname format
+func isValidPathname(pathname string) bool {
+	if pathname == "" {
+		return false
+	}
+	for _, r := range pathname {
+		if !((r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '-') {
+			return false
+		}
+	}
+	return true
+}
+
+// nullStringFromString converts a string to sql.NullString
+func nullStringFromString(s string) sql.NullString {
+	if s == "" {
+		return sql.NullString{Valid: false}
+	}
+	return sql.NullString{String: s, Valid: true}
 }
 
 type listSubclientsParams struct {
@@ -1980,6 +2748,24 @@ func runMigrations(ctx context.Context, db *sql.DB) error {
 		}
 	}
 
+	if currentVersion < 8 {
+		if err := applyMigration(ctx, db, 8); err != nil {
+			return err
+		}
+	}
+
+	if currentVersion < 9 {
+		if err := applyMigration(ctx, db, 9); err != nil {
+			return err
+		}
+	}
+
+	if currentVersion < 10 {
+		if err := applyMigration(ctx, db, 10); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -2134,8 +2920,8 @@ type updateProjectRoleRequest struct {
 
 // GetProjectRole retrieves the context role for a project
 //
-//encore:api auth method=GET path=/projects/:projectID/role
-func GetProjectRole(ctx context.Context, projectID string) (*getProjectRoleResponse, error) {
+//encore:api auth method=GET path=/projects/:projectId/role
+func GetProjectRole(ctx context.Context, projectId string) (*getProjectRoleResponse, error) {
 	raw := auth.Data()
 	data, ok := raw.(*AuthData)
 	if !ok || data == nil || data.ScopeType != scopeTenant {
@@ -2144,7 +2930,7 @@ func GetProjectRole(ctx context.Context, projectID string) (*getProjectRoleRespo
 
 	// Get project to verify ownership
 	_, err := q().GetProject(ctx, iamdb.GetProjectParams{
-		ID:       projectID,
+		ID:       projectId,
 		TenantID: data.TenantID,
 	})
 	if err != nil {
@@ -2156,7 +2942,7 @@ func GetProjectRole(ctx context.Context, projectID string) (*getProjectRoleRespo
 
 	// Get context_role from project
 	var contextRole string
-	err = db.QueryRowContext(ctx, "SELECT context_role FROM projects WHERE id = ? AND tenant_id = ?", projectID, data.TenantID).Scan(&contextRole)
+	err = db.QueryRowContext(ctx, "SELECT context_role FROM projects WHERE id = ? AND tenant_id = ?", projectId, data.TenantID).Scan(&contextRole)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, &errs.Error{Code: errs.NotFound, Message: "project not found"}
@@ -2171,8 +2957,8 @@ func GetProjectRole(ctx context.Context, projectID string) (*getProjectRoleRespo
 
 // UpdateProjectRole updates the context role for a project
 //
-//encore:api auth method=PUT path=/projects/:projectID/role
-func UpdateProjectRole(ctx context.Context, projectID string, req *updateProjectRoleRequest) (*getProjectRoleResponse, error) {
+//encore:api auth method=PUT path=/projects/:projectId/role
+func UpdateProjectRole(ctx context.Context, projectId string, req *updateProjectRoleRequest) (*getProjectRoleResponse, error) {
 	if req == nil || strings.TrimSpace(req.ContextRole) == "" {
 		return nil, badRequest("context_role is required")
 	}
@@ -2185,7 +2971,7 @@ func UpdateProjectRole(ctx context.Context, projectID string, req *updateProject
 
 	// Verify project exists
 	_, err := q().GetProject(ctx, iamdb.GetProjectParams{
-		ID:       projectID,
+		ID:       projectId,
 		TenantID: data.TenantID,
 	})
 	if err != nil {
@@ -2202,7 +2988,7 @@ func UpdateProjectRole(ctx context.Context, projectID string, req *updateProject
 	}
 
 	// Update project role
-	_, err = db.ExecContext(ctx, "UPDATE projects SET context_role = ? WHERE id = ? AND tenant_id = ?", req.ContextRole, projectID, data.TenantID)
+	_, err = db.ExecContext(ctx, "UPDATE projects SET context_role = ? WHERE id = ? AND tenant_id = ?", req.ContextRole, projectId, data.TenantID)
 	if err != nil {
 		return nil, err
 	}
@@ -2214,8 +3000,8 @@ func UpdateProjectRole(ctx context.Context, projectID string, req *updateProject
 
 // CheckQuestionScope checks if a question is within the project's role scope
 //
-//encore:api auth method=POST path=/projects/:projectID/check-scope
-func CheckQuestionScope(ctx context.Context, projectID string, req *checkQuestionScopeRequest) (*checkQuestionScopeResponse, error) {
+//encore:api auth method=POST path=/projects/:projectId/check-scope
+func CheckQuestionScope(ctx context.Context, projectId string, req *checkQuestionScopeRequest) (*checkQuestionScopeResponse, error) {
 	if req == nil || strings.TrimSpace(req.Question) == "" {
 		return nil, badRequest("question is required")
 	}
@@ -2228,7 +3014,7 @@ func CheckQuestionScope(ctx context.Context, projectID string, req *checkQuestio
 
 	// Get project role
 	var contextRole string
-	err := db.QueryRowContext(ctx, "SELECT COALESCE(context_role, 'general') FROM projects WHERE id = ? AND tenant_id = ?", projectID, data.TenantID).Scan(&contextRole)
+	err := db.QueryRowContext(ctx, "SELECT COALESCE(context_role, 'general') FROM projects WHERE id = ? AND tenant_id = ?", projectId, data.TenantID).Scan(&contextRole)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, &errs.Error{Code: errs.NotFound, Message: "project not found"}

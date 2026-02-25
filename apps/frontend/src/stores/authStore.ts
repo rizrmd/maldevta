@@ -81,6 +81,8 @@ interface AuthStore {
   // Actions
   checkSession: () => Promise<void>;
   login: (username: string, password: string) => Promise<void>;
+  subClientLogin: (shortPath: string, usernameOrEmail: string, password: string) => Promise<AuthData>;
+  subClientRegister: (shortPath: string, email: string, username: string, password: string) => Promise<AuthData>;
   logout: () => Promise<void>;
   clearError: () => void;
   setUser: (user: AuthData | null) => void;
@@ -146,6 +148,100 @@ export const useAuthStore = create<AuthStore>()(
         } catch (err) {
           const apiError = err as ApiError;
           set({ error: apiError.message || "Login failed", loading: false });
+          throw err;
+        }
+      },
+
+      subClientLogin: async (shortPath: string, usernameOrEmail: string, password: string) => {
+        set({ error: null, loading: true });
+        try {
+          const response = await apiRequest<{
+            success: boolean;
+            data: {
+              user: {
+                id: number;
+                username: string;
+                email: string;
+                role: string;
+              };
+              session: {
+                token: string;
+                expiresAt: number;
+              };
+            };
+          }>("/api/sub-client/login", {
+            method: "POST",
+            body: JSON.stringify({ shortPath, usernameOrEmail, password }),
+          });
+
+          // Extract subclient info from shortPath
+          const parts = shortPath.split('-');
+          const shortId = parts[0];
+
+          const authData: AuthData = {
+            userId: String(response.data.user.id),
+            role: response.data.user.role,
+            scopeType: "sub_client_user",
+            subclientId: shortId,
+            username: response.data.user.username,
+          };
+
+          set({
+            user: authData,
+            loading: false,
+          });
+
+          return authData;
+        } catch (err) {
+          const apiError = err as ApiError;
+          set({ error: apiError.message || "Login failed", loading: false });
+          throw err;
+        }
+      },
+
+      subClientRegister: async (shortPath: string, email: string, username: string, password: string) => {
+        set({ error: null, loading: true });
+        try {
+          const response = await apiRequest<{
+            success: boolean;
+            data: {
+              user: {
+                id: number;
+                username: string;
+                email: string;
+                role: string;
+              };
+              session: {
+                token: string;
+                expiresAt: number;
+              };
+            };
+          }>("/api/sub-client/register", {
+            method: "POST",
+            body: JSON.stringify({ shortPath, email, username, password }),
+          });
+
+          // Extract subclient info from shortPath
+          const parts = shortPath.split('-');
+          const shortId = parts[0];
+
+          const authData: AuthData = {
+            userId: String(response.data.user.id),
+            role: response.data.user.role,
+            scopeType: "sub_client_user",
+            subclientId: shortId,
+            username: response.data.user.username,
+          };
+
+          set({
+            user: authData,
+            loading: false,
+          });
+
+          return authData;
+        } catch (err) {
+          const apiError = err as ApiError;
+          set({ error: apiError.message || "Registration failed", loading: false });
           throw err;
         }
       },
