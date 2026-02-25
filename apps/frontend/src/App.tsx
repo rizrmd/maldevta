@@ -19,7 +19,10 @@ import { EmbedSettings } from "@/components/pages/developer/embed-settings";
 import SettingsPage from "@/pages/Settings";
 import SubClientSettingsPage from "@/pages/SubClientSettings";
 import SubClientManagementPage from "@/pages/SubClientManagement";
-import { SubClientDetailPage } from "@/components/pages/sub-client";
+import SubClientDetailPage from "@/pages/SubClientDetail";
+import SubClientLoginPage from "@/pages/SubClientLogin";
+import SubClientRegisterPage from "@/pages/SubClientRegister";
+import SubClientChatPage from "@/pages/SubClientChat";
 // import SupportPage from "@/pages/Support"; // TODO: Create SupportPage
 import BillingPage from "@/pages/Billing";
 import PaymentPage from "@/pages/Payment";
@@ -153,6 +156,11 @@ function App() {
 
           {/* Login route - accessible when licensed but not authenticated */}
           <Route path="/login" component={LoginPage} />
+
+          {/* Public sub-client routes - accessible without main authentication */}
+          <Route path="/s/:shortPath/login" component={SubClientLoginPage} />
+          <Route path="/s/:shortPath/register" component={SubClientRegisterPage} />
+          <Route path="/s/:shortPath/chat" component={SubClientChatPage} />
 
           {/* Protected routes - require authentication */}
           <ProtectedRoute>

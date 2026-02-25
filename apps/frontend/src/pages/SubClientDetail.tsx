@@ -91,7 +91,7 @@ type SubClient = {
   pathname: string | null;
   custom_domain: string | null;
   registration_enabled: boolean;
-  users: SubClientUser[];
+  users: SubClientUser[] | null;
   suspended?: boolean;
   whatsapp_client_id?: string | null;
 };
@@ -126,7 +126,11 @@ async function parseError(response: Response): Promise<ApiError> {
   try {
     payload = await response.json();
   } catch {
-    payload = null;
+    // If JSON parsing fails, return status text
+    return {
+      message: `${response.status} ${response.statusText}`,
+      status: response.status,
+    };
   }
 
   if (payload && typeof payload === "object") {
@@ -226,9 +230,14 @@ export default function SubClientDetailPage() {
 
   // Fetch sub-client details
   const fetchSubClient = useCallback(async () => {
-    if (!projectId || !subClientId) return;
+    if (!projectId || !subClientId) {
+      console.log('[SubClientDetail] Missing params:', { projectId, subClientId });
+      setIsLoading(false);
+      return;
+    }
 
     setIsLoading(true);
+    console.log('[SubClientDetail] Fetching sub-client:', { projectId, subClientId });
 
     try {
       const response = await apiRequest<{
@@ -236,19 +245,30 @@ export default function SubClientDetailPage() {
         data: { subClient: SubClient };
       }>(`/projects/${projectId}/sub-clients/${subClientId}`);
 
-      if (response.success) {
-        setSubClient(response.data.subClient);
+      console.log('[SubClientDetail] Response:', response);
+
+      if (response.success && response.data?.subClient) {
+        // Normalize users field - handle null/undefined
+        const subClientData = {
+          ...response.data.subClient,
+          users: response.data.subClient.users || [],
+        };
+        setSubClient(subClientData);
+        console.log('[SubClientDetail] Sub-client loaded successfully');
       } else {
-        throw new Error("Failed to fetch sub-client");
+        console.error('[SubClientDetail] Invalid response format:', response);
+        throw new Error("Invalid response format");
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to fetch sub-client";
+      console.error('[SubClientDetail] Error fetching sub-client:', err);
       toast({
         variant: "destructive",
         title: "Error",
         description: errorMessage,
       });
-      console.error("Error fetching sub-client:", err);
+      // Set subClient to null to show not found state
+      setSubClient(null);
     } finally {
       setIsLoading(false);
     }
@@ -525,7 +545,8 @@ export default function SubClientDetailPage() {
   // Effects
   useEffect(() => {
     fetchSubClient();
-  }, [fetchSubClient]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId, subClientId]);
 
   useEffect(() => {
     if (activeTab === 'whatsapp') {
@@ -821,7 +842,7 @@ export default function SubClientDetailPage() {
 
               {/* Users Tab */}
               <TabsContent value="users" className="space-y-6 mt-6">
-                {subClient.users.length === 0 ? (
+                {!subClient.users || subClient.users.length === 0 ? (
                   <Card>
                     <CardContent className="py-12 text-center">
                       <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
