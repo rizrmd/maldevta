@@ -600,36 +600,36 @@ export default function LandingPage() {
           </div>
 
           {/* Slider Container */}
-          <div className="relative">
+          <div className="relative max-w-7xl mx-auto">
             {/* Navigation Buttons */}
             <button
               onClick={() => setCurrentFeatureSlide((prev) => prev === 0 ? coreFeatures.length - 1 : prev - 1)}
-              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 w-12 h-12 bg-white rounded-full shadow-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50 hover:scale-110 transition-all hidden md:flex"
+              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 w-14 h-14 bg-white rounded-full shadow-xl border border-gray-200 flex items-center justify-center hover:bg-gray-50 hover:scale-110 transition-all hidden md:flex"
               aria-label="Previous feature"
             >
-              <ChevronLeft className="w-6 h-6 text-gray-700" />
+              <ChevronLeft className="w-7 h-7 text-gray-700" />
             </button>
 
             <button
               onClick={() => setCurrentFeatureSlide((prev) => (prev + 1) % coreFeatures.length)}
-              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 w-12 h-12 bg-white rounded-full shadow-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50 hover:scale-110 transition-all hidden md:flex"
+              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 w-14 h-14 bg-white rounded-full shadow-xl border border-gray-200 flex items-center justify-center hover:bg-gray-50 hover:scale-110 transition-all hidden md:flex"
               aria-label="Next feature"
             >
-              <ChevronRight className="w-6 h-6 text-gray-700" />
+              <ChevronRight className="w-7 h-7 text-gray-700" />
             </button>
 
             {/* Slides */}
-            <div className="overflow-hidden">
+            <div className="overflow-hidden rounded-3xl">
               <div
                 className="flex transition-transform duration-500 ease-in-out"
                 style={{ transform: `translateX(-${currentFeatureSlide * 100}%)` }}
               >
                 {coreFeatures.map((feature, idx) => (
-                  <div key={idx} className="w-full flex-shrink-0 px-4">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
+                  <div key={idx} className="w-full flex-shrink-0 px-6 py-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
                       {/* Image */}
                       <div className="relative order-2 lg:order-1">
-                        <div className="aspect-video bg-white rounded-2xl overflow-hidden border border-gray-200 shadow-xl">
+                        <div className="aspect-[16/10] bg-white rounded-3xl overflow-hidden border-2 border-gray-200 shadow-2xl">
                           <img
                             src={feature.image}
                             alt={feature.title}
@@ -641,36 +641,36 @@ export default function LandingPage() {
                               if (fallback) fallback.style.display = "flex";
                             }}
                           />
-                          <div className="w-full h-full items-center justify-center text-6xl hidden">
+                          <div className="w-full h-full items-center justify-center text-8xl hidden">
                             {feature.icon}
                           </div>
                         </div>
 
                         {/* Gradient glow */}
-                        <div className={`absolute -inset-4 bg-gradient-to-r ${feature.gradient} opacity-10 blur-3xl rounded-3xl -z-10`}></div>
+                        <div className={`absolute -inset-6 bg-gradient-to-r ${feature.gradient} opacity-15 blur-3xl rounded-3xl -z-10`}></div>
                       </div>
 
                       {/* Content */}
-                      <div className="order-1 lg:order-2">
-                        <div className={`inline-flex p-3 bg-gradient-to-br ${feature.gradient} rounded-xl mb-6`}>
+                      <div className="order-1 lg:order-2 space-y-8">
+                        <div className={`inline-flex p-4 bg-gradient-to-br ${feature.gradient} rounded-2xl`}>
                           <div className="text-white">
                             {feature.icon}
                           </div>
                         </div>
 
-                        <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
+                        <h3 className="text-4xl sm:text-5xl font-bold text-gray-900 leading-tight">
                           {feature.title}
                         </h3>
 
-                        <p className="text-lg text-gray-600 mb-6">
+                        <p className="text-xl text-gray-600 leading-relaxed">
                           {feature.description}
                         </p>
 
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
                           {feature.highlights.map((highlight, i) => (
-                            <div key={i} className="flex items-center text-gray-600">
-                              <Check className="w-4 h-4 mr-2 text-blue-500" />
-                              <span className="text-sm">{highlight}</span>
+                            <div key={i} className="flex items-center text-gray-700">
+                              <Check className="w-5 h-5 mr-3 text-blue-500 flex-shrink-0" />
+                              <span className="text-base font-medium">{highlight}</span>
                             </div>
                           ))}
                         </div>
@@ -682,15 +682,15 @@ export default function LandingPage() {
             </div>
 
             {/* Dot Indicators */}
-            <div className="flex justify-center items-center gap-3 mt-12">
+            <div className="flex justify-center items-center gap-4 mt-16">
               {coreFeatures.map((_, idx) => (
                 <button
                   key={idx}
                   onClick={() => setCurrentFeatureSlide(idx)}
-                  className={`w-3 h-3 rounded-full transition-all ${
+                  className={`h-3 rounded-full transition-all ${
                     idx === currentFeatureSlide
-                      ? "bg-blue-500 w-8"
-                      : "bg-gray-300 hover:bg-gray-400"
+                      ? "bg-blue-500 w-10"
+                      : "bg-gray-300 hover:bg-gray-400 w-3"
                   }`}
                   aria-label={`Go to feature ${idx + 1}`}
                 />
@@ -698,20 +698,20 @@ export default function LandingPage() {
             </div>
 
             {/* Mobile Navigation */}
-            <div className="flex justify-center items-center gap-4 mt-6 md:hidden">
+            <div className="flex justify-center items-center gap-4 mt-8 md:hidden">
               <button
                 onClick={() => setCurrentFeatureSlide((prev) => prev === 0 ? coreFeatures.length - 1 : prev - 1)}
-                className="px-6 py-3 bg-white rounded-full shadow-lg border border-gray-200 flex items-center hover:bg-gray-50 transition-all"
+                className="px-8 py-4 bg-white rounded-full shadow-xl border-2 border-gray-200 flex items-center hover:bg-gray-50 transition-all text-base font-semibold"
               >
-                <ChevronLeft className="w-5 h-5 text-gray-700 mr-1" />
+                <ChevronLeft className="w-6 h-6 text-gray-700 mr-2" />
                 Previous
               </button>
               <button
                 onClick={() => setCurrentFeatureSlide((prev) => (prev + 1) % coreFeatures.length)}
-                className="px-6 py-3 bg-white rounded-full shadow-lg border border-gray-200 flex items-center hover:bg-gray-50 transition-all"
+                className="px-8 py-4 bg-white rounded-full shadow-xl border-2 border-gray-200 flex items-center hover:bg-gray-50 transition-all text-base font-semibold"
               >
                 Next
-                <ChevronRight className="w-5 h-5 text-gray-700 ml-1" />
+                <ChevronRight className="w-6 h-6 text-gray-700 ml-2" />
               </button>
             </div>
           </div>
