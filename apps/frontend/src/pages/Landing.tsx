@@ -29,6 +29,7 @@ import {
   Building2,
   CheckCircle,
 } from "lucide-react";
+import { InteractiveDemo, FullInteractiveDemo } from "@/components/InteractiveDemo";
 
 export default function LandingPage() {
   const [, setLocation] = useLocation();
@@ -424,53 +425,61 @@ export default function LandingPage() {
         <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-gradient-to-br from-blue-100/40 to-blue-200/40 rounded-full blur-3xl animate-pulse delay-1000"></div>
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
-              Buat AI Agent untuk Bisnis.
-              <br />
-              <span className="bg-gradient-to-r from-blue-500 to-blue-600 bg-clip-text text-transparent">
-                Pasang di Website & WhatsApp.
-              </span>
-            </h1>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            {/* Left: Hero Content */}
+            <div>
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
+                Buat AI Agent untuk Bisnis.
+                <br />
+                <span className="bg-gradient-to-r from-blue-500 to-blue-600 bg-clip-text text-transparent">
+                  Pasang di Website & WhatsApp.
+                </span>
+              </h1>
 
-            <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-              Platform no-code untuk membuat AI agent yang bisa di-embed ke website dan
-              terhubung ke WhatsApp. Atur context, knowledge base, dan biar AI handle customer
-              support 24/7.
-            </p>
+              <p className="text-xl text-gray-600 mb-8 max-w-2xl">
+                Platform no-code untuk membuat AI agent yang bisa di-embed ke website dan
+                terhubung ke WhatsApp. Atur context, knowledge base, dan biar AI handle customer
+                support 24/7.
+              </p>
 
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
-              <button
-                onClick={() => setLocation("/login")}
-                className="group px-8 py-4 text-lg font-semibold text-white bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all shadow-xl shadow-blue-500/30 flex items-center"
-              >
-                Mulai Gratis
-                <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </button>
-              <button
-                onClick={() => scrollToSection("features")}
-                className="px-8 py-4 text-lg font-semibold text-gray-700 border-2 border-gray-300 rounded-xl hover:bg-gray-50 transition-colors flex items-center"
-              >
-                <Play className="mr-2 w-5 h-5" />
-                Lihat Demo
-              </button>
+              {/* CTA Buttons */}
+              <div className="flex flex-col sm:flex-row items-center gap-4 mb-12">
+                <button
+                  onClick={() => setLocation("/login")}
+                  className="group px-8 py-4 text-lg font-semibold text-white bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all shadow-xl shadow-blue-500/30 flex items-center"
+                >
+                  Mulai Gratis
+                  <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </button>
+                <button
+                  onClick={() => scrollToSection("interactive-demo")}
+                  className="px-8 py-4 text-lg font-semibold text-gray-700 border-2 border-gray-300 rounded-xl hover:bg-gray-50 transition-colors flex items-center"
+                >
+                  <Play className="mr-2 w-5 h-5" />
+                  Lihat Demo
+                </button>
+              </div>
+
+              {/* Quick bullets */}
+              <div className="flex flex-wrap items-center gap-6 text-gray-600">
+                <div className="flex items-center">
+                  <Check className="w-5 h-5 mr-2 text-blue-500" />
+                  <span>Embed ke Website</span>
+                </div>
+                <div className="flex items-center">
+                  <Check className="w-5 h-5 mr-2 text-blue-500" />
+                  <span>Integrasi WhatsApp</span>
+                </div>
+                <div className="flex items-center">
+                  <Check className="w-5 h-5 mr-2 text-blue-500" />
+                  <span>Atur Context & SOP</span>
+                </div>
+              </div>
             </div>
 
-            {/* Quick bullets */}
-            <div className="flex flex-wrap items-center justify-center gap-6 text-gray-600">
-              <div className="flex items-center">
-                <Check className="w-5 h-5 mr-2 text-blue-500" />
-                <span>Embed ke Website</span>
-              </div>
-              <div className="flex items-center">
-                <Check className="w-5 h-5 mr-2 text-blue-500" />
-                <span>Integrasi WhatsApp</span>
-              </div>
-              <div className="flex items-center">
-                <Check className="w-5 h-5 mr-2 text-blue-500" />
-                <span>Atur Context & SOP</span>
-              </div>
+            {/* Right: Mini Demo */}
+            <div className="flex justify-center">
+              <InteractiveDemo type="mini" onCtaClick={() => setLocation("/login")} />
             </div>
           </div>
         </div>
@@ -713,6 +722,59 @@ export default function LandingPage() {
                 Next
                 <ChevronRight className="w-6 h-6 text-gray-700 ml-2" />
               </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* INTERACTIVE DEMO */}
+      <section id="interactive-demo" className="py-20 bg-gradient-to-b from-gray-50 to-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center px-4 py-2 bg-blue-100 rounded-full text-blue-600 text-sm font-medium mb-4">
+              <Play className="w-4 h-4 mr-2" />
+              Coba Langsung
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+              Interactive Demo
+            </h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Rasakan sendiri bagaimana AI agent bekerja. Pilih skenario, ganti channel, dan lihat responsnya secara langsung.
+            </p>
+          </div>
+
+          <FullInteractiveDemo onCtaClick={() => setLocation("/login")} />
+
+          {/* Demo Features */}
+          <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-lg">
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                <Bot className="w-6 h-6 text-blue-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">3 Skenario Nyata</h3>
+              <p className="text-gray-600 text-sm">
+                Customer Support, Sales, dan Booking dengan konteks dan pertanyaan yang realistis.
+              </p>
+            </div>
+
+            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-lg">
+              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
+                <Smartphone className="w-6 h-6 text-green-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Multi-Channel</h3>
+              <p className="text-gray-600 text-sm">
+                Website Widget dan WhatsApp dengan tampilan dan respons yang sesuai channel.
+              </p>
+            </div>
+
+            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-lg">
+              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
+                <Database className="w-6 h-6 text-purple-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Context-Aware</h3>
+              <p className="text-gray-600 text-sm">
+                Jawaban berubah sesuai konteks skenario yang dipilih, menunjukkan kecerdasan AI.
+              </p>
             </div>
           </div>
         </div>
