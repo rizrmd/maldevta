@@ -189,59 +189,6 @@ export default function LandingPage() {
     { name: "Make", icon: "🔄", color: "bg-purple-600" }
   ];
 
-  // Pricing plans
-  const pricingPlans = [
-    {
-      name: "Starter",
-      description: "Untuk bisnis yang baru mulai",
-      price: "Gratis",
-      period: "",
-      features: [
-        "1 AI Agent",
-        "Website Widget",
-        "100 chat/bulan",
-        "Basic knowledge base",
-        "Community support"
-      ],
-      cta: "Mulai Gratis",
-      primary: false
-    },
-    {
-      name: "Pro",
-      description: "Untuk bisnis yang berkembang",
-      price: "Rp 499.000",
-      period: "/bulan",
-      features: [
-        "3 AI Agents",
-        "Website + WhatsApp",
-        "5.000 chat/bulan",
-        "Advanced knowledge base",
-        "Analytics dashboard",
-        "Email support"
-      ],
-      cta: "Mulai Trial",
-      primary: true
-    },
-    {
-      name: "Bisnis",
-      description: "Untuk perusahaan besar",
-      price: "Hubungi Sales",
-      period: "",
-      features: [
-        "Unlimited AI Agents",
-        "All channels",
-        "Unlimited chat",
-        "Custom knowledge base",
-        "Advanced analytics",
-        "Priority support",
-        "Custom integrations",
-        "SLA guarantee"
-      ],
-      cta: "Minta Demo",
-      primary: false
-    }
-  ];
-
   // FAQ items
   const faqs = [
     {
@@ -321,12 +268,6 @@ export default function LandingPage() {
                 Solusi
               </button>
               <button
-                onClick={() => scrollToSection("pricing")}
-                className="text-gray-600 hover:text-blue-600 transition-colors"
-              >
-                Harga
-              </button>
-              <button
                 onClick={() => scrollToSection("integrations")}
                 className="text-gray-600 hover:text-blue-600 transition-colors"
               >
@@ -381,12 +322,6 @@ export default function LandingPage() {
                 className="block w-full text-left text-gray-600 hover:text-blue-600 py-2"
               >
                 Solusi
-              </button>
-              <button
-                onClick={() => scrollToSection("pricing")}
-                className="block w-full text-left text-gray-600 hover:text-blue-600 py-2"
-              >
-                Harga
               </button>
               <button
                 onClick={() => scrollToSection("integrations")}
@@ -1043,82 +978,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* PRICING */}
-      <section id="pricing" className="py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-              Harga yang Sesuai untuk Bisnis Anda
-            </h2>
-            <p className="text-xl text-gray-600">
-              Mulai gratis, upgrade kapanpun Anda siap
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {pricingPlans.map((plan, idx) => (
-              <div
-                key={idx}
-                className={`relative rounded-2xl p-8 ${
-                  plan.primary
-                    ? "bg-gradient-to-br from-blue-500 to-blue-600 border-2 border-blue-500 shadow-xl"
-                    : "bg-white border border-gray-200 shadow-lg"
-                }`}
-              >
-                {plan.primary && (
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                    <span className="px-4 py-1 bg-white rounded-full text-blue-600 text-sm font-medium shadow-lg">
-                      Popular
-                    </span>
-                  </div>
-                )}
-
-                <div className="text-center mb-8">
-                  <h3 className={`text-xl font-bold mb-2 ${plan.primary ? "text-white" : "text-gray-900"}`}>{plan.name}</h3>
-                  <p className={`text-sm mb-4 ${plan.primary ? "text-blue-100" : "text-gray-600"}`}>{plan.description}</p>
-                  <div className="flex items-center justify-center">
-                    <span className={`text-4xl font-bold ${plan.primary ? "text-white" : "text-gray-900"}`}>{plan.price}</span>
-                    {plan.period && (
-                      <span className={plan.primary ? "text-blue-100 ml-2" : "text-gray-600 ml-2"}>{plan.period}</span>
-                    )}
-                  </div>
-                </div>
-
-                <ul className="space-y-4 mb-8">
-                  {plan.features.map((feature, i) => (
-                    <li key={i} className="flex items-start">
-                      <Check className={`w-5 h-5 mr-3 flex-shrink-0 mt-0.5 ${plan.primary ? "text-white" : "text-blue-500"}`} />
-                      <span className={plan.primary ? "text-white" : "text-gray-700"}>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <button
-                  onClick={() => setLocation("/login")}
-                  className={`w-full py-3 rounded-xl font-medium transition-all ${
-                    plan.primary
-                      ? "bg-white text-blue-600 hover:bg-gray-50"
-                      : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-300"
-                  }`}
-                >
-                  {plan.cta}
-                </button>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-12 text-center">
-            <button
-              onClick={() => scrollToSection("contact")}
-              className="text-blue-600 hover:text-blue-700 font-medium inline-flex items-center"
-            >
-              Lihat Detail Harga
-              <ArrowRight className="ml-2 w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      </section>
-
       {/* FAQ */}
       <section className="py-20 bg-gray-50">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1208,7 +1067,6 @@ export default function LandingPage() {
               <h4 className="text-white font-semibold mb-4">Produk</h4>
               <ul className="space-y-2">
                 <li><a href="#features" className="text-gray-400 hover:text-white text-sm">Fitur</a></li>
-                <li><a href="#pricing" className="text-gray-400 hover:text-white text-sm">Harga</a></li>
                 <li><a href="#integrations" className="text-gray-400 hover:text-white text-sm">Integrasi</a></li>
                 <li><a href="#" className="text-gray-400 hover:text-white text-sm">Extension</a></li>
               </ul>
