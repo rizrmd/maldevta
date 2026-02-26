@@ -1762,40 +1762,11 @@ func DeleteProjectSubClient(ctx context.Context, projectId, subClientId string) 
 	return &successResponse{Success: true}, nil
 }
 
-// GetProjectSubClientDetail gets a single sub-client detail.
-// API path: /projects/:projectId/sub-clients/:subClientId
-//
-//encore:api auth method=GET path=/projects/:projectId/sub-clients/:subClientId
-func GetProjectSubClientDetail(ctx context.Context, projectId, subClientId string) (*createSubClientResponse, error) {
-	raw := auth.Data()
-	data, _ := raw.(*AuthData)
-	if data == nil {
-		return nil, &errs.Error{Code: errs.Unauthenticated, Message: "authentication required"}
-	}
-
-	// Verify project exists and belongs to tenant
-	ok, _, _, err := projectOwnedByTenant(ctx, projectId, data.TenantID)
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		return nil, &errs.Error{Code: errs.NotFound, Message: "project not found"}
-	}
-
-	// Verify sub-client exists and belongs to project
-	subClient, err := getSubClientByID(ctx, subClientId)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, &errs.Error{Code: errs.NotFound, Message: "sub-client not found"}
-		}
-		return nil, err
-	}
-	if subClient.ProjectID != projectId {
-		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "sub-client does not belong to this project"}
-	}
-
-	return getSubClientDetailResponse(ctx, projectId, subClientId)
-}
+// REMOVED: GetProjectSubClientDetail endpoint
+// This endpoint was removed because it conflicted with the frontend route.
+// The frontend now fetches sub-client details using the ListProjectSubClients endpoint
+// and filters by subClientId. This allows the SPA to handle page refreshes correctly
+// without routing conflicts.
 
 // ============================================================================
 // Sub-Client User Management
@@ -1853,6 +1824,131 @@ func ListSubClientUsers(ctx context.Context, projectId, subClientId string) (*li
 		Data: &listSubClientUsers{
 			Users: users,
 		},
+	}, nil
+}
+
+type createSubClientUserRequest struct {
+	Username string `json:"username"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+	Role     string `json:"role"`
+}
+
+type createSubClientUserResponse struct {
+	Success bool           `json:"success"`
+	Data    *subClientUser `json:"data"`
+	Message string         `json:"message"`
+}
+
+type subClientUser struct {
+	User       SubClientUser `json:"user"`
+	CreatedAt int64          `json:"created_at"`
+}
+
+// CreateSubClientUser creates a new user in a sub-client.
+// API path: /projects/:projectId/sub-clients/:subClientId/users
+//
+//encore:api auth method=POST path=/projects/:projectId/sub-clients/:subClientId/users
+func CreateSubClientUser(ctx context.Context, projectId, subClientId string, p *createSubClientUserRequest) (*createSubClientUserResponse, error) {
+	raw := auth.Data()
+	data, _ := raw.(*AuthData)
+	if data == nil {
+		return nil, &errs.Error{Code: errs.Unauthenticated, Message: "authentication required"}
+	}
+
+	// Validate request
+	if p == nil {
+		return nil, badRequest("request body is required")
+	}
+	if strings.TrimSpace(p.Username) == "" {
+		return nil, badRequest("username is required")
+	}
+	if strings.TrimSpace(p.Email) == "" {
+		return nil, badRequest("email is required")
+	}
+	if strings.TrimSpace(p.Password) == "" {
+		return nil, badRequest("password is required")
+	}
+	if len(p.Password) < 8 {
+		return nil, badRequest("password must be at least 8 characters")
+	}
+	if p.Role != "" && p.Role != "admin" && p.Role != "user" {
+		return nil, badRequest("role must be either 'admin' or 'user'")
+	}
+
+	// Default role to "user" if not specified
+	role := p.Role
+	if role == "" {
+		role = "user"
+	}
+
+	// Verify project exists and belongs to tenant
+	ok, _, _, err := projectOwnedByTenant(ctx, projectId, data.TenantID)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, &errs.Error{Code: errs.NotFound, Message: "project not found"}
+	}
+
+	// Verify sub-client exists and belongs to project
+	subClient, err := getSubClientByID(ctx, subClientId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, &errs.Error{Code: errs.NotFound, Message: "sub-client not found"}
+		}
+		return nil, err
+	}
+	if subClient.ProjectID != projectId {
+		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "sub-client does not belong to this project"}
+	}
+
+	// Check if username already exists for this sub-client
+	var existingUserID string
+	err = db.QueryRowContext(ctx, "SELECT id FROM users WHERE subclient_id = ? AND username = ?", subClientId, p.Username).Scan(&existingUserID)
+	if err == nil {
+		return nil, &errs.Error{Code: errs.AlreadyExists, Message: "username already exists in this sub-client"}
+	} else if !errors.Is(err, sql.ErrNoRows) {
+		return nil, fmt.Errorf("failed to check existing username: %w", err)
+	}
+
+	// Check if email already exists for this sub-client
+	err = db.QueryRowContext(ctx, "SELECT id FROM users WHERE subclient_id = ? AND email = ?", subClientId, p.Email).Scan(&existingUserID)
+	if err == nil {
+		return nil, &errs.Error{Code: errs.AlreadyExists, Message: "email already exists in this sub-client"}
+	} else if !errors.Is(err, sql.ErrNoRows) {
+		return nil, fmt.Errorf("failed to check existing email: %w", err)
+	}
+
+	// Hash the password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(p.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, fmt.Errorf("failed to hash password: %w", err)
+	}
+
+	// Create the user
+	now := time.Now().UnixMilli()
+	userID := newID("usr")
+	_, err = db.ExecContext(ctx, `
+		INSERT INTO users (id, tenant_id, project_id, subclient_id, username, email, password_hash, role, source, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, userID, data.TenantID, projectId, subClientId, p.Username, p.Email, string(hashedPassword), role, "manual", now, now)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create user: %w", err)
+	}
+
+	return &createSubClientUserResponse{
+		Success: true,
+		Data: &subClientUser{
+			User: SubClientUser{
+				ID:       userID,
+				Username: p.Username,
+				Email:    p.Email,
+				Role:     role,
+			},
+			CreatedAt: now,
+		},
+		Message: "User created successfully",
 	}, nil
 }
 

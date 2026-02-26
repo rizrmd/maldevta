@@ -140,6 +140,7 @@ async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
     credentials: "include",
     headers: {
       "Content-Type": "application/json",
+      "Accept": "application/json",
       ...(init?.headers || {}),
     },
   });
@@ -624,7 +625,7 @@ export default function SubClientManagementPage() {
                   </CardContent>
                 </Card>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {/* Select All Checkbox */}
                   {selectedSubClients.size > 0 && (
                     <div className="flex items-center gap-2 px-2">
@@ -638,7 +639,7 @@ export default function SubClientManagementPage() {
                     </div>
                   )}
 
-                  {/* Sub-Client Cards */}
+                  {/* Sub-Client Cards - Horizontal Row Layout */}
                   {filteredSubClients.map((subClient) => {
                     const isSelected = selectedSubClients.has(subClient.id);
                     const publicUrl = `/s/${subClient.short_id}-${subClient.pathname}`;
@@ -647,117 +648,103 @@ export default function SubClientManagementPage() {
                     return (
                       <Card
                         key={subClient.id}
-                        className={`border-[#e6dccc] bg-white/80 backdrop-blur transition-all ${
-                          subClient.suspended ? "opacity-70 bg-muted/50" : ""
+                        className={`border border-gray-200 bg-white transition-all hover:shadow-md ${
+                          subClient.suspended ? "opacity-60" : ""
                         } ${isSelected ? "ring-2 ring-primary" : ""}`}
                       >
-                        <CardContent className="p-4">
-                          <div className="flex items-start gap-4">
-                            {/* Checkbox */}
-                            <div className="pt-1">
-                              <Checkbox
-                                checked={isSelected}
-                                onCheckedChange={(checked) => toggleSelection(subClient.id, checked)}
-                              />
-                            </div>
+                        <CardContent className="p-3">
+                          <div className="flex items-center gap-3">
+                            {/* Client Info */}
+                            <div className="flex-1 min-w-0 flex items-center gap-3">
+                              {/* Checkbox */}
+                              <div className="flex-shrink-0">
+                                <Checkbox
+                                  checked={isSelected}
+                                  onCheckedChange={(checked) => toggleSelection(subClient.id, checked)}
+                                  className="h-4 w-4"
+                                />
+                              </div>
 
-                            {/* Content */}
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-start justify-between gap-4">
-                                <div className="flex-1 min-w-0">
-                                  {/* Name and Description */}
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    <button
-                                      onClick={() => setLocation(`/projects/${projectId}/sub-clients/${subClient.id}`)}
-                                      className="text-lg font-semibold text-slate-900 hover:text-primary transition-colors text-left"
-                                    >
-                                      {subClient.name}
-                                    </button>
-                                    {/* Status Badges */}
-                                    {subClient.suspended && (
-                                      <Badge variant="secondary" className="text-amber-600 bg-amber-50 border-amber-200">
-                                        <Pause className="h-3 w-3 mr-1" />
-                                        Suspended
-                                      </Badge>
-                                    )}
-                                    {subClient.whatsapp_client_id && (
-                                      <Badge variant="secondary" className="text-green-600 bg-green-50 border-green-200">
-                                        <WhatsAppIcon className="h-3 w-3 mr-1" />
-                                        WhatsApp
-                                      </Badge>
-                                    )}
-                                  </div>
-
-                                  {subClient.description && (
-                                    <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                                      {subClient.description}
-                                    </p>
-                                  )}
-
-                                  {/* Metadata */}
-                                  <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
-                                    <div className="flex items-center gap-1">
-                                      <Users className="h-4 w-4" />
-                                      <span>{userCount} user{userCount !== 1 ? "s" : ""}</span>
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                      <Link2 className="h-4 w-4" />
-                                      <button
-                                        onClick={() => window.open(publicUrl, "_blank")}
-                                        className="hover:text-primary transition-colors"
-                                      >
-                                        {publicUrl}
-                                      </button>
-                                    </div>
-                                  </div>
-                                </div>
-
-                                {/* Actions */}
-                                <div className="flex items-center gap-1">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => copyUrl(subClient)}
-                                    title="Copy URL"
+                              {/* Name and Badges */}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <h3
+                                    onClick={() => setLocation(`/projects/${projectId}/sub-clients/${subClient.id}`)}
+                                    className="text-sm font-semibold text-gray-900 hover:underline cursor-pointer transition-all truncate"
                                   >
-                                    {copiedId === subClient.id ? (
-                                      <span className="text-green-600 text-xs">Copied!</span>
-                                    ) : (
-                                      <>
-                                        <Copy className="h-4 w-4" />
-                                        <span className="sr-only">Copy URL</span>
-                                      </>
-                                    )}
-                                  </Button>
-                                  <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                      <Button variant="ghost" size="sm">
-                                        <MoreVertical className="h-4 w-4" />
-                                      </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                      <DropdownMenuItem onClick={() => openEditDialog(subClient)}>
-                                        <Edit className="h-4 w-4 mr-2" />
-                                        Edit
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem
-                                        onClick={() => setLocation(`/projects/${projectId}/sub-clients/${subClient.id}`)}
-                                      >
-                                        <ExternalLink className="h-4 w-4 mr-2" />
-                                        Manage
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem
-                                        onClick={() => openDeleteDialog(subClient)}
-                                        disabled={!subClient.suspended}
-                                        className="text-red-600 focus:text-red-600"
-                                      >
-                                        <Trash2 className="h-4 w-4 mr-2" />
-                                        Delete
-                                      </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                  </DropdownMenu>
+                                    {subClient.name}
+                                  </h3>
+                                  {/* Status Badges */}
+                                  {subClient.whatsapp_client_id && (
+                                    <Badge variant="secondary" className="text-green-700 bg-green-100 border-green-200 px-2 py-0.5 h-5 text-xs font-medium">
+                                      Config
+                                    </Badge>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-3 text-xs text-gray-500">
+                                  <span className="flex items-center gap-1">
+                                    <Users className="h-3 w-3" />
+                                    {userCount} user{userCount !== 1 ? 's' : ''}
+                                  </span>
+                                  <button
+                                    onClick={() => window.open(publicUrl, '_blank')}
+                                    className="flex items-center gap-1 hover:text-gray-900 hover:underline transition-all truncate"
+                                    title={publicUrl}
+                                  >
+                                    <Link2 className="h-3 w-3" />
+                                    <span className="truncate">{window.location.origin}/{subClient.short_id}-{subClient.pathname}</span>
+                                  </button>
                                 </div>
                               </div>
+                            </div>
+
+                            {/* Status Indicator */}
+                            <div className="flex-shrink-0 flex items-center gap-2">
+                              <div className={`h-2.5 w-2.5 rounded-full ${
+                                subClient.suspended ? 'bg-amber-500' : 'bg-green-500'
+                              }`} title={subClient.suspended ? 'Suspended' : 'Active'} />
+                            </div>
+
+                            {/* Divider */}
+                            <div className="h-8 w-px bg-gray-200 flex-shrink-0" />
+
+                            {/* Action Buttons */}
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => copyUrl(subClient)}
+                                className="h-8 px-3 text-xs font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100"
+                              >
+                                {copiedId === subClient.id ? (
+                                  <>
+                                    <span className="text-green-600 mr-1">✓</span>
+                                    Copied
+                                  </>
+                                ) : (
+                                  <>
+                                    <Copy className="h-3.5 w-3.5 mr-1" />
+                                    Copy
+                                  </>
+                                )}
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => openEditDialog(subClient)}
+                                className="h-8 px-3 text-xs font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100"
+                              >
+                                <Edit className="h-3.5 w-3.5 mr-1" />
+                                Edit
+                              </Button>
+                              <Button
+                                size="sm"
+                                onClick={() => setLocation(`/projects/${projectId}/sub-clients/${subClient.id}`)}
+                                className="h-8 px-3 text-xs font-medium text-white bg-black hover:bg-gray-800"
+                              >
+                                Manage
+                                <ExternalLink className="h-3.5 w-3.5 mr-1" />
+                              </Button>
                             </div>
                           </div>
                         </CardContent>

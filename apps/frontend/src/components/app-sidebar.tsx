@@ -212,21 +212,27 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       icon: WhatsAppIcon as LucideIcon,
     });
 
-    // Sub Client (collapsible) - exact structure from AIBase
+    // Sub Client (collapsible) - always show Settings, only show Management if enabled
+    const subClientItems: MenuItem[] = [
+      {
+        title: "Settings",
+        url: projectId ? `/sub-clients/settings/${projectId}` : "/sub-clients/settings",
+      }
+    ];
+
+    // Only add Management menu if sub_clients_enabled is true
+    if (effectiveProject?.sub_clients_enabled) {
+      subClientItems.unshift({
+        title: "Management",
+        url: projectId ? `/sub-clients/management/${projectId}` : "/sub-clients/management",
+      });
+    }
+
     items.push({
       title: "Sub Client",
       url: "/sub-clients",
       icon: Building2,
-      items: [
-        {
-          title: "Management",
-          url: projectId ? `/sub-clients/management/${projectId}` : "/sub-clients/management",
-        },
-        {
-          title: "Settings",
-          url: projectId ? `/sub-clients/settings/${projectId}` : "/sub-clients/settings",
-        },
-      ]
+      items: subClientItems
     });
 
     // Developer (collapsible) - exact structure from AIBase

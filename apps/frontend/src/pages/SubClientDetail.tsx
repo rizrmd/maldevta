@@ -154,6 +154,7 @@ async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
     credentials: "include",
     headers: {
       "Content-Type": "application/json",
+      "Accept": "application/json",
       ...(init?.headers || {}),
     },
   });
@@ -240,21 +241,33 @@ export default function SubClientDetailPage() {
     console.log('[SubClientDetail] Fetching sub-client:', { projectId, subClientId });
 
     try {
+      // Fetch all sub-clients for this project
       const response = await apiRequest<{
         success: boolean;
-        data: { subClient: SubClient };
-      }>(`/projects/${projectId}/sub-clients/${subClientId}`);
+        data: {
+          subClients: SubClient[];
+          enabled: boolean;
+        };
+      }>(`/projects/${projectId}/sub-clients`);
 
       console.log('[SubClientDetail] Response:', response);
 
-      if (response.success && response.data?.subClient) {
-        // Normalize users field - handle null/undefined
-        const subClientData = {
-          ...response.data.subClient,
-          users: response.data.subClient.users || [],
-        };
-        setSubClient(subClientData);
-        console.log('[SubClientDetail] Sub-client loaded successfully');
+      if (response.success && response.data?.subClients) {
+        // Find the specific sub-client by ID
+        const found = response.data.subClients.find((sc) => sc.id === subClientId);
+
+        if (found) {
+          // Normalize users field - handle null/undefined
+          const subClientData = {
+            ...found,
+            users: found.users || [],
+          };
+          setSubClient(subClientData);
+          console.log('[SubClientDetail] Sub-client loaded successfully');
+        } else {
+          console.error('[SubClientDetail] Sub-client not found in list');
+          setSubClient(null);
+        }
       } else {
         console.error('[SubClientDetail] Invalid response format:', response);
         throw new Error("Invalid response format");
@@ -710,16 +723,16 @@ export default function SubClientDetailPage() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setLocation(`/projects/${projectId}/sub-clients`)}
+              onClick={() => setLocation(`/sub-clients/management/${projectId}`)}
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <div>
-              <h1 className="text-lg font-semibold">{subClient.name}</h1>
+              <h1 className="text-sm font-semibold">{subClient.name}</h1>
               {publicUrl && (
                 <div className="flex items-center gap-2 text-xs font-normal text-muted-foreground">
                   <Link2 className="h-3 w-3" />
-                  <span className="font-mono">{publicUrl}</span>
+                  <span className="font-mono">{window.location.origin}{publicUrl}</span>
                 </div>
               )}
             </div>
@@ -842,77 +855,95 @@ export default function SubClientDetailPage() {
 
               {/* Users Tab */}
               <TabsContent value="users" className="space-y-6 mt-6">
+                {/* Team Members Header */}
+                <div className="mb-4">
+                  <h2 className="text-lg font-semibold flex items-center gap-2">
+                    <Users className="h-5 w-5" />
+                    Team Members
+                  </h2>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Manage access and permissions for this sub-client
+                  </p>
+                </div>
+
                 {!subClient.users || subClient.users.length === 0 ? (
                   <Card>
                     <CardContent className="py-12 text-center">
                       <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                      <p className="text-muted-foreground">No users in this sub-client yet</p>
+                      <p className="text-muted-foreground">No team members in this sub-client yet</p>
                     </CardContent>
                   </Card>
                 ) : (
-                  <div className="space-y-3">
-                    {subClient.users.map((member) => (
-                      <Card key={member.id}>
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <div className={`flex h-10 w-10 items-center justify-center rounded-full ${
-                                member.role === 'admin'
-                                  ? 'bg-primary/10 text-primary'
-                                  : 'bg-muted'
-                              }`}>
-                                {member.role === 'admin' ? (
-                                  <Shield className="h-5 w-5" />
-                                ) : (
-                                  <UserIcon className="h-5 w-5" />
+                  <Card>
+                    <CardContent className="p-0">
+                      <div className="divide-y">
+                        {subClient.users.map((member) => (
+                          <div key={member.id} className="p-4 hover:bg-muted/50 transition-colors">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3 flex-1">
+                                <div className={`flex h-10 w-10 items-center justify-center rounded-full ${
+                                  member.role === 'admin'
+                                    ? 'bg-primary/10 text-primary'
+                                    : 'bg-muted'
+                                }`}>
+                                  {member.role === 'admin' ? (
+                                    <Shield className="h-5 w-5" />
+                                  ) : (
+                                    <UserIcon className="h-5 w-5" />
+                                  )}
+                                </div>
+                                <div>
+                                  <p className="font-medium">{member.username}</p>
+                                  <p className="text-sm text-muted-foreground">{member.email}</p>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-3">
+                                <Badge
+                                  variant={member.role === 'admin' ? 'default' : 'secondary'}
+                                >
+                                  {member.role === 'admin' ? 'Admin' : 'User'}
+                                </Badge>
+
+                                {String(member.id) !== String(authUser?.userId || "") && (
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                                        <MoreVertical className="h-4 w-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      {member.role === 'admin' ? (
+                                        <DropdownMenuItem onClick={() => handleUpdateRole(member, 'user')}>
+                                          <UserIcon className="h-4 w-4 mr-2" />
+                                          Change to User
+                                        </DropdownMenuItem>
+                                      ) : (
+                                        <DropdownMenuItem onClick={() => handleUpdateRole(member, 'admin')}>
+                                          <Shield className="h-4 w-4 mr-2" />
+                                          Change to Admin
+                                        </DropdownMenuItem>
+                                      )}
+                                      <DropdownMenuItem
+                                        onClick={() => {
+                                          setUserToDelete(member);
+                                          setDeleteUserDialogOpen(true);
+                                        }}
+                                        className="text-red-600 focus:text-red-600"
+                                      >
+                                        <Trash2 className="h-4 w-4 mr-2" />
+                                        Remove
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
                                 )}
                               </div>
-                              <div>
-                                <p className="font-medium">{member.username}</p>
-                                <p className="text-sm text-muted-foreground">{member.email}</p>
-                              </div>
-                              <Badge variant={member.role === 'admin' ? 'default' : 'secondary'}>
-                                {member.role === 'admin' ? 'Admin' : 'User'}
-                              </Badge>
                             </div>
-
-                            {String(member.id) !== String(authUser?.userId || "") && (
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="sm">
-                                    <MoreVertical className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  {member.role === 'admin' ? (
-                                    <DropdownMenuItem onClick={() => handleUpdateRole(member, 'user')}>
-                                      <UserIcon className="h-4 w-4 mr-2" />
-                                      Change to User
-                                    </DropdownMenuItem>
-                                  ) : (
-                                    <DropdownMenuItem onClick={() => handleUpdateRole(member, 'admin')}>
-                                      <Shield className="h-4 w-4 mr-2" />
-                                      Change to Admin
-                                    </DropdownMenuItem>
-                                  )}
-                                  <DropdownMenuItem
-                                    onClick={() => {
-                                      setUserToDelete(member);
-                                      setDeleteUserDialogOpen(true);
-                                    }}
-                                    className="text-red-600 focus:text-red-600"
-                                  >
-                                    <Trash2 className="h-4 w-4 mr-2" />
-                                    Remove
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            )}
                           </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
                 )}
               </TabsContent>
 
