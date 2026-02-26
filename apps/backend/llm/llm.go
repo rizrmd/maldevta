@@ -934,12 +934,107 @@ func (s *Service) GenerateStream(ctx context.Context, p *GenerateParams) (*Gener
 		preprocessed = s.applyExtensionHooks(ctx, "pre-generate", preprocessed, p.ProjectContext)
 	}
 
+	// Check if Image extension is enabled
+	hasImageExtension := false
+	fmt.Printf("[LLM Stream] === MULTIMODAL DEBUG ===\n")
+	fmt.Printf("[LLM Stream] Checking extensions: %+v (total: %d)\n", p.ProjectContext.Extensions, len(p.ProjectContext.Extensions))
+	if p.ProjectContext.Extensions != nil {
+		for _, extID := range p.ProjectContext.Extensions {
+			fmt.Printf("[LLM Stream]   - Extension: '%s' (equals 'image': %v)\n", extID, extID == "image")
+			if extID == "image" {
+				hasImageExtension = true
+				fmt.Printf("[LLM Stream]   ✓ Image extension FOUND!\n")
+				break
+			}
+		}
+	}
+	fmt.Printf("[LLM Stream] hasImageExtension: %v, attachments count: %d\n", hasImageExtension, len(p.Attachments))
+	for i, att := range p.Attachments {
+		fmt.Printf("[LLM Stream]   Attachment %d: %s (type: %s, dataSize: %d)\n", i, att.Name, att.Type, len(att.Data))
+	}
+	fmt.Printf("[LLM Stream] === END MULTIMODAL DEBUG ===\n")
+
+	// Build messages - handle multimodal content if attachments exist
+	var messages []*schema.Message
+
+	// System message
+	messages = append(messages, &schema.Message{
+		Role:    schema.System,
+		Content: systemPrompt,
+	})
+
+	// User message with potential multimodal content
+	if len(p.Attachments) > 0 && hasImageExtension {
+		fmt.Printf("[LLM] Processing %d file attachments (stream) with multimodal content\n", len(p.Attachments))
+
+		// Check if there are any image attachments
+		hasImages := false
+		for _, att := range p.Attachments {
+			if strings.HasPrefix(att.Type, "image/") && att.Data != "" {
+				hasImages = true
+				break
+			}
+		}
+
+		if hasImages {
+			// Build multimodal message with text + images
+			var parts []schema.MessageInputPart
+
+			// Add text part
+			parts = append(parts, schema.MessageInputPart{
+				Type: schema.ChatMessagePartTypeText,
+				Text: preprocessed,
+			})
+
+			// Add image parts
+			for _, att := range p.Attachments {
+				if strings.HasPrefix(att.Type, "image/") && att.Data != "" {
+					fmt.Printf("[LLM] Stream - Adding image: %s (%s)\n", att.Name, att.Type)
+					parts = append(parts, schema.MessageInputPart{
+						Type: schema.ChatMessagePartTypeImageURL,
+						Image: &schema.MessageInputImage{
+							MessagePartCommon: schema.MessagePartCommon{
+								Base64Data: &att.Data,
+								MIMEType:   att.Type,
+							},
+							Detail: schema.ImageURLDetailAuto,
+						},
+					})
+				} else if att.Type != "" {
+					// Non-image file - add as text reference
+					parts[0].Text += fmt.Sprintf("\n\n[File Attachment: %s (%s)]", att.Name, att.Type)
+				}
+			}
+
+			messages = append(messages, &schema.Message{
+				Role:                   schema.User,
+				UserInputMultiContent: parts,
+			})
+		} else {
+			// No images, just add file references as text
+			var fileContext strings.Builder
+			for _, att := range p.Attachments {
+				fileContext.WriteString(fmt.Sprintf("\n\n[File Attachment: %s (%s)]", att.Name, att.Type))
+			}
+			messages = append(messages, &schema.Message{
+				Role:    schema.User,
+				Content: preprocessed + fileContext.String(),
+			})
+		}
+	} else {
+		// No attachments or image extension not enabled - use simple text message
+		if len(p.Attachments) > 0 {
+			fmt.Printf("[LLM] Stream - Image extension not enabled\n")
+		}
+		messages = append(messages, &schema.Message{
+			Role:    schema.User,
+			Content: preprocessed,
+		})
+	}
+
 	// For streaming, we'll generate the full response first
 	// In a future enhancement, this could use true streaming with the eino library
-	resp, err := s.generateWithConfigCached(ctx, cfg, []*schema.Message{
-		{Role: schema.System, Content: systemPrompt},
-		{Role: schema.User, Content: preprocessed},
-	})
+	resp, err := s.generateWithConfigCached(ctx, cfg, messages)
 	if err != nil {
 		return nil, &errs.Error{Code: errs.Internal, Message: fmt.Sprintf("generate failed: %v", err)}
 	}
@@ -974,6 +1069,26 @@ func (s *Service) Generate(ctx context.Context, p *GenerateParams) (*GenerateRes
 
 	validationTime := time.Since(startTime)
 	fmt.Printf("[LLM] Generate: validation took %v\n", validationTime)
+
+	// Check if Image extension is enabled
+	hasImageExtension := false
+	fmt.Printf("[LLM] === MULTIMODAL DEBUG ===\n")
+	fmt.Printf("[LLM] Checking extensions: %+v (total: %d)\n", p.ProjectContext.Extensions, len(p.ProjectContext.Extensions))
+	if p.ProjectContext.Extensions != nil {
+		for _, extID := range p.ProjectContext.Extensions {
+			fmt.Printf("[LLM]   - Extension: '%s' (equals 'image': %v)\n", extID, extID == "image")
+			if extID == "image" {
+				hasImageExtension = true
+				fmt.Printf("[LLM]   ✓ Image extension FOUND!\n")
+				break
+			}
+		}
+	}
+	fmt.Printf("[LLM] hasImageExtension: %v, attachments count: %d\n", hasImageExtension, len(p.Attachments))
+	for i, att := range p.Attachments {
+		fmt.Printf("[LLM]   Attachment %d: %s (type: %s, dataSize: %d)\n", i, att.Name, att.Type, len(att.Data))
+	}
+	fmt.Printf("[LLM] === END MULTIMODAL DEBUG ===\n")
 
 	tenantID := ""
 	if p.ProjectContext.Metadata != nil {
@@ -1020,12 +1135,95 @@ func (s *Service) Generate(ctx context.Context, p *GenerateParams) (*GenerateRes
 		preprocessed = s.applyExtensionHooks(ctx, "pre-generate", preprocessed, p.ProjectContext)
 	}
 
+	// Build messages - handle multimodal content if attachments exist
+	var messages []*schema.Message
+
+	// System message
+	messages = append(messages, &schema.Message{
+		Role:    schema.System,
+		Content: systemPrompt,
+	})
+
+	// User message with potential multimodal content
+	if len(p.Attachments) > 0 && hasImageExtension {
+		fmt.Printf("[LLM] Processing %d file attachments with multimodal content\n", len(p.Attachments))
+
+		// Check if there are any image attachments
+		hasImages := false
+		for _, att := range p.Attachments {
+			if strings.HasPrefix(att.Type, "image/") && att.Data != "" {
+				hasImages = true
+				break
+			}
+		}
+
+		if hasImages {
+			// Build multimodal message with text + images
+			var parts []schema.MessageInputPart
+
+			// Add text part
+			parts = append(parts, schema.MessageInputPart{
+				Type: schema.ChatMessagePartTypeText,
+				Text: preprocessed,
+			})
+
+			// Add image parts
+			for _, att := range p.Attachments {
+				if strings.HasPrefix(att.Type, "image/") && att.Data != "" {
+					fmt.Printf("[LLM] Adding image: %s (%s, %d bytes)\n", att.Name, att.Type, att.Size)
+					parts = append(parts, schema.MessageInputPart{
+						Type: schema.ChatMessagePartTypeImageURL,
+						Image: &schema.MessageInputImage{
+							MessagePartCommon: schema.MessagePartCommon{
+								Base64Data: &att.Data,
+								MIMEType:   att.Type,
+							},
+							Detail: schema.ImageURLDetailAuto,
+						},
+					})
+				} else if att.Type != "" {
+					// Non-image file - add as text reference
+					fmt.Printf("[LLM] Skipping non-image file: %s (%s)\n", att.Name, att.Type)
+					parts[0].Text += fmt.Sprintf("\n\n[File Attachment: %s (%s, %d bytes)]", att.Name, att.Type, att.Size)
+				}
+			}
+
+			messages = append(messages, &schema.Message{
+				Role:                   schema.User,
+				UserInputMultiContent: parts,
+			})
+			fmt.Printf("[LLM] Built multimodal message with %d parts\n", len(parts))
+		} else {
+			// No images, just add file references as text
+			var fileContext strings.Builder
+			for _, att := range p.Attachments {
+				fileContext.WriteString(fmt.Sprintf("\n\n[File Attachment: %s (%s, %d bytes)]", att.Name, att.Type, att.Size))
+			}
+			messages = append(messages, &schema.Message{
+				Role:    schema.User,
+				Content: preprocessed + fileContext.String(),
+			})
+		}
+	} else {
+		// No attachments or image extension not enabled - use simple text message
+		if len(p.Attachments) > 0 {
+			fmt.Printf("[LLM] Image extension not enabled, treating files as text references\n")
+			var fileContext strings.Builder
+			for _, att := range p.Attachments {
+				fileContext.WriteString(fmt.Sprintf("\n\n[File Attachment: %s (%s, %d bytes)]\nNote: The Image extension is not enabled. Please enable it to analyze image content.", att.Name, att.Type, att.Size))
+			}
+			preprocessed = preprocessed + fileContext.String()
+		}
+
+		messages = append(messages, &schema.Message{
+			Role:    schema.User,
+			Content: preprocessed,
+		})
+	}
+
 	// Call LLM
 	llmStartTime := time.Now()
-	resp, err := s.generateWithConfigCached(ctx, cfg, []*schema.Message{
-		{Role: schema.System, Content: systemPrompt},
-		{Role: schema.User, Content: preprocessed},
-	})
+	resp, err := s.generateWithConfigCached(ctx, cfg, messages)
 	if err != nil {
 		fmt.Printf("[LLM] Generate: LLM call failed after %v: %v\n", time.Since(llmStartTime), err)
 		return nil, &errs.Error{Code: errs.Internal, Message: fmt.Sprintf("generate failed: %v", err)}
@@ -1113,9 +1311,17 @@ type CompletionResult struct {
 	Error    string `json:"error,omitempty"`
 }
 
+type FileAttachment struct {
+	Name string `json:"name"`
+	Type string `json:"type"`
+	Size int64  `json:"size"`
+	Data string `json:"data"` // Base64 encoded file data
+}
+
 type GenerateParams struct {
-	Prompt         string          `json:"prompt"`
-	ProjectContext *ProjectContext `json:"project_context"`
+	Prompt         string            `json:"prompt"`
+	ProjectContext *ProjectContext   `json:"project_context"`
+	Attachments    []FileAttachment  `json:"attachments,omitempty"`
 }
 
 type ProjectContext struct {

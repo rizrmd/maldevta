@@ -100,6 +100,40 @@ function ChatMessage({ message, isGenerating }: { message: Message; isGenerating
             : "bg-white text-slate-900 border border-slate-200 rounded-bl-sm"
         )}
       >
+        {/* Display attachments first */}
+        {message.attachments && message.attachments.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-3">
+            {message.attachments.map((attachment) => (
+              <div
+                key={attachment.id}
+                className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white/50 backdrop-blur px-2 py-1.5 text-sm"
+              >
+                {attachment.type.startsWith("image/") && attachment.preview ? (
+                  <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded border border-slate-300">
+                    <img
+                      src={attachment.preview}
+                      alt={attachment.name}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-slate-200">
+                    <FileText className="h-5 w-5 text-slate-500" />
+                  </div>
+                )}
+                <div className="flex min-w-0 flex-col">
+                  <span className="max-w-[150px] truncate text-xs font-medium text-slate-700">
+                    {attachment.name}
+                  </span>
+                  <span className="text-[10px] text-slate-500">
+                    {formatFileSize(attachment.size)}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="prose prose-sm max-w-none">
           <p className="whitespace-pre-wrap break-words">{messageContent}</p>
         </div>
@@ -174,16 +208,32 @@ function FileAttachmentPreview() {
   if (files.length === 0) return null;
 
   return (
-    <div className="flex flex-wrap gap-2 p-2">
+    <div className="flex flex-wrap gap-2 p-2 max-w-2xl mx-auto">
       {files.map((file) => (
         <div
           key={file.id}
           className="group relative flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 pr-8 text-sm"
         >
-          <span className="max-w-[200px] truncate text-slate-700">{file.name}</span>
-          <span className="text-xs text-slate-500">
-            {(file.size / 1024).toFixed(1)} KB
-          </span>
+          {/* Image preview */}
+          {file.type.startsWith("image/") && file.preview ? (
+            <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded border border-slate-200">
+              <img
+                src={file.preview}
+                alt={file.name}
+                className="h-full w-full object-cover"
+              />
+            </div>
+          ) : (
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded bg-slate-100">
+              <FileText className="h-6 w-6 text-slate-400" />
+            </div>
+          )}
+          <div className="flex min-w-0 flex-1 flex-col">
+            <span className="max-w-[200px] truncate text-slate-700">{file.name}</span>
+            <span className="text-xs text-slate-500">
+              {formatFileSize(file.size)}
+            </span>
+          </div>
           {file.uploadProgress !== undefined && file.status === "uploading" && (
             <div className="h-1 w-16 rounded-full bg-slate-200">
               <div
@@ -210,6 +260,7 @@ export default function ChatPage() {
   const [backendConversationId, setBackendConversationId] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const [contextInstructions, setContextInstructions] = useState<string>("");
+  const [enabledExtensions, setEnabledExtensions] = useState<string[]>([]);
   const projectIdRef = useRef<string>("");
   const conversationIdRef = useRef<string>("");
 
@@ -225,7 +276,7 @@ export default function ChatPage() {
     setIsGenerating,
     setShouldAutoScroll,
   } = useChatStore();
-  const { addFile, clearFiles, setIsDragging } = useFileStore();
+  const { addFile, clearFiles, setIsDragging, files } = useFileStore();
   const { projects } = useProjectStore();
   const { addToast } = useUIStore();
 
@@ -276,6 +327,35 @@ export default function ChatPage() {
     };
 
     loadContext();
+  }, [projectId]);
+
+  // Load enabled extensions for the project
+  useEffect(() => {
+    const currentProjectId = projectIdRef.current;
+    if (!currentProjectId) return;
+
+    const loadExtensions = async () => {
+      try {
+        const response = await fetch(`/projects/${currentProjectId}/extensions`, {
+          credentials: "include",
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          // Filter only enabled extensions and extract their IDs
+          const enabled = (data.extensions || [])
+            .filter((ext: any) => ext.enabled)
+            .map((ext: any) => ext.id);
+          setEnabledExtensions(enabled);
+          console.log("[Chat] Loaded enabled extensions:", enabled);
+        }
+      } catch (error) {
+        console.error("Failed to load extensions:", error);
+        setEnabledExtensions([]);
+      }
+    };
+
+    loadExtensions();
   }, [projectId]);
 
   // Initialize or load conversation
@@ -409,6 +489,21 @@ export default function ChatPage() {
     }
   };
 
+  // Helper function to convert file to base64
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        // Remove data URL prefix (e.g., "data:image/png;base64,")
+        const base64 = result.split(',')[1];
+        resolve(base64);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
   const handleSubmit = async () => {
     if (!input.trim() || isGenerating) return;
 
@@ -440,13 +535,25 @@ export default function ChatPage() {
       return;
     }
 
+    // Prepare message attachments for display BEFORE adding message
+    const messageAttachments = files.map((file) => ({
+      id: file.id,
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      preview: file.preview,
+    }));
+
+    console.log("[Chat] File attachments prepared:", files.length);
+
     // Add user message to UI first for instant feedback
     console.log("[Chat] handleSubmit: adding user message");
     const userMsg = addMessage({
       role: "user",
       content: messageContent,
+      attachments: messageAttachments,
     });
-    console.log("[Chat] handleSubmit: user message added", { id: userMsg.id });
+    console.log("[Chat] handleSubmit: user message added", { id: userMsg.id, attachments: messageAttachments.length });
 
     // Verify user message was actually added
     const stateAfterUserMsg = useChatStore.getState();
@@ -458,7 +565,6 @@ export default function ChatPage() {
       ]?.role
     });
 
-    clearFiles();
     setIsGenerating(true);
 
     try {
@@ -470,15 +576,57 @@ export default function ChatPage() {
         instructions: contextInstructions, // Load from Context page
         tone: "professional",
         language: "english",
-        extensions: [],
+        extensions: enabledExtensions, // Pass enabled extensions to LLM
         metadata: {},
       };
 
+      console.log("[Chat] Starting LLM request with context:", { ...projectContext, extensions: enabledExtensions });
+
       console.log("[Chat] Starting LLM request with context:", projectContext);
+
+      // Convert files to base64 and prepare attachments for LLM
+      let llmAttachments: any[] = [];
+      if (files.length > 0) {
+        console.log("[Chat] Processing file attachments:", files.length);
+        llmAttachments = await Promise.all(
+          files.map(async (file) => {
+            const base64 = await fileToBase64(file.file);
+            return {
+              name: file.name,
+              type: file.type,
+              size: file.size,
+              data: base64,
+            };
+          })
+        );
+        console.log("[Chat] File attachments processed:", llmAttachments.map(a => ({ name: a.name, type: a.type, size: a.size })));
+      }
+
+      // Clear files after processing
+      clearFiles();
 
       // CRITICAL: Start LLM call IMMEDIATELY without waiting for backend ops
       // This is the key optimization - don't block on conversation creation or message saving
       const llmStartTime = Date.now();
+
+      // Debug: Log the full request payload
+      const requestPayload = {
+        prompt: messageContent,
+        project_context: projectContext,
+        attachments: llmAttachments,
+      };
+      console.log("[Chat] === SENDING LLM REQUEST ===");
+      console.log("[Chat] Extensions:", projectContext.extensions);
+      console.log("[Chat] Has Image Extension:", projectContext.extensions.includes("image"));
+      console.log("[Chat] Attachments count:", llmAttachments.length);
+      console.log("[Chat] Attachment details:", llmAttachments.map(a => ({
+        name: a.name,
+        type: a.type,
+        dataSize: a.data ? a.data.length : 0,
+        hasData: !!a.data,
+      })));
+      console.log("[Chat] Full payload:", JSON.stringify(requestPayload, null, 2));
+
       const llmResponse = await fetch("/llm/generate", {
         method: "POST",
         credentials: "include",
@@ -486,6 +634,7 @@ export default function ChatPage() {
         body: JSON.stringify({
           prompt: messageContent,
           project_context: projectContext,
+          attachments: llmAttachments,
         }),
         // Add timeout to prevent hanging - sync with backend timeout
         signal: AbortSignal.timeout(70000), // 70 second timeout (backend is 60s + buffer)

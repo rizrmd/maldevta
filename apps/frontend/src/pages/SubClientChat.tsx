@@ -6,7 +6,6 @@ import {
   Card,
   CardContent,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Building2, AlertCircle, Send, LogOut, MessageSquare } from "lucide-react";
 

@@ -11,6 +11,14 @@ export type ToolInvocation = {
   error?: string;
 };
 
+export type MessageAttachment = {
+  id: string;
+  name: string;
+  type: string;
+  size: number;
+  preview?: string;
+};
+
 export type Message = {
   id: string;
   role: MessageRole;
@@ -20,6 +28,7 @@ export type Message = {
   toolInvocations?: ToolInvocation[];
   rating?: "thumbs-up" | "thumbs-down" | null;
   metadata?: Record<string, unknown>;
+  attachments?: MessageAttachment[];
 };
 
 export type Conversation = {
