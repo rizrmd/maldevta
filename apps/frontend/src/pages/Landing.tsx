@@ -68,7 +68,7 @@ export default function LandingPage() {
         { value: "99.5%", label: "Accuracy Rate" },
         { value: "100+", label: "Languages Supported" }
       ],
-      gradient: "from-cyan-400 to-blue-600"
+      gradient: "from-blue-400 to-blue-600"
     },
     {
       id: 2,
@@ -89,7 +89,7 @@ export default function LandingPage() {
         { value: "<2s", label: "Processing Time" },
         { value: "99%", label: "Extraction Accuracy" }
       ],
-      gradient: "from-blue-400 to-indigo-600"
+      gradient: "from-blue-500 to-indigo-600"
     },
     {
       id: 3,
@@ -131,7 +131,7 @@ export default function LandingPage() {
         { value: "<1s", label: "Message Delivery" },
         { value: "100%", label: "Uptime" }
       ],
-      gradient: "from-green-400 to-emerald-600"
+      gradient: "from-emerald-500 to-emerald-600"
     },
     {
       id: 5,
@@ -152,7 +152,7 @@ export default function LandingPage() {
         { value: "∞", label: "Tenants Support" },
         { value: "100%", label: "Data Isolation" }
       ],
-      gradient: "from-indigo-400 to-blue-600"
+      gradient: "from-indigo-500 to-blue-600"
     },
     {
       id: 6,
@@ -173,7 +173,7 @@ export default function LandingPage() {
         { value: "SDK", label: "Multiple Languages" },
         { value: "24/7", label: "API Access" }
       ],
-      gradient: "from-purple-400 to-pink-600"
+      gradient: "from-indigo-500 to-blue-600"
     }
   ];
 
@@ -410,23 +410,23 @@ export default function LandingPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-950 overflow-hidden relative">
+    <div className="min-h-screen bg-white overflow-hidden relative">
       {/* Advanced AI-themed Background */}
       <div className="fixed inset-0">
-        {/* Deep gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-blue-950/50 to-indigo-950/50"></div>
+        {/* Light gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-white via-blue-50/50 to-blue-100/30"></div>
 
         {/* Animated gradient mesh */}
         <div className="absolute inset-0">
-          <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-gradient-to-br from-cyan-500/20 to-blue-600/20 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute top-1/4 right-1/4 w-[500px] h-[500px] bg-gradient-to-br from-blue-500/15 to-indigo-600/15 rounded-full blur-3xl animate-pulse" style={{animationDelay: "1s"}}></div>
-          <div className="absolute bottom-0 left-1/3 w-[600px] h-[600px] bg-gradient-to-br from-violet-500/20 to-purple-600/20 rounded-full blur-3xl animate-pulse" style={{animationDelay: "2s"}}></div>
-          <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-gradient-to-br from-indigo-500/15 to-blue-600/15 rounded-full blur-3xl animate-pulse" style={{animationDelay: "0.5s"}}></div>
+          <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-gradient-to-br from-blue-200/20 to-blue-300/15 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute top-1/4 right-1/4 w-[500px] h-[500px] bg-gradient-to-br from-blue-100/15 to-indigo-200/10 rounded-full blur-3xl animate-pulse" style={{animationDelay: "1s"}}></div>
+          <div className="absolute bottom-0 left-1/3 w-[600px] h-[600px] bg-gradient-to-br from-blue-150/15 to-cyan-200/10 rounded-full blur-3xl animate-pulse" style={{animationDelay: "2s"}}></div>
+          <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-gradient-to-br from-indigo-100/10 to-blue-200/10 rounded-full blur-3xl animate-pulse" style={{animationDelay: "0.5s"}}></div>
         </div>
 
         {/* Neural network grid pattern */}
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#06b6d6_1px,transparent_1px),linear-gradient(to_bottom,#06b6d6_1px,transparent_1px)] bg-[size:80px_80px]"></div>
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#3b82f6_1px,transparent_1px),linear-gradient(to_bottom,#3b82f6_1px,transparent_1px)] bg-[size:80px_80px]"></div>
         </div>
 
         {/* Animated particles */}
@@ -434,7 +434,7 @@ export default function LandingPage() {
           {[...Array(30)].map((_, i) => (
             <div
               key={i}
-              className="absolute w-1 h-1 bg-cyan-400 rounded-full animate-particle"
+              className="absolute w-1 h-1 bg-blue-300 rounded-full animate-particle"
               style={{
                 left: `${Math.random() * 100}%`,
                 top: `${Math.random() * 100}%`,
@@ -446,10 +446,10 @@ export default function LandingPage() {
         </div>
 
         {/* Neural network connections */}
-        <svg className="absolute inset-0 w-full h-full opacity-10">
+        <svg className="absolute inset-0 w-full h-full opacity-5">
           {neuralNodes.map((node, i) => (
             <g key={i}>
-              <circle cx={`${node.x}%`} cy={`${node.y}%`} r="3" fill="#06b6d4" />
+              <circle cx={`${node.x}%`} cy={`${node.y}%`} r="3" fill="#3b82f6" />
               {neuralNodes.slice(i + 1).filter((_n, idx) => idx < 3).map((target, j) => (
                 <line
                   key={j}
@@ -457,7 +457,7 @@ export default function LandingPage() {
                   y1={`${node.y}%`}
                   x2={`${target.x}%`}
                   y2={`${target.y}%`}
-                  stroke="#06b6d6"
+                  stroke="#3b82f6"
                   strokeWidth="0.5"
                   strokeDasharray="4 4"
                 >
@@ -478,17 +478,17 @@ export default function LandingPage() {
       {/* Navigation */}
       <nav
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          isScrolled ? "bg-slate-900/95 backdrop-blur-lg shadow-sm border-b border-slate-800" : "bg-transparent"
+          isScrolled ? "bg-white/98 backdrop-blur-lg shadow-sm border-b border-blue-200" : "bg-transparent"
         }`}
       >
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex-shrink-0 flex items-center cursor-pointer" onClick={() => setLocation("/")}>
               <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-cyan-500/30">
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-400/30">
                   <Sparkles className="w-4 h-4 text-white" />
                 </div>
-                <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+                <span className="text-xl font-bold text-blue-600">
                   Maldevta
                 </span>
               </div>
@@ -499,7 +499,7 @@ export default function LandingPage() {
                 <a
                   key={item}
                   href={`#${item.toLowerCase()}`}
-                  className="text-slate-300 hover:text-cyan-400 font-medium transition-colors duration-200"
+                  className="text-slate-800 hover:text-blue-600 font-medium transition-colors duration-200"
                 >
                   {item}
                 </a>
@@ -507,12 +507,12 @@ export default function LandingPage() {
             </div>
 
             <div className="hidden lg:flex items-center space-x-4">
-              <button onClick={() => setLocation("/login")} className="text-slate-300 hover:text-cyan-400 font-medium transition-colors">
+              <button onClick={() => setLocation("/login")} className="text-slate-800 hover:text-blue-600 font-medium transition-colors">
                 Sign In
               </button>
               <button
                 onClick={() => setLocation("/login")}
-                className="px-5 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold rounded-full hover:shadow-lg hover:shadow-cyan-500/30 hover:scale-105 transition-all duration-300"
+                className="px-5 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-full hover:shadow-lg hover:shadow-blue-400/30 hover:scale-105 transition-all duration-300"
               >
                 Get Started Free
               </button>
@@ -520,31 +520,31 @@ export default function LandingPage() {
 
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="lg:hidden p-2 rounded-lg hover:bg-slate-800 transition-colors"
+              className="lg:hidden p-2 rounded-lg hover:bg-blue-100 transition-colors"
             >
-              {isMobileMenuOpen ? <X className="w-6 h-6 text-white" /> : <Menu className="w-6 h-6 text-white" />}
+              {isMobileMenuOpen ? <X className="w-6 h-6 text-slate-900" /> : <Menu className="w-6 h-6 text-slate-900" />}
             </button>
           </div>
         </div>
 
         {isMobileMenuOpen && (
-          <div className="lg:hidden bg-slate-900/95 backdrop-blur-lg border-t border-slate-800 py-4">
+          <div className="lg:hidden bg-white/98 backdrop-blur-lg border-t border-blue-200 py-4">
             <div className="px-6 space-y-3">
               {["Features", "Extensions", "Integrations", "Pricing"].map((item) => (
                 <a
                   key={item}
                   href={`#${item.toLowerCase()}`}
-                  className="block py-2 text-slate-300 hover:text-cyan-400 font-medium"
+                  className="block py-2 text-slate-800 hover:text-blue-600 font-medium"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   {item}
                 </a>
               ))}
               <div className="pt-4 space-y-2">
-                <button onClick={() => { setIsMobileMenuOpen(false); setLocation("/login"); }} className="w-full py-2 text-slate-300 hover:text-cyan-400 font-medium">
+                <button onClick={() => { setIsMobileMenuOpen(false); setLocation("/login"); }} className="w-full py-2 text-slate-800 hover:text-blue-600 font-medium">
                   Sign In
                 </button>
-                <button onClick={() => { setIsMobileMenuOpen(false); setLocation("/login"); }} className="w-full py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold rounded-full">
+                <button onClick={() => { setIsMobileMenuOpen(false); setLocation("/login"); }} className="w-full py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-full">
                   Get Started Free
                 </button>
               </div>
@@ -558,42 +558,42 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="max-w-2xl">
-              <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/30 rounded-full mb-6 backdrop-blur-sm">
-                <Sparkles className="w-4 h-4 mr-2 text-cyan-400" />
-                <span className="text-sm font-medium text-slate-300">AI-powered platform for modern teams</span>
+              <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-100 to-blue-50 border border-blue-300 rounded-full mb-6 backdrop-blur-sm">
+                <Sparkles className="w-4 h-4 mr-2 text-blue-600" />
+                <span className="text-sm font-medium text-slate-800">AI-powered platform for modern teams</span>
               </div>
 
-              <h1 className="text-5xl lg:text-7xl font-bold text-white mb-6 leading-tight">
+              <h1 className="text-5xl lg:text-7xl font-bold text-slate-900 mb-6 leading-tight">
                 Multi-Tenant
                 <br />
-                <span className="bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-500 bg-clip-text text-transparent">
+                <span className="text-blue-600">
                   AI Platform
                 </span>
               </h1>
 
-              <p className="text-xl text-slate-400 mb-8 leading-relaxed">
+              <p className="text-xl text-slate-700 mb-8 leading-relaxed">
                 Complete AI chat solution with intelligent extensions, seamless integrations, and enterprise-grade multi-tenant architecture.
               </p>
 
               <div className="flex flex-col sm:flex-row items-center gap-4 mb-8">
                 <button
                   onClick={() => setLocation("/login")}
-                  className="group px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold rounded-full hover:shadow-xl hover:shadow-cyan-500/30 hover:scale-105 transition-all duration-300"
+                  className="group px-8 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-full hover:shadow-xl hover:shadow-blue-400/30 hover:scale-105 transition-all duration-300"
                 >
                   <span className="flex items-center space-x-2">
                     <span>Start Free Trial</span>
                     <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
                   </span>
                 </button>
-                <button className="group px-8 py-4 bg-slate-800/50 text-white font-semibold rounded-full border border-slate-700 hover:border-cyan-500/50 hover:shadow-lg hover:shadow-cyan-500/20 transition-all duration-300 backdrop-blur-sm">
+                <button className="group px-8 py-4 bg-blue-50/50 text-slate-900 font-semibold rounded-full border border-blue-200 hover:border-blue-400 hover:shadow-lg hover:shadow-blue-300/20 transition-all duration-300 backdrop-blur-sm">
                   <span className="flex items-center space-x-2">
-                    <Play className="w-5 h-5 text-cyan-400" />
+                    <Play className="w-5 h-5 text-blue-600" />
                     <span>Watch Demo</span>
                   </span>
                 </button>
               </div>
 
-              <div className="flex items-center space-x-6 text-sm text-slate-400">
+              <div className="flex items-center space-x-6 text-sm text-slate-600">
                 <div className="flex items-center space-x-2">
                   <Check className="w-5 h-5 text-emerald-400" />
                   <span>No credit card required</span>
@@ -607,27 +607,27 @@ export default function LandingPage() {
 
             {/* Dashboard Preview with Glassmorphism */}
             <div className="relative">
-              <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-cyan-500/20 border border-slate-700/50 backdrop-blur-xl">
+              <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-blue-300/20 border border-blue-200 backdrop-blur-xl">
                 {/* Browser Frame */}
-                <div className="bg-gradient-to-r from-slate-800/80 to-slate-900/80 px-4 py-3 flex items-center space-x-2 border-b border-slate-700/50 backdrop-blur-sm">
+                <div className="bg-gradient-to-r from-slate-100 to-slate-50 px-4 py-3 flex items-center space-x-2 border-b border-blue-200 backdrop-blur-sm">
                   <div className="flex space-x-2">
                     <div className="w-3 h-3 rounded-full bg-red-400/80"></div>
                     <div className="w-3 h-3 rounded-full bg-yellow-400/80"></div>
                     <div className="w-3 h-3 rounded-full bg-green-400/80"></div>
                   </div>
                   <div className="flex-1 mx-4">
-                    <div className="bg-slate-900/80 rounded-md px-3 py-1 text-xs text-slate-400 text-center shadow-sm backdrop-blur-sm">
+                    <div className="bg-slate-200 rounded-md px-3 py-1 text-xs text-slate-600 text-center shadow-sm backdrop-blur-sm">
                       app.maldevta.com
                     </div>
                   </div>
                 </div>
 
                 {/* Dashboard Content */}
-                <div className="bg-gradient-to-br from-slate-900/90 to-slate-800/90 p-6 backdrop-blur-xl">
+                <div className="bg-gradient-to-br from-blue-50 to-white p-6 backdrop-blur-xl">
                   <div className="flex items-center justify-between mb-6">
                     <div>
-                      <div className="h-6 w-32 bg-slate-700 rounded mb-2"></div>
-                      <div className="h-4 w-48 bg-slate-800 rounded"></div>
+                      <div className="h-6 w-32 bg-slate-300 rounded mb-2"></div>
+                      <div className="h-4 w-48 bg-slate-200 rounded"></div>
                     </div>
                     <div className="flex space-x-2">
                       <div className="w-10 h-10 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-full"></div>
@@ -638,9 +638,9 @@ export default function LandingPage() {
                   {/* Chat Messages */}
                   <div className="space-y-4 mb-6">
                     <div className="flex justify-start">
-                      <div className="max-w-xs bg-gradient-to-br from-slate-800 to-slate-700 rounded-2xl rounded-bl-sm px-4 py-3 border border-slate-700">
-                        <div className="h-3 w-24 bg-slate-600 rounded mb-2"></div>
-                        <div className="h-3 w-32 bg-slate-600 rounded"></div>
+                      <div className="max-w-xs bg-gradient-to-br from-slate-200 to-slate-100 rounded-2xl rounded-bl-sm px-4 py-3 border border-slate-300">
+                        <div className="h-3 w-24 bg-slate-400 rounded mb-2"></div>
+                        <div className="h-3 w-32 bg-slate-400 rounded"></div>
                       </div>
                     </div>
                     <div className="flex justify-end">
@@ -652,8 +652,8 @@ export default function LandingPage() {
                   </div>
 
                   {/* Input */}
-                  <div className="bg-gradient-to-r from-slate-800 to-slate-700 border border-slate-600 rounded-xl px-4 py-3 flex items-center">
-                    <div className="flex-1 h-4 bg-slate-600 rounded"></div>
+                  <div className="bg-gradient-to-r from-slate-200 to-slate-100 border border-slate-300 rounded-xl px-4 py-3 flex items-center">
+                    <div className="flex-1 h-4 bg-slate-400 rounded"></div>
                     <div className="ml-2 flex space-x-1">
                       <div className="w-6 h-6 bg-slate-600 rounded"></div>
                       <div className="w-8 h-6 bg-gradient-to-r from-cyan-500 to-blue-600 rounded"></div>
@@ -663,14 +663,14 @@ export default function LandingPage() {
               </div>
 
               {/* Floating Badge */}
-              <div className="absolute -bottom-4 -right-4 bg-slate-800/90 backdrop-blur-xl rounded-xl shadow-lg border border-slate-700 px-4 py-3">
+              <div className="absolute -bottom-4 -right-4 bg-white/95 backdrop-blur-xl rounded-xl shadow-lg border border-blue-200 px-4 py-3">
                 <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full flex items-center justify-center">
+                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
                     <Zap className="w-4 h-4 text-white" />
                   </div>
                   <div>
-                    <div className="text-xs text-slate-400">AI Response</div>
-                    <div className="text-sm font-semibold text-white">0.8s</div>
+                    <div className="text-xs text-slate-600">AI Response</div>
+                    <div className="text-sm font-semibold text-slate-900">0.8s</div>
                   </div>
                 </div>
               </div>
@@ -680,15 +680,20 @@ export default function LandingPage() {
       </section>
 
       {/* Feature Slides Section */}
-      <section id="features" className="py-20 px-6 lg:px-8 bg-gradient-to-b from-slate-950 to-slate-900">
-        <div className="max-w-7xl mx-auto">
+      <section id="features" className="py-20 px-6 lg:px-8 bg-white relative overflow-hidden">
+        {/* Animated background elements */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full blur-3xl opacity-20 animate-pulse"></div>
+          <div className="absolute bottom-0 left-0 w-80 h-80 bg-gradient-to-tr from-indigo-100 to-blue-100 rounded-full blur-3xl opacity-20 animate-pulse" style={{animationDelay: '1s'}}></div>
+        </div>
+        <div className="max-w-7xl mx-auto relative z-10">
           <div className="text-center mb-16">
-            <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/30 rounded-full mb-4 backdrop-blur-sm">
-              <Sparkles className="w-4 h-4 mr-2 text-cyan-400" />
-              <span className="text-sm font-medium text-slate-300">Feature Showcase</span>
+            <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-100 to-blue-50 border border-blue-300 rounded-full mb-4 backdrop-blur-sm">
+              <Sparkles className="w-4 h-4 mr-2 text-blue-600" />
+              <span className="text-sm font-medium text-slate-800">Feature Showcase</span>
             </div>
-            <h2 className="text-4xl lg:text-5xl font-bold text-white mb-4">Explore Our Features</h2>
-            <p className="text-xl text-slate-400 max-w-2xl mx-auto">
+            <h2 className="text-4xl lg:text-5xl font-bold text-slate-900 mb-4">Explore Our Features</h2>
+            <p className="text-xl text-slate-700 max-w-2xl mx-auto">
               Discover powerful AI capabilities with detailed explanations
             </p>
           </div>
@@ -696,15 +701,15 @@ export default function LandingPage() {
           {/* Feature Slider */}
           <div className="relative">
             {/* Main Feature Card */}
-            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-3xl border border-slate-700/50 backdrop-blur-xl overflow-hidden shadow-2xl shadow-cyan-500/10">
+            <div className="bg-gradient-to-br from-white to-blue-50 rounded-3xl border border-blue-200 backdrop-blur-xl overflow-hidden shadow-2xl shadow-blue-300/20">
               <div className="grid lg:grid-cols-2 gap-0">
                 {/* Left - Image/Visual */}
                 <div className={`relative p-12 flex items-center justify-center bg-gradient-to-br ${featureSlides[currentFeatureSlide].gradient}`}>
-                  <div className="absolute inset-0 opacity-20">
+                  <div className="absolute inset-0 opacity-10">
                     <div className="absolute top-0 left-0 w-full h-full bg-[linear-gradient(to_right,#ffffff_1px,transparent_1px),linear-gradient(to_bottom,#ffffff_1px,transparent_1px)] bg-[size:40px_40px]"></div>
                   </div>
                   <div className="relative z-10 text-center">
-                    <div className="rounded-xl overflow-hidden shadow-2xl shadow-cyan-500/20 mb-6">
+                    <div className="rounded-xl overflow-hidden shadow-2xl shadow-blue-400/20 mb-6">
                       <img
                         src={featureSlides[currentFeatureSlide].image}
                         alt={featureSlides[currentFeatureSlide].title}
@@ -733,13 +738,13 @@ export default function LandingPage() {
                     {featureSlides[currentFeatureSlide].icon}
                   </div>
 
-                  <h3 className="text-3xl font-bold text-white mb-2">
+                  <h3 className="text-3xl font-bold text-slate-900 mb-2">
                     {featureSlides[currentFeatureSlide].title}
                   </h3>
-                  <p className={`text-lg font-transparent bg-gradient-to-r ${featureSlides[currentFeatureSlide].gradient} bg-clip-text mb-4`}>
+                  <p className="text-lg font-semibold text-blue-600 mb-4">
                     {featureSlides[currentFeatureSlide].subtitle}
                   </p>
-                  <p className="text-slate-400 leading-relaxed mb-8">
+                  <p className="text-slate-700 leading-relaxed mb-8">
                     {featureSlides[currentFeatureSlide].description}
                   </p>
 
@@ -747,14 +752,14 @@ export default function LandingPage() {
                   <div className="space-y-4 mb-8">
                     {featureSlides[currentFeatureSlide].features.map((feature, idx) => (
                       <div key={idx} className="flex items-start space-x-3">
-                        <div className={`w-10 h-10 bg-gradient-to-br ${featureSlides[currentFeatureSlide].gradient}/20 rounded-xl flex items-center justify-center flex-shrink-0`}>
-                          <div className={`text-transparent bg-gradient-to-r ${featureSlides[currentFeatureSlide].gradient} bg-clip-text`}>
+                        <div className={`w-10 h-10 bg-gradient-to-br ${featureSlides[currentFeatureSlide].gradient}/10 rounded-xl flex items-center justify-center flex-shrink-0`}>
+                          <div className="text-blue-600">
                             {feature.icon}
                           </div>
                         </div>
                         <div className="flex-1">
-                          <h4 className="text-white font-semibold mb-1">{feature.text}</h4>
-                          <p className="text-sm text-slate-400">{feature.desc}</p>
+                          <h4 className="text-slate-900 font-semibold mb-1">{feature.text}</h4>
+                          <p className="text-sm text-slate-600">{feature.desc}</p>
                         </div>
                       </div>
                     ))}
@@ -763,11 +768,11 @@ export default function LandingPage() {
                   {/* Stats */}
                   <div className="grid grid-cols-3 gap-4">
                     {featureSlides[currentFeatureSlide].stats.map((stat, idx) => (
-                      <div key={idx} className="text-center p-4 bg-slate-800/50 rounded-xl border border-slate-700/50">
-                        <div className={`text-2xl font-bold text-transparent bg-gradient-to-r ${featureSlides[currentFeatureSlide].gradient} bg-clip-text mb-1`}>
+                      <div key={idx} className="text-center p-4 bg-slate-100 rounded-xl border border-blue-200">
+                        <div className="text-2xl font-bold text-blue-600 mb-1">
                           {stat.value}
                         </div>
-                        <div className="text-xs text-slate-400">{stat.label}</div>
+                        <div className="text-xs text-slate-600">{stat.label}</div>
                       </div>
                     ))}
                   </div>
@@ -783,8 +788,8 @@ export default function LandingPage() {
                   onClick={() => setCurrentFeatureSlide(idx)}
                   className={`w-3 h-3 rounded-full transition-all duration-300 ${
                     idx === currentFeatureSlide
-                      ? "bg-gradient-to-r from-cyan-400 to-blue-600 w-8"
-                      : "bg-slate-700 hover:bg-slate-600"
+                      ? "bg-gradient-to-r from-blue-500 to-blue-600 w-8"
+                      : "bg-slate-300 hover:bg-slate-400"
                   }`}
                 />
               ))}
@@ -793,13 +798,13 @@ export default function LandingPage() {
             {/* Navigation Arrows */}
             <button
               onClick={() => setCurrentFeatureSlide((prev) => prev === 0 ? featureSlides.length - 1 : prev - 1)}
-              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 w-12 h-12 bg-slate-800/80 backdrop-blur-sm rounded-full border border-slate-700/50 flex items-center justify-center text-white hover:bg-slate-700/80 hover:border-cyan-500/50 transition-all duration-300"
+              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 w-12 h-12 bg-white/80 backdrop-blur-sm rounded-full border border-blue-200 flex items-center justify-center text-slate-900 hover:bg-slate-50/80 hover:border-blue-400 transition-all duration-300"
             >
               <ChevronLeft className="w-6 h-6" />
             </button>
             <button
               onClick={() => setCurrentFeatureSlide((prev) => (prev + 1) % featureSlides.length)}
-              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 w-12 h-12 bg-slate-800/80 backdrop-blur-sm rounded-full border border-slate-700/50 flex items-center justify-center text-white hover:bg-slate-700/80 hover:border-cyan-500/50 transition-all duration-300"
+              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 w-12 h-12 bg-white/80 backdrop-blur-sm rounded-full border border-blue-200 flex items-center justify-center text-slate-900 hover:bg-slate-50/80 hover:border-blue-400 transition-all duration-300"
             >
               <ChevronRight className="w-6 h-6" />
             </button>
@@ -816,8 +821,8 @@ export default function LandingPage() {
                   onClick={() => setCurrentFeatureSlide(index)}
                   className={`group p-4 rounded-xl border transition-all duration-300 ${
                     isActive
-                      ? `bg-gradient-to-br ${colors.gradient}/20 border-cyan-500/50`
-                      : "bg-slate-800/30 border-slate-700/50 hover:bg-slate-800/50 hover:border-slate-600"
+                      ? `bg-gradient-to-br ${colors.gradient}/10 border-blue-400`
+                      : "bg-slate-50 border-blue-200 hover:bg-slate-100 hover:border-blue-300"
                   }`}
                 >
                   <div className="flex items-center space-x-3">
@@ -825,8 +830,8 @@ export default function LandingPage() {
                       {feature.icon}
                     </div>
                     <div className="text-left">
-                      <h4 className={`font-semibold ${isActive ? 'text-white' : 'text-slate-300'}`}>{feature.title}</h4>
-                      <p className="text-xs text-slate-400 line-clamp-1">{feature.description}</p>
+                      <h4 className={`font-semibold ${isActive ? 'text-slate-900' : 'text-slate-800'}`}>{feature.title}</h4>
+                      <p className="text-xs text-slate-600 line-clamp-1">{feature.description}</p>
                     </div>
                   </div>
                 </button>
@@ -837,15 +842,24 @@ export default function LandingPage() {
       </section>
 
       {/* Extensions Section */}
-      <section id="extensions" className="py-20 px-6 lg:px-8 bg-slate-900">
-        <div className="max-w-7xl mx-auto">
+      <section id="extensions" className="py-20 px-6 lg:px-8 bg-gradient-to-b from-blue-50 via-white to-white relative overflow-hidden">
+        {/* Background animations */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-20 left-10 w-72 h-72 bg-gradient-to-br from-blue-200 to-indigo-200 rounded-full blur-3xl opacity-15 animate-pulse"></div>
+          <div className="absolute bottom-20 right-10 w-96 h-96 bg-gradient-to-tl from-blue-100 to-cyan-100 rounded-full blur-3xl opacity-15 animate-pulse" style={{animationDelay: '2s'}}></div>
+          {/* Floating AI nodes */}
+          <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+          <div className="absolute top-1/3 right-1/3 w-2 h-2 bg-indigo-400 rounded-full animate-pulse" style={{animationDelay: '0.5s'}}></div>
+          <div className="absolute bottom-1/3 left-1/3 w-2 h-2 bg-blue-300 rounded-full animate-pulse" style={{animationDelay: '1s'}}></div>
+        </div>
+        <div className="max-w-7xl mx-auto relative z-10">
           <div className="text-center mb-16">
-            <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/30 rounded-full mb-4 backdrop-blur-sm">
-              <Puzzle className="w-4 h-4 mr-2 text-cyan-400" />
-              <span className="text-sm font-medium text-slate-300">Extensions Ecosystem</span>
+            <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-100 to-blue-50 border border-blue-300 rounded-full mb-4 backdrop-blur-sm">
+              <Puzzle className="w-4 h-4 mr-2 text-blue-600" />
+              <span className="text-sm font-medium text-slate-800">Extensions Ecosystem</span>
             </div>
-            <h2 className="text-4xl lg:text-5xl font-bold text-white mb-4">17+ AI Extensions</h2>
-            <p className="text-xl text-slate-400 max-w-2xl mx-auto">
+            <h2 className="text-4xl lg:text-5xl font-bold text-slate-900 mb-4">17+ AI Extensions</h2>
+            <p className="text-xl text-slate-700 max-w-2xl mx-auto">
               Powerful extensions for documents, databases, visualization, and more
             </p>
           </div>
@@ -856,17 +870,17 @@ export default function LandingPage() {
               return (
                 <div
                   key={index}
-                  className={`${colors.bgLight}/10 rounded-2xl p-6 border border-slate-700/50 hover:shadow-lg hover:shadow-cyan-500/20 transition-all duration-300 backdrop-blur-sm`}
+                  className={`${colors.bgLight}/30 rounded-2xl p-6 border border-blue-200 hover:shadow-lg hover:shadow-blue-300/20 transition-all duration-300 backdrop-blur-sm`}
                 >
                   <div className={`inline-flex w-12 h-12 bg-gradient-to-br ${colors.gradient} rounded-xl flex items-center justify-center text-white mb-4 shadow-lg ${colors.shadow}`}>
                     {category.icon}
                   </div>
-                  <h3 className="text-lg font-bold text-white mb-3">{category.name}</h3>
+                  <h3 className="text-lg font-bold text-slate-900 mb-3">{category.name}</h3>
                   <div className="space-y-2">
                     {category.extensions.map((ext, i) => (
                       <div key={i} className="flex items-center space-x-2">
-                        <Check className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                        <span className="text-sm text-slate-300">{ext}</span>
+                        <Check className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                        <span className="text-sm text-slate-800">{ext}</span>
                       </div>
                     ))}
                   </div>
@@ -878,15 +892,34 @@ export default function LandingPage() {
       </section>
 
       {/* System Foundation */}
-      <section className="py-20 px-6 lg:px-8 bg-gradient-to-b from-slate-900 to-slate-950">
-        <div className="max-w-7xl mx-auto">
+      <section className="py-20 px-6 lg:px-8 bg-white relative overflow-hidden">
+        {/* Interactive background elements */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-blue-100 to-transparent rounded-full blur-3xl opacity-30"></div>
+          <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-tr from-indigo-100 to-transparent rounded-full blur-3xl opacity-30"></div>
+          {/* Floating nodes */}
+          <svg className="absolute inset-0 w-full h-full" style={{opacity: 0.05}} preserveAspectRatio="xMidYMid slice">
+            <defs>
+              <linearGradient id="nodeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style={{stopColor: '#3b82f6', stopOpacity: 1}} />
+                <stop offset="100%" style={{stopColor: '#6366f1', stopOpacity: 1}} />
+              </linearGradient>
+            </defs>
+            <circle cx="20%" cy="30%" r="3" fill="url(#nodeGradient)" />
+            <circle cx="40%" cy="70%" r="3" fill="url(#nodeGradient)" />
+            <circle cx="60%" cy="40%" r="3" fill="url(#nodeGradient)" />
+            <circle cx="80%" cy="60%" r="3" fill="url(#nodeGradient)" />
+            <circle cx="50%" cy="80%" r="3" fill="url(#nodeGradient)" />
+          </svg>
+        </div>
+        <div className="max-w-7xl mx-auto relative z-10">
           <div className="text-center mb-16">
-            <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/30 rounded-full mb-4 backdrop-blur-sm">
-              <Shield className="w-4 h-4 mr-2 text-cyan-400" />
-              <span className="text-sm font-medium text-slate-300">AI Principles</span>
+            <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-100 to-blue-50 border border-blue-300 rounded-full mb-4 backdrop-blur-sm">
+              <Shield className="w-4 h-4 mr-2 text-blue-600" />
+              <span className="text-sm font-medium text-slate-800">AI Principles</span>
             </div>
-            <h2 className="text-4xl lg:text-5xl font-bold text-white mb-4">Built on Trust</h2>
-            <p className="text-xl text-slate-400 max-w-2xl mx-auto">
+            <h2 className="text-4xl lg:text-5xl font-bold text-slate-900 mb-4">Built on Trust</h2>
+            <p className="text-xl text-slate-700 max-w-2xl mx-auto">
               Our AI system follows three core principles
             </p>
           </div>
@@ -899,27 +932,27 @@ export default function LandingPage() {
                   key={index}
                   className={`relative rounded-2xl p-8 border backdrop-blur-sm ${
                     index === 1
-                      ? `bg-gradient-to-br ${colors.gradientLight}/20 border-2 ${colors.border}/50`
-                      : "bg-gradient-to-br from-slate-800/50 to-slate-900/50 border-slate-700/50"
-                  } hover:shadow-xl hover:shadow-cyan-500/20 hover:-translate-y-1 transition-all duration-300`}
+                      ? `bg-gradient-to-br ${colors.gradientLight}/40 border-2 border-blue-300`
+                      : "bg-gradient-to-br from-slate-100 to-blue-50 border-blue-200"
+                  } hover:shadow-xl hover:shadow-blue-300/20 hover:-translate-y-1 transition-all duration-300`}
                 >
                   {index === 1 && (
                     <div className={`absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r ${colors.gradient} text-white text-sm font-semibold rounded-full shadow-lg`}>
                       Core
                     </div>
                   )}
-                  <div className={`w-16 h-16 ${colors.bgLight}/10 rounded-2xl flex items-center justify-center mb-6`}>
-                    <div className={`bg-gradient-to-br ${colors.gradient} bg-clip-text text-transparent`}>
+                  <div className={`w-16 h-16 ${colors.bgLight}/20 rounded-2xl flex items-center justify-center mb-6`}>
+                    <div className="text-blue-600">
                       {capability.icon}
                     </div>
                   </div>
-                  <h3 className="text-2xl font-bold text-white mb-4">{capability.title}</h3>
-                  <p className="text-slate-400 leading-relaxed mb-6">{capability.description}</p>
+                  <h3 className="text-2xl font-bold text-slate-900 mb-4">{capability.title}</h3>
+                  <p className="text-slate-700 leading-relaxed mb-6">{capability.description}</p>
                   <ul className="space-y-2">
                     {capability.metrics.map((metric, i) => (
                       <li key={i} className="flex items-center space-x-2">
-                        <Check className="w-4 h-4 text-emerald-400" />
-                        <span className="text-sm text-slate-300">{metric}</span>
+                        <Check className="w-4 h-4 text-emerald-500" />
+                        <span className="text-sm text-slate-800">{metric}</span>
                       </li>
                     ))}
                   </ul>
@@ -931,29 +964,35 @@ export default function LandingPage() {
       </section>
 
       {/* Integrations */}
-      <section id="integrations" className="py-20 px-6 lg:px-8 bg-slate-950">
-        <div className="max-w-7xl mx-auto">
+      <section id="integrations" className="py-20 px-6 lg:px-8 bg-gradient-to-b from-white via-blue-50 to-white relative overflow-hidden">
+        {/* Animated background */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full max-w-4xl">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-100/50 via-transparent to-indigo-100/50 rounded-full blur-3xl animate-pulse"></div>
+          </div>
+        </div>
+        <div className="max-w-7xl mx-auto relative z-10">
           <div className="text-center mb-16">
-            <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/30 rounded-full mb-4 backdrop-blur-sm">
-              <Layers className="w-4 h-4 mr-2 text-cyan-400" />
-              <span className="text-sm font-medium text-slate-300">Integrations</span>
+            <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-100 to-blue-50 border border-blue-300 rounded-full mb-4 backdrop-blur-sm">
+              <Layers className="w-4 h-4 mr-2 text-blue-600" />
+              <span className="text-sm font-medium text-slate-800">Integrations</span>
             </div>
-            <h2 className="text-4xl lg:text-5xl font-bold text-white mb-4">Seamless Connections</h2>
-            <p className="text-xl text-slate-400 max-w-2xl mx-auto">
+            <h2 className="text-4xl lg:text-5xl font-bold text-slate-900 mb-4">Seamless Connections</h2>
+            <p className="text-xl text-slate-700 max-w-2xl mx-auto">
               Connect with the tools you already use
             </p>
           </div>
 
-          <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 rounded-2xl p-8 border border-slate-700/50 backdrop-blur-sm">
+          <div className="bg-gradient-to-br from-slate-50 to-blue-50 rounded-2xl p-8 border border-blue-200 backdrop-blur-sm">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               {integrations.map((integration, index) => (
                 <div
                   key={index}
-                  className="flex flex-col items-center justify-center p-6 rounded-xl bg-slate-800/30 hover:shadow-xl hover:shadow-cyan-500/20 hover:-translate-y-1 transition-all cursor-pointer group backdrop-blur-sm border border-slate-700/30"
+                  className="flex flex-col items-center justify-center p-6 rounded-xl bg-white hover:shadow-xl hover:shadow-blue-300/20 hover:-translate-y-1 transition-all cursor-pointer group backdrop-blur-sm border border-blue-200"
                 >
                   <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">{integration.icon}</div>
-                  <div className="text-sm font-semibold text-white mb-1">{integration.name}</div>
-                  <div className="text-xs text-slate-400">{integration.desc}</div>
+                  <div className="text-sm font-semibold text-slate-900 mb-1">{integration.name}</div>
+                  <div className="text-xs text-slate-600">{integration.desc}</div>
                 </div>
               ))}
             </div>
@@ -962,32 +1001,37 @@ export default function LandingPage() {
       </section>
 
       {/* Testimonials */}
-      <section className="py-20 px-6 lg:px-8 bg-gradient-to-b from-slate-950 to-slate-900">
-        <div className="max-w-7xl mx-auto">
+      <section className="py-20 px-6 lg:px-8 bg-white relative overflow-hidden">
+        {/* Subtle animated background */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-0 right-1/4 w-80 h-80 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full blur-3xl opacity-20 animate-pulse" style={{animationDuration: '4s'}}></div>
+          <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-gradient-to-tr from-indigo-100 to-blue-100 rounded-full blur-3xl opacity-20 animate-pulse" style={{animationDuration: '5s', animationDelay: '1s'}}></div>
+        </div>
+        <div className="max-w-7xl mx-auto relative z-10">
           <div className="text-center mb-16">
-            <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/30 rounded-full mb-4 backdrop-blur-sm">
+            <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-100 to-blue-50 border border-blue-300 rounded-full mb-4 backdrop-blur-sm">
               <Star className="w-4 h-4 mr-2 text-yellow-500" />
-              <span className="text-sm font-medium text-slate-300">Testimonials</span>
+              <span className="text-sm font-medium text-slate-800">Testimonials</span>
             </div>
-            <h2 className="text-4xl lg:text-5xl font-bold text-white mb-4">Trusted by Teams</h2>
+            <h2 className="text-4xl lg:text-5xl font-bold text-slate-900 mb-4">Trusted by Teams</h2>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
             {testimonials.map((testimonial, index) => (
-              <div key={index} className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 rounded-2xl p-8 border border-slate-700/50 hover:shadow-xl hover:shadow-cyan-500/20 transition-all backdrop-blur-sm">
+              <div key={index} className="bg-gradient-to-br from-slate-50 to-blue-50 rounded-2xl p-8 border border-blue-200 hover:shadow-xl hover:shadow-blue-300/20 transition-all backdrop-blur-sm">
                 <div className="flex items-center space-x-1 mb-4">
                   {[...Array(testimonial.rating)].map((_, i) => (
                     <Star key={i} className="w-5 h-5 text-yellow-500 fill-yellow-500" />
                   ))}
                 </div>
-                <p className="text-slate-400 mb-6 leading-relaxed">"{testimonial.content}"</p>
+                <p className="text-slate-700 mb-6 leading-relaxed">"{testimonial.content}"</p>
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-full flex items-center justify-center">
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
                     <span className="text-sm font-semibold text-white">{testimonial.avatar}</span>
                   </div>
                   <div>
-                    <div className="font-semibold text-white">{testimonial.name}</div>
-                    <div className="text-sm text-slate-400">{testimonial.role}</div>
+                    <div className="font-semibold text-slate-900">{testimonial.name}</div>
+                    <div className="text-sm text-slate-600">{testimonial.role}</div>
                   </div>
                 </div>
               </div>
@@ -997,11 +1041,11 @@ export default function LandingPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-6 lg:px-8 bg-slate-950">
+      <section className="py-20 px-6 lg:px-8 bg-white">
         <div className="max-w-4xl mx-auto">
-          <div className="relative overflow-hidden bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 rounded-3xl p-12 lg:p-16 shadow-2xl shadow-cyan-500/30">
+          <div className="relative overflow-hidden bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 rounded-3xl p-12 lg:p-16 shadow-2xl shadow-blue-400/30">
             <div className="absolute inset-0">
-              <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/20 via-blue-500/20 to-indigo-500/20 animate-gradient-shift"></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-400/20 via-blue-500/20 to-indigo-500/20 animate-gradient-shift"></div>
               <div className="absolute top-0 left-0 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
               <div className="absolute bottom-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
             </div>
@@ -1010,12 +1054,12 @@ export default function LandingPage() {
               <h2 className="text-4xl lg:text-5xl font-bold text-white mb-6">
                 Ready to Transform Your Workflows?
               </h2>
-              <p className="text-xl text-white/90 mb-10">
+              <p className="text-xl text-white mb-10">
                 Join thousands of teams using Maldevta's AI platform
               </p>
               <button
                 onClick={() => setLocation("/login")}
-                className="group px-10 py-4 bg-white text-cyan-600 font-semibold rounded-full hover:shadow-xl hover:scale-105 transition-all duration-300"
+                className="group px-10 py-4 bg-white text-blue-600 font-semibold rounded-full hover:shadow-xl hover:scale-105 transition-all duration-300"
               >
                 <span className="flex items-center space-x-2">
                   <span>Get Started Now</span>
@@ -1028,27 +1072,27 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="py-16 px-6 lg:px-8 bg-slate-900 border-t border-slate-800">
+      <footer className="py-16 px-6 lg:px-8 bg-slate-50 border-t border-blue-200">
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-4 gap-8 mb-12">
             <div className="md:col-span-2">
               <div className="flex items-center space-x-2 mb-4">
-                <div className="w-8 h-8 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-lg flex items-center justify-center">
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
                   <Sparkles className="w-4 h-4 text-white" />
                 </div>
-                <span className="text-lg font-bold text-white">Maldevta</span>
+                <span className="text-lg font-bold text-slate-900">Maldevta</span>
               </div>
-              <p className="text-slate-400 text-sm mb-6 max-w-sm">
+              <p className="text-slate-600 text-sm mb-6 max-w-sm">
                 Multi-tenant AI platform with intelligent extensions, seamless integrations, and powerful developer tools.
               </p>
               <div className="flex space-x-4">
-                <a href="#" className="text-slate-400 hover:text-cyan-400 transition-colors">
+                <a href="#" className="text-slate-600 hover:text-blue-600 transition-colors">
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
                 </a>
-                <a href="#" className="text-slate-400 hover:text-cyan-400 transition-colors">
+                <a href="#" className="text-slate-600 hover:text-blue-600 transition-colors">
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
                 </a>
-                <a href="#" className="text-slate-400 hover:text-cyan-400 transition-colors">
+                <a href="#" className="text-slate-600 hover:text-blue-600 transition-colors">
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
                 </a>
               </div>
@@ -1060,11 +1104,11 @@ export default function LandingPage() {
               { title: "Resources", links: ["Docs", "API Reference", "Help Center", "Status"] }
             ].map((column, index) => (
               <div key={index}>
-                <h4 className="font-semibold text-white mb-4">{column.title}</h4>
+                <h4 className="font-semibold text-slate-900 mb-4">{column.title}</h4>
                 <ul className="space-y-2">
                   {column.links.map((link) => (
                     <li key={link}>
-                      <a href="#" className="text-slate-400 hover:text-cyan-400 text-sm transition-colors">{link}</a>
+                      <a href="#" className="text-slate-600 hover:text-blue-600 text-sm transition-colors">{link}</a>
                     </li>
                   ))}
                 </ul>
@@ -1072,11 +1116,11 @@ export default function LandingPage() {
             ))}
           </div>
 
-          <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row items-center justify-between">
-            <p className="text-sm text-slate-400">© 2026 Maldevta. All rights reserved.</p>
+          <div className="border-t border-blue-200 pt-8 flex flex-col md:flex-row items-center justify-between">
+            <p className="text-sm text-slate-600">© 2026 Maldevta. All rights reserved.</p>
             <div className="flex space-x-6 mt-4 md:mt-0">
-              <a href="#" className="text-slate-400 hover:text-cyan-400 text-sm transition-colors">Privacy</a>
-              <a href="#" className="text-slate-400 hover:text-cyan-400 text-sm transition-colors">Terms</a>
+              <a href="#" className="text-slate-600 hover:text-blue-600 text-sm transition-colors">Privacy</a>
+              <a href="#" className="text-slate-600 hover:text-blue-600 text-sm transition-colors">Terms</a>
             </div>
           </div>
         </div>

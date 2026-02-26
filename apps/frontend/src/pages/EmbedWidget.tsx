@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSearchParams } from "wouter";
 
 // Simple standalone embed widget - no layout, no auth required
@@ -42,6 +42,14 @@ export default function EmbedWidgetPage() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
+
+  // Ref for auto-scroll to bottom of messages
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loadingMsg]);
 
   // Fetch embed info on mount
   useEffect(() => {
@@ -158,24 +166,27 @@ export default function EmbedWidgetPage() {
     setInput("");
     setLoadingMsg(true);
 
-    const tempUserMsg: Message = {
-      id: `temp-${Date.now()}`,
-      role: "user",
+    // Immediately show user message (optimistic update)
+    const tempUserMsgId = `temp-${Date.now()}`;
+    setMessages((prev) => [...prev, {
+      id: tempUserMsgId,
+      role: "user" as const,
       content: userMsg,
-      created_at: new Date().toISOString(),
-    };
-    setMessages((prev) => [...prev, tempUserMsg]);
-
-    let convId = currentConversationId;
-    if (!convId) {
-      convId = await createConversation();
-      if (!convId) {
-        setLoadingMsg(false);
-        return;
-      }
-    }
+      created_at: new Date().toISOString()
+    }]);
 
     try {
+      let convId = currentConversationId;
+      if (!convId) {
+        convId = await createConversation();
+        if (!convId) {
+          // Remove temp message on failure
+          setMessages((prev) => prev.filter(m => m.id !== tempUserMsgId));
+          setLoadingMsg(false);
+          return;
+        }
+      }
+
       const res = await fetch(`/embed/${projectId}/conversations/${convId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -186,10 +197,14 @@ export default function EmbedWidgetPage() {
       });
 
       if (res.ok) {
-        const data = await res.json();
-        if (data.message) {
-          setMessages((prev) => [...prev, data.message]);
+        // Get the updated conversation with AI response
+        const convRes = await fetch(`/embed/${projectId}/conversations/${convId}`);
+        if (convRes.ok) {
+          const convData = await convRes.json();
+          // Replace temp message with actual messages from server
+          setMessages(convData.messages || []);
         }
+
         // Refresh conversations
         const convsRes = await fetch(`/embed/${projectId}/conversations`);
         if (convsRes.ok) {
@@ -198,6 +213,8 @@ export default function EmbedWidgetPage() {
         }
       } else {
         const errData = await res.json();
+        // Remove temp message on error
+        setMessages((prev) => prev.filter(m => m.id !== tempUserMsgId));
         throw new Error(errData.message || "Failed to send message");
       }
     } catch (err) {
@@ -330,6 +347,8 @@ export default function EmbedWidgetPage() {
               </div>
             </div>
           )}
+          {/* Invisible div for auto-scroll */}
+          <div ref={messagesEndRef} />
         </div>
 
         {/* Input */}
