@@ -23,6 +23,8 @@ import {
   Puzzle,
   ChevronDown,
   ChevronUp,
+  ChevronLeft,
+  ChevronRight,
   Star,
   Building2,
   CheckCircle,
@@ -34,6 +36,7 @@ export default function LandingPage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeUseCase, setActiveUseCase] = useState(0);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [currentFeatureSlide, setCurrentFeatureSlide] = useState(0);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -596,64 +599,121 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="space-y-24">
-            {coreFeatures.map((feature, idx) => (
+          {/* Slider Container */}
+          <div className="relative">
+            {/* Navigation Buttons */}
+            <button
+              onClick={() => setCurrentFeatureSlide((prev) => prev === 0 ? coreFeatures.length - 1 : prev - 1)}
+              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 w-12 h-12 bg-white rounded-full shadow-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50 hover:scale-110 transition-all hidden md:flex"
+              aria-label="Previous feature"
+            >
+              <ChevronLeft className="w-6 h-6 text-gray-700" />
+            </button>
+
+            <button
+              onClick={() => setCurrentFeatureSlide((prev) => (prev + 1) % coreFeatures.length)}
+              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 w-12 h-12 bg-white rounded-full shadow-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50 hover:scale-110 transition-all hidden md:flex"
+              aria-label="Next feature"
+            >
+              <ChevronRight className="w-6 h-6 text-gray-700" />
+            </button>
+
+            {/* Slides */}
+            <div className="overflow-hidden">
               <div
-                key={idx}
-                className={`grid grid-cols-1 lg:grid-cols-2 gap-12 items-center ${
-                  idx % 2 === 1 ? "lg:flex-row-reverse" : ""
-                }`}
+                className="flex transition-transform duration-500 ease-in-out"
+                style={{ transform: `translateX(-${currentFeatureSlide * 100}%)` }}
               >
-                {/* Image */}
-                <div className="relative">
-                  <div className="aspect-video bg-white rounded-2xl overflow-hidden border border-gray-200 shadow-xl">
-                    <img
-                      src={feature.image}
-                      alt={feature.title}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = "none";
-                        const fallback = target.nextElementSibling as HTMLElement;
-                        if (fallback) fallback.style.display = "flex";
-                      }}
-                    />
-                    <div className="w-full h-full items-center justify-center text-6xl hidden">
-                      {feature.icon}
-                    </div>
-                  </div>
+                {coreFeatures.map((feature, idx) => (
+                  <div key={idx} className="w-full flex-shrink-0 px-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
+                      {/* Image */}
+                      <div className="relative order-2 lg:order-1">
+                        <div className="aspect-video bg-white rounded-2xl overflow-hidden border border-gray-200 shadow-xl">
+                          <img
+                            src={feature.image}
+                            alt={feature.title}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = "none";
+                              const fallback = target.nextElementSibling as HTMLElement;
+                              if (fallback) fallback.style.display = "flex";
+                            }}
+                          />
+                          <div className="w-full h-full items-center justify-center text-6xl hidden">
+                            {feature.icon}
+                          </div>
+                        </div>
 
-                  {/* Gradient glow */}
-                  <div className={`absolute -inset-4 bg-gradient-to-r ${feature.gradient} opacity-10 blur-3xl rounded-3xl -z-10`}></div>
-                </div>
-
-                {/* Content */}
-                <div>
-                  <div className={`inline-flex p-3 bg-gradient-to-br ${feature.gradient} rounded-xl mb-6`}>
-                    <div className="text-white">
-                      {feature.icon}
-                    </div>
-                  </div>
-
-                  <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
-                    {feature.title}
-                  </h3>
-
-                  <p className="text-lg text-gray-600 mb-6">
-                    {feature.description}
-                  </p>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    {feature.highlights.map((highlight, i) => (
-                      <div key={i} className="flex items-center text-gray-600">
-                        <Check className="w-4 h-4 mr-2 text-blue-500" />
-                        <span className="text-sm">{highlight}</span>
+                        {/* Gradient glow */}
+                        <div className={`absolute -inset-4 bg-gradient-to-r ${feature.gradient} opacity-10 blur-3xl rounded-3xl -z-10`}></div>
                       </div>
-                    ))}
+
+                      {/* Content */}
+                      <div className="order-1 lg:order-2">
+                        <div className={`inline-flex p-3 bg-gradient-to-br ${feature.gradient} rounded-xl mb-6`}>
+                          <div className="text-white">
+                            {feature.icon}
+                          </div>
+                        </div>
+
+                        <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
+                          {feature.title}
+                        </h3>
+
+                        <p className="text-lg text-gray-600 mb-6">
+                          {feature.description}
+                        </p>
+
+                        <div className="grid grid-cols-2 gap-3">
+                          {feature.highlights.map((highlight, i) => (
+                            <div key={i} className="flex items-center text-gray-600">
+                              <Check className="w-4 h-4 mr-2 text-blue-500" />
+                              <span className="text-sm">{highlight}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                ))}
               </div>
-            ))}
+            </div>
+
+            {/* Dot Indicators */}
+            <div className="flex justify-center items-center gap-3 mt-12">
+              {coreFeatures.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setCurrentFeatureSlide(idx)}
+                  className={`w-3 h-3 rounded-full transition-all ${
+                    idx === currentFeatureSlide
+                      ? "bg-blue-500 w-8"
+                      : "bg-gray-300 hover:bg-gray-400"
+                  }`}
+                  aria-label={`Go to feature ${idx + 1}`}
+                />
+              ))}
+            </div>
+
+            {/* Mobile Navigation */}
+            <div className="flex justify-center items-center gap-4 mt-6 md:hidden">
+              <button
+                onClick={() => setCurrentFeatureSlide((prev) => prev === 0 ? coreFeatures.length - 1 : prev - 1)}
+                className="px-6 py-3 bg-white rounded-full shadow-lg border border-gray-200 flex items-center hover:bg-gray-50 transition-all"
+              >
+                <ChevronLeft className="w-5 h-5 text-gray-700 mr-1" />
+                Previous
+              </button>
+              <button
+                onClick={() => setCurrentFeatureSlide((prev) => (prev + 1) % coreFeatures.length)}
+                className="px-6 py-3 bg-white rounded-full shadow-lg border border-gray-200 flex items-center hover:bg-gray-50 transition-all"
+              >
+                Next
+                <ChevronRight className="w-5 h-5 text-gray-700 ml-1" />
+              </button>
+            </div>
           </div>
         </div>
       </section>
