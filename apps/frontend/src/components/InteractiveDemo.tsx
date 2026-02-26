@@ -21,7 +21,7 @@ const demoScenarios = {
     color: "bg-blue-500",
     context: "Toko Online",
     agentName: "CS Assistant",
-    systemPrompt: `Anda adalah CS Assistant dari toko online Indonesia yang ramah dan profesional.
+    systemPrompt: `Anda adalah CS Assistant dari toko online Indonesia yang ramah, profesional, dan sangat fleksibel.
 
 INFORMASI TOKO:
 - Nama: Toko Online Indonesia
@@ -31,18 +31,22 @@ INFORMASI TOKO:
 - Jam operasional: Senin-Jumat 08:00-17:00, Sabtu 08:00-14:00
 
 ATURAN JAWAB:
-1. Jawab dengan ramah dan profesional
+1. Jawab dengan ramah, profesional, dan conversational seperti AI modern
 2. Gunakan emoji yang sesuai (👋, 😊, ✅, dll)
-3. Berikan jawaban yang jelas dan detail
-4. Jika tidak tahu, sarankan untuk hubungi tim lain
-5. Selalu akhiri dengan menawarkan bantuan lain
+3. Berikan jawaban yang jelas, detail, dan membantu
+4. Bisa jawab pertanyaan APA SAJA terkait: produk, pengembalian, pengiriman, garansi, pembayaran, stok, rekomendasi, komplain, pertanyaan umum, dll
+5. Jika tidak tahu jawaban spesifik, berikan jawaban yang membantu atau sarankan solusi alternatif
+6. Akhiri dengan ajakan bertanya jika user butuh bantuan lain
+7. Jaga flow percakapan tetap natural dan engaging
 
 Contoh gaya jawab:
 - Untuk pengembalian: "Tentu bisa! 🔄 Berikut syaratnya..."
 - Untuk ongkir: "Ongkir ke [kota] mulai dari Rp..."
 - Untuk garansi: "Klaim garansi mudah sekali! Berikut langkahnya..."
+- Untuk pertanyaan umum: "Pertanyaan yang bagus! 😊 Mari saya bantu jelaskan..."
+- Untuk rekomendasi: "Berdasarkan yang Kakak butuhkan, saya rekomendasikan..."
 
-Jawab dengan ringkas, informatif, dan tetap ramah!`,
+PENTING: Jawab semua pertanyaan sebaik mungkin, jangan batasi percakapan. Jadilah assistant yang helpful dan knowledgeable!`,
     quickQuestions: [
       "Apakah barang bisa dikembalikan?",
       "Berapa ongkir ke Bandung?",
@@ -57,7 +61,7 @@ Jawab dengan ringkas, informatif, dan tetap ramah!`,
     color: "bg-green-500",
     context: "Konsultan Bisnis",
     agentName: "Sales Assistant",
-    systemPrompt: `Anda adalah Sales Assistant dari perusahaan konsultan bisnis. Fokus pada kualifikasi lead dan offering solusi yang tepat.
+    systemPrompt: `Anda adalah Sales Assistant dari perusahaan konsultan bisnis yang ramah, persuasif, dan sangat fleksibel.
 
 PRODUK YANG DIJUAL:
 - Paket Starter: Rp 500.000/bulan (untuk 1-5 tim)
@@ -72,18 +76,23 @@ PROMO SAAT INI:
 Kode promo: EARLY30
 
 ATURAN JAWAB:
-1. Kualifikasi lead dulu (tanya kebutuhan, budget, timeline)
-2. Berikan rekomendasi yang sesuai dengan kebutuhan
-3. Jelaskan value proposition dengan jelas
-4. Gunakan emoji untuk membuat lebih engaging (🎯, 💰, 🎉, dll)
-5. Selalu tutup dengan call-to-action (mau sign up?)
+1. Jawab dengan ramah, persuasif, dan conversational seperti AI modern
+2. Kualifikasi lead dulu (tanya kebutuhan, budget, timeline) TAPI jangan terlalu kaku
+3. Berikan rekomendasi yang sesuai dengan kebutuhan
+4. Jelaskan value proposition dengan jelas dan menarik
+5. Gunakan emoji untuk membuat lebih engaging (🎯, 💰, 🎉, dll)
+6. Bisa jawab pertanyaan APA SAJA terkait: produk, harga, fitur, promo, kompetitor, testimoni, demo gratis, integrasi, keamanan, support, dll
+7. Selalu tutup dengan call-to-action yang natural
+8. Jaga flow percakapan tetap fun dan tidak terasa dipaksa
 
 Contoh gaya jawab:
 - "Sebelum saya rekomendasikan, boleh tahu sedikit tentang kebutuhan Kakak?"
 - "Untuk 10 orang, saya rekomendasikan Paket Business yang lebih hemat..."
 - "Wah pas banget! Ada promo spesial bulan ini..."
+- "Pertanyaan menarik! 😊 Mari saya jelaskan..."
+- "Banyak juga yang tanya hal ini, jadi Kakak tidak sendirian..."
 
-Jawab dengan persuasif tapi tetap professional!`,
+PENTING: Jawab semua pertanyaan dengan cara yang engaging, jangan batasi percakapan. Jadilah sales assistant yang helpful dan tidak annoying!`,
     quickQuestions: [
       "Saya butuh paket untuk 10 orang",
       "Rekomendasikan paket untuk saya",
@@ -98,7 +107,7 @@ Jawab dengan persuasif tapi tetap professional!`,
     color: "bg-purple-500",
     context: "Layanan Booking",
     agentName: "Booking Assistant",
-    systemPrompt: `Anda adalah Booking Assistant yang membantu user jadwalkan appointment. Bantu user jadwalkan meeting dengan efisien.
+    systemPrompt: `Anda adalah Booking Assistant yang membantu user jadwalkan appointment dengan cara yang ramah, efisien, dan sangat fleksibel.
 
 INFORMASI BOOKING:
 - Layanan: Konsultasi bisnis online via Zoom
@@ -123,18 +132,22 @@ JADWAL MINGGU INI (Contoh):
 - Minggu: Tutup
 
 ATURAN JAWAB:
-1. Cek ketersediaan jadwal dulu
-2. Jika tersedia, minta konfirmasi data (nama, email, no WA)
-3. Berikan detail booking yang jelas (tanggal, jam, durasi)
-4. Gunakan emoji untuk memperjelas (📅, ⏰, ✅, ❌)
-5. Selalu konfirmasi dan tawarkan bantuan lain
+1. Jawab dengan ramah, efisien, dan conversational seperti AI modern
+2. Cek ketersediaan jadwal dulu
+3. Jika tersedia, minta konfirmasi data (nama, email, no WA)
+4. Berikan detail booking yang jelas (tanggal, jam, durasi)
+5. Gunakan emoji untuk memperjelas (📅, ⏰, ✅, ❌)
+6. Bisa jawab pertanyaan APA SAJA terkait: booking, jadwal, reschedule, cancel, harga, layanan, konsultan, persiapan, pembayaran, timezone, dll
+7. Selalu konfirmasi dan tawarkan bantuan lain
+8. Jaga flow percakapan tetap jelas dan tidak membingungkan
 
 Contoh gaya jawab:
 - "Cek jadwal minggu ini: Senin 14:00 dan 16:00 tersedia ✅"
 - "Noted! Saya akan booking untuk Sabtu, 25 Februari 2025 jam 19:00"
-- "Mohon maaf, jadwal tersebut sudah penuh ❌"
+- "Mohon maaf, jadwal tersebut sudah penuh ❌ Tapi Kakak bisa pilih slot lain..."
+- "Pertanyaan bagus! 😊 Untuk timezone, kita akan sesuaikan dengan WIB..."
 
-Jawab dengan efisien dan jelas!`,
+PENTING: Jawab semua pertanyaan dengan jelas dan membantu, jangan batasi percakapan. Jadilah booking assistant yang efficient dan user-friendly!`,
     quickQuestions: [
       "Booking untuk Sabtu jam 7 malam",
       "Slot tersedia minggu ini?",
@@ -208,16 +221,25 @@ function generateFallbackResponse(userMessage: string, systemPrompt: string): st
   const isBooking = systemPrompt.includes("Booking Assistant") || systemPrompt.includes("Appointment");
 
   if (isCustomerSupport) {
-    if (lowerMessage.includes("kembali") || lowerMessage.includes("refund") || lowerMessage.includes("garansi")) {
+    if (lowerMessage.includes("kembali") || lowerMessage.includes("refund")) {
       return "Tentu bisa! 🔄 Kami memberikan garansi pengembalian 30 hari dengan syarat:\n\n1. Barang masih dalam kondisi original\n2. Ada receipt/struk pembelian\n3. Alasan pengembalian jelas\n\nUntuk proses lebih lanjut, silakan hubungi tim kami ya! 😊";
     }
-    if (lowerMessage.includes("ongkir") || lowerMessage.includes("kirim") || lowerMessage.includes("hapus")) {
-      return "Ongkos kirim bervariasi tergantung kota tujuan. Mulai dari Rp 12.000 untuk area dalam kota. \n\nEstimasi pengiriman 2-4 hari kerja. Ada yang bisa saya bantu lainnya? 📦";
-    }
-    if (lowerMessage.includes("klaim") || lowerMessage.includes("garansi")) {
+    if (lowerMessage.includes("garansi") || lowerMessage.includes("klaim")) {
       return "Klaim garansi mudah sekali! Berikut langkahnya:\n\n1️⃣ Buka menu 'Garansi' di profile\n2️⃣ Upload foto/video kendala\n3️⃣ Isi form klaim\n4️⃣ Tim kami akan review 1x24 jam\n5️⃣ Penggantian/refund diproses 3-5 hari kerja\n\nButuh bantuan langsung? Chat saya ya! 🛠️";
     }
-    return "Terima kasih telah menghubungi kami! 👋 Ada yang bisa saya bantu terkait pertanyaan Anda? Saya siap membantu dengan informasi produk, pengembalian, pengiriman, atau hal lainnya. 😊";
+    if (lowerMessage.includes("ongkir") || lowerMessage.includes("kirim") || lowerMessage.includes("pengiriman")) {
+      return "Ongkos kirim bervariasi tergantung kota tujuan. Mulai dari Rp 12.000 untuk area dalam kota.\n\nEstimasi pengiriman 2-4 hari kerja. Ada yang bisa saya bantu lainnya? 📦";
+    }
+    if (lowerMessage.includes("pembayaran") || lowerMessage.includes("bayar") || lowerMessage.includes("transfer") || lowerMessage.includes("qris") || lowerMessage.includes("cod")) {
+      return "Kami menyediakan beberapa metode pembayaran yang mudah: 💳\n\n✅ **Transfer Bank** - BCA, Mandiri, BNI, BRI\n✅ **QRIS** - Scan & bayar via GoPay, OVO, Dana, ShopeePay\n✅ **COD (Bayar di Tempat)** - Bayar tunai saat barang sampai\n\nSemua pembayaran aman dan terverifikasi! Ada yang bisa saya bantu lainnya? 😊";
+    }
+    if (lowerMessage.includes("produk") || lowerMessage.includes("stok") || lowerMessage.includes("barang") || lowerMessage.includes("tersedia")) {
+      return "Untuk informasi produk dan stok, kami punya berbagai kategori produk yang tersedia! 📦\n\nUntuk cek ketersediaan stok spesifik, Kakak bisa:\n• Sebutkan nama produk yang dicari\n• Saya bantu cek ketersediaannya\n• Atau kunjungi katalog produk kami\n\nAda produk tertentu yang Kakak cari? 😊";
+    }
+    if (lowerMessage.includes("promo") || lowerMessage.includes("diskon") || lowerMessage.includes("voucher") || lowerMessage.includes("sale")) {
+      return "Wah, Kakak lagi cari promo ya? 🎉\n\nPromo yang tersedia saat ini:\n• Free shipping min. pembelian Rp 100.000\n• Diskon hingga 50% untuk produk tertentu\n• Voucher new member 10%\n\nCek page 'Promo' di website kami untuk kode voucher aktif! Ada yang bisa saya bantu lainnya? 😊";
+    }
+    return "Terima kasih telah menghubungi kami! 👋 Pertanyaan yang menarik! 😊\n\nSaya siap membantu dengan informasi apapun terkait:\n• Produk dan stok\n• Pengembalian & garansi\n• Pengiriman & ongkir\n• Pembayaran\n• Promo & diskon\n• Atau hal lainnya\n\nApa yang ingin Kakak tahu lebih lanjut? 😊";
   }
 
   if (isSales) {
@@ -227,7 +249,22 @@ function generateFallbackResponse(userMessage: string, systemPrompt: string): st
     if (lowerMessage.includes("promo") || lowerMessage.includes("diskon") || lowerMessage.includes("promo apa")) {
       return "Wah pas banget! 🎉 Ada promo spesial bulan ini:\n\n**PROMO EARLY BIRD**\n• Diskon 30% untuk pembayaran annual\n• Free onboarding senilai Rp 2.000.000\n• Bonus 1 bulan ekstra\n\nKode promo: **EARLY30**\n\nMau saya bantu sign up sekarang sebelum kehabisan?";
     }
-    return "Terima kasih sudah menghubungi kami! 🎯 Boleh cerita sedikit tentang kebutuhan bisnis Anda? Dari situ saya bisa kasih rekomendasi paket yang paling cocok dan efisien untuk tim Anda. 😊";
+    if (lowerMessage.includes("fitur") || lowerMessage.includes("kegunaan") || lowerMessage.includes("bisa apa")) {
+      return "Fitur yang tersedia di semua paket: 🚀\n\n• Project Management - Kelola task & deadline\n• Time Tracking - Monitor jam kerja tim\n• Reporting - Laporan performa otomatis\n• Team Collaboration - Chat & share file\n\nBeda tiap paket di jumlah user dan limit fitur. Mau detail lebih lanjut? 😊";
+    }
+    if (lowerMessage.includes("integrasi") || lowerMessage.includes("connect") || lowerMessage.includes("hubungkan")) {
+      return "Kami support berbagai integrasi populer! 🔗\n\n• Slack, Microsoft Teams\n• Google Workspace, Office 365\n• Jira, GitHub, GitLab\n• Dan banyak lagi!\n\nIntegrasi mudah, setup dalam hitungan menit. Ada tool spesifik yang Kakak butuh? 😊";
+    }
+    if (lowerMessage.includes("keamanan") || lowerMessage.includes("security") || lowerMessage.includes("data")) {
+      return "Keamanan data adalah prioritas kami! 🔒\n\n• Data encryption (AES-256)\n• ISO 27001 certified\n• Regular security audits\n• GDPR compliant\n• Backup harian otomatis\n\nData Kakak aman bersama kami. Ada pertanyaan lain seputar security? 😊";
+    }
+    if (lowerMessage.includes("support") || lowerMessage.includes("bantuan") || lowerMessage.includes("hubungi")) {
+      return "Tim support kami siap membantu! 💪\n\n• Live chat: Senin-Jumat 08:00-17:00\n• Email: support@example.com\n• Response time: < 2 jam (business day)\n• Knowledge base 24/7\n\nKakak butuh bantuan dengan apa sekarang? 😊";
+    }
+    if (lowerMessage.includes("kompetitor") || lowerMessage.includes("bandingkan") || lowerMessage.includes("bedanya")) {
+      return "Pertanyaan bagus! 😊 Keunggulan kami dibanding kompetitor:\n\n✨ Lebih mudah digunakan - learn in minutes\n✨ Harga lebih terjangkau - mulai Rp 500k/bulan\n✨ Support lokal - bahasa Indonesia, response cepat\n✨ Customizable - sesuaikan dengan workflow Kakak\n\nMau saya jelaskan lebih detail atau ada concern khusus? 😊";
+    }
+    return "Terima kasih sudah menghubungi kami! 🎯 Pertanyaan yang bagus! 😊\n\nSaya bisa bantu Kakak dengan:\n• Info lengkap paket dan harga\n• Fitur-fitur yang tersedia\n• Promo dan diskon menarik\n• Perbandingan antar paket\n• Testimoni pelanggan\n• Demo gratis\n• Atau pertanyaan lain seputar bisnis Kakak\n\nApa yang ingin Kakak tahu lebih lanjut? 😊";
   }
 
   if (isBooking) {
@@ -237,11 +274,26 @@ function generateFallbackResponse(userMessage: string, systemPrompt: string): st
     if (lowerMessage.includes("reschedule") || lowerMessage.includes("ubah") || lowerMessage.includes("ganti")) {
       return "Tentu bisa reschedule! 🔄\n\n• Gratis: H-3 sebelum jadwal\n• H-1 s/d Hari H: Dikenakan fee 25%\n\nUntuk reschedule, silakan infokan jadwal lama dan jadwal baru yang diinginkan. Saya bantu proses! ✅";
     }
-    return "Terima kasih telah menghubungi kami! 📅 Saya siap membantu Anda jadwalkan appointment. Silakan pilih tanggal dan jam yang Anda inginkan, atau tanya slot tersedia minggu ini. 😊";
+    if (lowerMessage.includes("harga") || lowerMessage.includes("biaya") || lowerMessage.includes("bayar")) {
+      return "Info harga konsultasi: 💰\n\n**Rp 500.000 per sesi** (60 menit)\n\nSudah termasuk:\n• Konsultasi dengan expert berpengalaman\n• Action plan yang bisa langsung diimplementasi\n• Recording sesi (jika butuh)\n• Follow-up via email\n\nPembayaran bisa via transfer atau QRIS. Mau booking sekarang? 😊";
+    }
+    if (lowerMessage.includes("cancel") || lowerMessage.includes("batal")) {
+      return "Untuk pembatalan booking: ❌\n\n• Full refund: cancel H-3 sebelum jadwal\n• 50% refund: cancel H-1\n• No refund: cancel di hari H\n\nUntuk cancel, silakan hubungi tim kami dengan sebutkan:\n• Nama pemesan\n• Tanggal & jam booking\n\nAda yang bisa saya bantu lainnya? 😊";
+    }
+    if (lowerMessage.includes("konsultan") || lowerMessage.includes("siapa") || lowerMessage.includes("coach")) {
+      return "Kami punya team konsultan berpengalaman! 👨‍💼👩‍💼\n\n• Expert di bidang business strategy, operations, marketing\n• Pengalaman 10+ tahun di industri\n• Sertifikasi internasional\n• Track record membantu 100+ bisnis\n\nKakak bisa request spesifik atau kami match-kan berdasarkan kebutuhan. Ada preferensi khusus? 😊";
+    }
+    if (lowerMessage.includes("persiapan") || lowerMessage.includes("perlu apa") || lowerMessage.includes("bawa apa")) {
+      return "Persiapan sebelum sesi konsultasi: 📝\n\n1. **Tentukan topik** - apa yang ingin didiskusikan\n2. **Kumpulkan data** - revenue, challenges, goals\n3. **Siapkan pertanyaan** - list hal yang ingin ditanyakan\n4. **Test device** - pastikan Zoom/Google Meet work\n5. **Join 5 min early** - untuk setup audio/video\n\nSemakin siap Kakak, semakin maksimal hasilnya! Ada pertanyaan lain? 😊";
+    }
+    if (lowerMessage.includes("timezone") || lowerMessage.includes("jam") || lowerMessage.includes("zona waktu")) {
+      return "Jadwal kami dalam WIB (GMT+7) 🕐\n\nJika Kakak di luar zona WIB:\n• WITA = +1 jam dari WIB\n• WIT = +2 jam dari WIB\n• Singapore/Malaysia = sama dengan WIB\n\nAtau bilang saja lokasi Kakak, saya bantu hitung! 😊";
+    }
+    return "Terima kasih telah menghubungi kami! 📅 Saya siap membantu Kakak jadwalkan appointment!\n\nYang bisa saya bantu:\n• Cek ketersediaan jadwal\n• Booking appointment baru\n• Reschedule atau cancel\n• Info harga dan pembayaran\n• Persiapan sebelum sesi\n• Atau pertanyaan lain seputar booking\n\nApa yang ingin Kakak tanyakan atau lakukan? 😊";
   }
 
-  // Generic fallback
-  return "Terima kasih untuk pesan Anda! 👋 Saya sedang memproses pertanyaan Anda. Bisa ulangi atau tanya dengan cara lain? Senang membantu Anda! 😊";
+  // Generic fallback - more conversational
+  return "Terima kasih untuk pesan Kakak! 👋 Pertanyaan yang menarik! 😊\n\nMaaf ya, saya sedang mengalami gangguan teknis sementara. Tapi Kakak bisa:\n\n• Coba ulangi pertanyaan\n• Tanya dengan cara lain\n• Atau hubungi tim kami langsung\n\nSenang sekali bisa membantu Kakak! Apa ada yang lain bisa saya bantu? 😊";
 }
 
 export function InteractiveDemo({ type = "full", activeScenario: propActiveScenario, channel: propChannel, onCtaClick }: InteractiveDemoProps) {
@@ -320,7 +372,13 @@ export function InteractiveDemo({ type = "full", activeScenario: propActiveScena
   };
 
   const handleQuickQuestion = (question: string) => {
-    handleSend(question);
+    // Populate input field instead of auto-sending
+    setInputValue(question);
+    // Focus on the input field
+    const inputElement = document.querySelector('input[type="text"]') as HTMLInputElement;
+    if (inputElement) {
+      inputElement.focus();
+    }
   };
 
   const handleReset = () => {
@@ -447,7 +505,7 @@ export function InteractiveDemo({ type = "full", activeScenario: propActiveScena
       {/* Quick Questions */}
       {type === "mini" && conversationCount < 2 && (
         <div className="bg-gray-50 px-4 py-3 border-t border-gray-200">
-          <p className="text-xs text-gray-500 mb-2">Pertanyaan cepat:</p>
+          <p className="text-xs text-gray-500 mb-2">Pertanyaan populer:</p>
           <div className="flex flex-wrap gap-2">
             {currentScenario.quickQuestions.slice(0, 2).map((q, idx) => (
               <button
@@ -470,7 +528,7 @@ export function InteractiveDemo({ type = "full", activeScenario: propActiveScena
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
-            placeholder="Ketik pesan apa saja..."
+            placeholder="Ketik pertanyaan apa saja..."
             className="flex-1 px-4 py-2 bg-gray-100 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <button
@@ -570,7 +628,8 @@ export function FullInteractiveDemo({ onCtaClick }: { onCtaClick?: () => void })
 
             {/* Quick Questions */}
             <div className="border-t border-gray-200 pt-4">
-              <h3 className="text-sm font-semibold text-gray-700 mb-3">Pertanyaan Populer</h3>
+              <h3 className="text-sm font-semibold text-gray-700 mb-2">Pertanyaan Populer</h3>
+              <p className="text-xs text-gray-500 mb-3">Klik untuk mengisi, lalu edit atau kirim langsung</p>
               <div className="space-y-2">
                 {demoScenarios[activeScenario].quickQuestions.map((q, idx) => (
                   <button
@@ -579,10 +638,11 @@ export function FullInteractiveDemo({ onCtaClick }: { onCtaClick?: () => void })
                       const demoInput = document.querySelector('input[type="text"]') as HTMLInputElement;
                       if (demoInput) {
                         demoInput.value = q;
-                        demoInput.dispatchEvent(new Event('input'));
+                        demoInput.dispatchEvent(new Event('input', { bubbles: true }));
+                        demoInput.focus();
                       }
                     }}
-                    className="w-full text-left px-3 py-2 bg-gray-50 hover:bg-gray-100 rounded-lg text-sm text-gray-700 transition-colors"
+                    className="w-full text-left px-3 py-2 bg-gray-50 hover:bg-blue-50 hover:border-blue-300 border border-transparent rounded-lg text-sm text-gray-700 transition-all"
                   >
                     💬 {q}
                   </button>
