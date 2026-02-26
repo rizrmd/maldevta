@@ -11,10 +11,8 @@ import {
   Globe,
   Smartphone,
   BarChart,
-  Users,
   Zap,
   Database,
-  Code,
   Calendar,
   ShoppingCart,
   HeadphonesIcon,
@@ -121,14 +119,14 @@ export default function LandingPage() {
     }
   ];
 
-  // Extension examples
+  // Extension examples - based on actual implemented extensions
   const extensions = [
-    { name: "Webhook / API Action", icon: <Code />, desc: "Trigger ke external system" },
-    { name: "Google Sheets", icon: <FileText />, desc: "Simpan data ke spreadsheet" },
-    { name: "CRM Integration", icon: <Users />, desc: "Sync ke CRM system" },
-    { name: "Booking System", icon: <Calendar />, desc: "Jadwalkan meeting otomatis" },
-    { name: "E-commerce", icon: <ShoppingCart />, desc: "Cek status pesanan" },
-    { name: "Custom Tool", icon: <Puzzle />, desc: "Buat tool sendiri" }
+    { name: "PDF & Documents", icon: <FileText />, desc: "Extract text dari PDF, Word, Excel, PPT" },
+    { name: "PostgreSQL", icon: <Database />, desc: "Query database dengan secure storage" },
+    { name: "AI Vision", icon: <Bot />, desc: "Analisis gambar dengan OpenAI Vision" },
+    { name: "Web Search", icon: <Globe />, desc: "Search via Brave Search API" },
+    { name: "Chat Tools", icon: <MessageSquare />, desc: "Logger, filter & response enhancer" },
+    { name: "Extension Creator", icon: <Puzzle />, desc: "Buat extension dengan natural language" }
   ];
 
   // Use Cases
@@ -177,16 +175,16 @@ export default function LandingPage() {
     }
   ];
 
-  // Integrations
+  // Integrations - based on actual implemented integrations
   const integrations = [
     { name: "WhatsApp", icon: "📱", color: "bg-green-500" },
     { name: "Website Widget", icon: "💬", color: "bg-blue-500" },
-    { name: "WordPress", icon: "📝", color: "bg-indigo-500" },
-    { name: "Webflow", icon: "🌐", color: "bg-blue-600" },
-    { name: "Shopify", icon: "🛒", color: "bg-green-600" },
-    { name: "Webhook", icon: "🔗", color: "bg-purple-500" },
-    { name: "Zapier", icon: "⚡", color: "bg-orange-500" },
-    { name: "Make", icon: "🔄", color: "bg-purple-600" }
+    { name: "PostgreSQL", icon: "🐘", color: "bg-indigo-500" },
+    { name: "ClickHouse", icon: "🏠", color: "bg-orange-500" },
+    { name: "Brave Search", icon: "🔍", color: "bg-cyan-500" },
+    { name: "OpenAI Vision", icon: "👁️", color: "bg-emerald-500" },
+    { name: "ECharts", icon: "📊", color: "bg-red-500" },
+    { name: "Mermaid", icon: "🔀", color: "bg-purple-500" }
   ];
 
   // FAQ items
