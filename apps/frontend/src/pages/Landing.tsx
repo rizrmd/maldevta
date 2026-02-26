@@ -6,38 +6,34 @@ import {
   ArrowRight,
   Check,
   Play,
-  Star,
-  MessageSquare,
-  FileText,
-  Zap,
-  Shield,
-  Puzzle,
-  Globe,
-  Users,
-  BarChart,
-  Code,
-  Smartphone,
-  Database,
-  Sparkles,
-  Target,
-  Brain,
-  Eye,
-  Layers,
   Bot,
-  ChevronLeft,
-  ChevronRight,
-  Lock,
-  Globe2,
-  Settings,
-  History,
-  Image as ImageIcon
+  MessageSquare,
+  Globe,
+  Smartphone,
+  BarChart,
+  Users,
+  Zap,
+  Database,
+  Code,
+  Calendar,
+  ShoppingCart,
+  HeadphonesIcon,
+  TrendingUp,
+  FileText,
+  Puzzle,
+  ChevronDown,
+  ChevronUp,
+  Star,
+  Building2,
+  CheckCircle,
 } from "lucide-react";
 
 export default function LandingPage() {
   const [, setLocation] = useLocation();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [currentFeatureSlide, setCurrentFeatureSlide] = useState(0);
+  const [activeUseCase, setActiveUseCase] = useState(0);
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -47,631 +43,494 @@ export default function LandingPage() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Feature slides with detailed information and real screenshots
-  const featureSlides = [
-    {
-      id: 1,
-      icon: <Bot className="w-12 h-12" />,
-      title: "AI-Powered Chat",
-      subtitle: "Intelligent Conversations",
-      description: "Experience context-aware AI conversations with multi-model LLM support. Our chat system understands context, remembers previous discussions, and provides intelligent, personalized responses.",
-      image: "/screenshots/chat.png",
-      imageFallback: "🤖",
-      features: [
-        { icon: <Zap className="w-5 h-5" />, text: "Real-time streaming responses", desc: "Instant AI responses as they're generated" },
-        { icon: <Brain className="w-5 h-5" />, text: "Context awareness", desc: "Remembers conversation history and context" },
-        { icon: <Globe2 className="w-5 h-5" />, text: "Multi-language support", desc: "Communicate in 100+ languages" },
-        { icon: <BarChart className="w-5 h-5" />, text: "Token tracking", desc: "Monitor usage and optimize costs" }
-      ],
-      stats: [
-        { value: "0.8s", label: "Avg Response Time" },
-        { value: "99.5%", label: "Accuracy Rate" },
-        { value: "100+", label: "Languages Supported" }
-      ],
-      gradient: "from-blue-400 to-blue-600"
-    },
-    {
-      id: 2,
-      icon: <FileText className="w-12 h-12" />,
-      title: "Smart File Analysis",
-      subtitle: "AI-Powered Document Processing",
-      description: "Upload and analyze documents, images, and data files with our advanced AI. Extract text, analyze content, and get intelligent insights from your files.",
-      image: "/screenshots/Files.png",
-      imageFallback: "📄",
-      features: [
-        { icon: <ImageIcon className="w-5 h-5" />, text: "AI Vision analysis", desc: "Extract and analyze images with AI" },
-        { icon: <FileText className="w-5 h-5" />, text: "Multi-format support", desc: "PDF, Excel, Word, PowerPoint, and more" },
-        { icon: <Zap className="w-5 h-5" />, text: "Instant processing", desc: "Fast analysis with smart caching" },
-        { icon: <Database className="w-5 h-5" />, text: "Batch processing", desc: "Analyze multiple files at once" }
-      ],
-      stats: [
-        { value: "50+", label: "File Formats" },
-        { value: "<2s", label: "Processing Time" },
-        { value: "99%", label: "Extraction Accuracy" }
-      ],
-      gradient: "from-blue-500 to-indigo-600"
-    },
-    {
-      id: 3,
-      icon: <Puzzle className="w-12 h-12" />,
-      title: "Extensions System",
-      subtitle: "Modular AI Capabilities",
-      description: "Enhance your AI with 17+ built-in extensions. From databases to web search, visualization to chat enhancement - customize your AI experience.",
-      image: "/screenshots/extensions.png",
-      imageFallback: "🧩",
-      features: [
-        { icon: <Database className="w-5 h-5" />, text: "Database connectors", desc: "PostgreSQL, ClickHouse, Trino support" },
-        { icon: <Globe className="w-5 h-5" />, text: "Web search", desc: "Integrated Brave Search capability" },
-        { icon: <BarChart className="w-5 h-5" />, text: "Visualization tools", desc: "Charts, tables, and diagrams" },
-        { icon: <Sparkles className="w-5 h-5" />, text: "Custom extensions", desc: "Create extensions with natural language" }
-      ],
-      stats: [
-        { value: "17+", label: "Built-in Extensions" },
-        { value: "6", label: "Categories" },
-        { value: "∞", label: "Custom Possibilities" }
-      ],
-      gradient: "from-violet-400 to-purple-600"
-    },
-    {
-      id: 4,
-      icon: <Smartphone className="w-12 h-12" />,
-      title: "WhatsApp Integration",
-      subtitle: "Connect with Your Customers",
-      description: "Integrate WhatsApp messaging directly into your projects. Each project can have its own WhatsApp number with QR code authentication and real-time messaging.",
-      image: "/screenshots/whatsapp.png",
-      imageFallback: "📱",
-      features: [
-        { icon: <QrCode className="w-5 h-5" />, text: "QR authentication", desc: "Easy connection with QR code scan" },
-        { icon: <Users className="w-5 h-5" />, text: "Per-project numbers", desc: "Dedicated WhatsApp per project" },
-        { icon: <Zap className="w-5 h-5" />, text: "Real-time messaging", desc: "Instant message delivery" },
-        { icon: <History className="w-5 h-5" />, text: "Message history", desc: "Complete conversation tracking" }
-      ],
-      stats: [
-        { value: "1-click", label: "Setup Time" },
-        { value: "<1s", label: "Message Delivery" },
-        { value: "100%", label: "Uptime" }
-      ],
-      gradient: "from-emerald-500 to-emerald-600"
-    },
-    {
-      id: 5,
-      icon: <Users className="w-12 h-12" />,
-      title: "Team Collaboration",
-      subtitle: "Multi-Tenant Architecture",
-      description: "Built for teams with complete multi-tenant support. Role-based access control, shared projects, and comprehensive collaboration features.",
-      image: "/screenshots/projects.png",
-      imageFallback: "👥",
-      features: [
-        { icon: <Shield className="w-5 h-5" />, text: "Role-based access", desc: "System, Admin, User roles" },
-        { icon: <Layers className="w-5 h-5" />, text: "Multi-tenant", desc: "Complete data isolation" },
-        { icon: <Users className="w-5 h-5" />, text: "Shared projects", desc: "Collaborate on AI conversations" },
-        { icon: <History className="w-5 h-5" />, text: "Chat history", desc: "Access all past conversations" }
-      ],
-      stats: [
-        { value: "3", label: "User Roles" },
-        { value: "∞", label: "Tenants Support" },
-        { value: "100%", label: "Data Isolation" }
-      ],
-      gradient: "from-indigo-500 to-blue-600"
-    },
-    {
-      id: 6,
-      icon: <Code className="w-12 h-12" />,
-      title: "Developer API",
-      subtitle: "Full Programmatic Access",
-      description: "Comprehensive REST API with complete documentation. Embed chat in your website, create custom integrations, and build powerful AI-powered applications.",
-      image: "/screenshots/developer.png",
-      imageFallback: "⚡",
-      features: [
-        { icon: <Code className="w-5 h-5" />, text: "REST API", desc: "Full API access to all features" },
-        { icon: <Globe2 className="w-5 h-5" />, text: "Embed support", desc: "Embed chat in any website" },
-        { icon: <Settings className="w-5 h-5" />, text: "Custom CSS", desc: "Fully customizable appearance" },
-        { icon: <Lock className="w-5 h-5" />, text: "Webhooks", desc: "Real-time event notifications" }
-      ],
-      stats: [
-        { value: "80+", label: "API Endpoints" },
-        { value: "SDK", label: "Multiple Languages" },
-        { value: "24/7", label: "API Access" }
-      ],
-      gradient: "from-indigo-500 to-blue-600"
-    }
-  ];
-
-  const coreFeatures = [
-    {
-      icon: <Bot className="w-7 h-7" />,
-      title: "AI-Powered Chat",
-      description: "Context-aware conversations with multi-model LLM support, streaming responses, and intelligent memory.",
-      highlights: ["Real-time streaming", "Context awareness", "Multi-language support", "Token tracking"],
-      color: "cyan"
-    },
-    {
-      icon: <FileText className="w-7 h-7" />,
-      title: "Smart File Analysis",
-      description: "Upload and analyze documents, images, and data files with AI-powered vision and text extraction.",
-      highlights: ["PDF, Excel, Word, PPT", "AI Vision analysis", "Drag & drop upload", "Instant preview"],
-      color: "blue"
-    },
-    {
-      icon: <Puzzle className="w-7 h-7" />,
-      title: "Extensions System",
-      description: "17+ built-in extensions for databases, documents, visualization, web search, and more.",
-      highlights: ["17+ extensions", "Enable per project", "Custom extensions", "Debug mode"],
-      color: "violet"
-    },
-    {
-      icon: <Smartphone className="w-7 h-7" />,
-      title: "WhatsApp Integration",
-      description: "Connect WhatsApp to any project with QR code authentication and real-time messaging.",
-      highlights: ["Per-project numbers", "QR authentication", "Real-time status", "Programmatic send"],
-      color: "green"
-    },
-    {
-      icon: <Users className="w-7 h-7" />,
-      title: "Team Collaboration",
-      description: "Multi-tenant architecture with role-based access, shared projects, and conversation history.",
-      highlights: ["Multi-tenant", "Role-based access", "Shared projects", "Chat history"],
-      color: "indigo"
-    },
-    {
-      icon: <Code className="w-7 h-7" />,
-      title: "Developer API",
-      description: "Comprehensive REST API with embed support, webhooks, and full customization options.",
-      highlights: ["REST API", "Embed support", "Custom CSS", "Webhooks"],
-      color: "purple"
-    }
-  ];
-
-  const extensionCategories = [
-    {
-      name: "Documents",
-      icon: <FileText className="w-6 h-6" />,
-      extensions: ["PDF Reader", "Excel Analyzer", "Word Processor", "PowerPoint Viewer", "AI Vision"],
-      color: "cyan"
-    },
-    {
-      name: "Visualization",
-      icon: <BarChart className="w-6 h-6" />,
-      extensions: ["Charts", "Tables", "Mermaid Diagrams"],
-      color: "blue"
-    },
-    {
-      name: "Database",
-      icon: <Database className="w-6 h-6" />,
-      extensions: ["PostgreSQL", "ClickHouse", "Trino"],
-      color: "violet"
-    },
-    {
-      name: "Web",
-      icon: <Globe className="w-6 h-6" />,
-      extensions: ["Brave Search", "Web Scraper"],
-      color: "indigo"
-    },
-    {
-      name: "Chat",
-      icon: <MessageSquare className="w-6 h-6" />,
-      extensions: ["Chat Logger", "Profanity Filter", "Response Enhancer"],
-      color: "purple"
-    },
-    {
-      name: "Utilities",
-      icon: <Sparkles className="w-6 h-6" />,
-      extensions: ["Extension Creator", "Peek View", "Context Manager"],
-      color: "pink"
-    }
-  ];
-
-  const integrations = [
-    { name: "Slack", icon: "💬", desc: "Team communication" },
-    { name: "WhatsApp", icon: "📱", desc: "Business messaging" },
-    { name: "Discord", icon: "🎮", desc: "Community chat" },
-    { name: "Telegram", icon: "✈️", desc: "Instant messaging" },
-    { name: "Email", icon: "📧", desc: "Email integration" },
-    { name: "Webhooks", icon: "🔗", desc: "Real-time updates" },
-    { name: "REST API", icon: "⚡", desc: "Full API access" },
-    { name: "Zapier", icon: "🔄", desc: "Automation" }
-  ];
-
-  const capabilities = [
-    {
-      icon: <Target className="w-8 h-8" />,
-      title: "Accuracy",
-      description: "99.5% response accuracy with context-aware understanding and verified factual responses.",
-      metrics: ["99.5% accuracy", "<0.8s response time", "3 retry attempts", "Smart caching"],
-      color: "cyan"
-    },
-    {
-      icon: <Brain className="w-8 h-8" />,
-      title: "Adaptability",
-      description: "Personalized AI that learns from your team's communication style and business context.",
-      metrics: ["Custom training", "Multi-language", "Domain knowledge", "Style learning"],
-      color: "blue"
-    },
-    {
-      icon: <Eye className="w-8 h-8" />,
-      title: "Transparency",
-      description: "Full visibility with explainable AI decisions, audit logs, and privacy-first approach.",
-      metrics: ["Explainable AI", "Audit logs", "SOC 2 certified", "GDPR compliant"],
-      color: "violet"
-    }
-  ];
-
-  const testimonials = [
-    {
-      name: "Sarah Chen",
-      role: "CEO at TechCorp",
-      content: "Maldevta transformed our customer support. The WhatsApp integration alone reduced our response time by 60%.",
-      rating: 5,
-      avatar: "S"
-    },
-    {
-      name: "Michael Brown",
-      role: "CTO at StartupXYZ",
-      content: "The extensions system is incredible. We built custom database integrations in minutes, not weeks.",
-      rating: 5,
-      avatar: "M"
-    },
-    {
-      name: "Emily Davis",
-      role: "Product Manager",
-      content: "Multi-tenant architecture is exactly what we needed. Managing multiple teams has never been easier.",
-      rating: 5,
-      avatar: "E"
-    }
-  ];
-
-  const colorClasses = {
-    cyan: {
-      bg: "bg-cyan-500",
-      bgLight: "bg-cyan-50",
-      bgDark: "bg-cyan-950",
-      text: "text-cyan-600",
-      textLight: "text-cyan-400",
-      gradient: "from-cyan-400 to-cyan-600",
-      gradientLight: "from-cyan-50 to-blue-50",
-      border: "border-cyan-200",
-      shadow: "shadow-cyan-500/20"
-    },
-    blue: {
-      bg: "bg-blue-500",
-      bgLight: "bg-blue-50",
-      bgDark: "bg-blue-950",
-      text: "text-blue-600",
-      textLight: "text-blue-400",
-      gradient: "from-blue-400 to-blue-600",
-      gradientLight: "from-blue-50 to-indigo-50",
-      border: "border-blue-200",
-      shadow: "shadow-blue-500/20"
-    },
-    violet: {
-      bg: "bg-violet-500",
-      bgLight: "bg-violet-50",
-      bgDark: "bg-violet-950",
-      text: "text-violet-600",
-      textLight: "text-violet-400",
-      gradient: "from-violet-400 to-violet-600",
-      gradientLight: "from-violet-50 to-purple-50",
-      border: "border-violet-200",
-      shadow: "shadow-violet-500/20"
-    },
-    green: {
-      bg: "bg-emerald-500",
-      bgLight: "bg-emerald-50",
-      bgDark: "bg-emerald-950",
-      text: "text-emerald-600",
-      textLight: "text-emerald-400",
-      gradient: "from-emerald-400 to-emerald-600",
-      gradientLight: "from-emerald-50 to-green-50",
-      border: "border-emerald-200",
-      shadow: "shadow-emerald-500/20"
-    },
-    indigo: {
-      bg: "bg-indigo-500",
-      bgLight: "bg-indigo-50",
-      bgDark: "bg-indigo-950",
-      text: "text-indigo-600",
-      textLight: "text-indigo-400",
-      gradient: "from-indigo-400 to-indigo-600",
-      gradientLight: "from-indigo-50 to-blue-50",
-      border: "border-indigo-200",
-      shadow: "shadow-indigo-500/20"
-    },
-    purple: {
-      bg: "bg-purple-500",
-      bgLight: "bg-purple-50",
-      bgDark: "bg-purple-950",
-      text: "text-purple-600",
-      textLight: "text-purple-400",
-      gradient: "from-purple-400 to-purple-600",
-      gradientLight: "from-purple-50 to-pink-50",
-      border: "border-purple-200",
-      shadow: "shadow-purple-500/20"
-    },
-    pink: {
-      bg: "bg-pink-500",
-      bgLight: "bg-pink-50",
-      bgDark: "bg-pink-950",
-      text: "text-pink-600",
-      textLight: "text-pink-400",
-      gradient: "from-pink-400 to-pink-600",
-      gradientLight: "from-pink-50 to-rose-50",
-      border: "border-pink-200",
-      shadow: "shadow-pink-500/20"
+  const scrollToSection = (id: string) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth" });
+      setIsMobileMenuOpen(false);
     }
   };
 
-  // Neural network nodes for background
-  const neuralNodes = [
-    { x: 10, y: 20 }, { x: 25, y: 15 }, { x: 40, y: 25 },
-    { x: 15, y: 45 }, { x: 30, y: 40 }, { x: 45, y: 50 },
-    { x: 20, y: 70 }, { x: 35, y: 65 }, { x: 50, y: 75 },
-    { x: 60, y: 30 }, { x: 75, y: 20 }, { x: 85, y: 35 },
-    { x: 70, y: 55 }, { x: 80, y: 60 }, { x: 90, y: 50 }
+  // Core Features
+  const coreFeatures = [
+    {
+      icon: <Bot className="w-8 h-8" />,
+      title: "AI Agent Builder",
+      description: "Buat agent sesuai kebutuhan: gaya bicara, aturan, dan tujuan bisnis Anda.",
+      highlights: ["Custom personality", "Aturan bisnis", "Multi-language", "Context aware"],
+      image: "/screenshots/chat.png",
+      gradient: "from-cyan-400 to-blue-600"
+    },
+    {
+      icon: <Globe className="w-8 h-8" />,
+      title: "Embed ke Website",
+      description: "Widget siap pakai, bisa custom tampilan sesuai brand Anda.",
+      highlights: ["One-line embed", "Custom CSS", "Branded design", "Mobile responsive"],
+      image: "/screenshots/embed.png",
+      gradient: "from-blue-400 to-indigo-600"
+    },
+    {
+      icon: <Smartphone className="w-8 h-8" />,
+      title: "Koneksi WhatsApp",
+      description: "Agent menjawab via WhatsApp untuk CS & sales dengan resmi.",
+      highlights: ["Official API", "QR connection", "Auto-reply", "Real-time sync"],
+      image: "/screenshots/whatsapp.png",
+      gradient: "from-emerald-400 to-emerald-600"
+    },
+    {
+      icon: <Database className="w-8 h-8" />,
+      title: "Context & Knowledge",
+      description: "Tambahkan konteks: SOP, FAQ, dokumen, URL, dan instruksi.",
+      highlights: ["SOP upload", "FAQ training", "URL scraping", "Document search"],
+      image: "/screenshots/Files.png",
+      gradient: "from-violet-400 to-purple-600"
+    },
+    {
+      icon: <BarChart className="w-8 h-8" />,
+      title: "Analitik & Handover",
+      description: "Riwayat chat, insight, dan alihkan ke tim manusia bila perlu.",
+      highlights: ["Chat history", "Analytics dashboard", "Human handover", "Performance metrics"],
+      image: "/screenshots/history.png",
+      gradient: "from-indigo-400 to-blue-600"
+    }
   ];
 
+  // Problem → Solution cards
+  const problems = [
+    {
+      problem: "CS kewalahan, respon lambat",
+      solution: "Jawaban otomatis 24/7",
+      description: "AI agent merespon pertanyaan pelanggan dalam hitungan detik, kapan saja.",
+      icon: <Zap className="w-6 h-6" />
+    },
+    {
+      problem: "Leads tidak ter-follow up",
+      solution: "Tangkap leads & follow-up cepat",
+      description: "Agent mengumpulkan informasi leads dan menjadwalkan follow-up otomatis.",
+      icon: <TrendingUp className="w-6 h-6" />
+    },
+    {
+      problem: "Jawaban tidak konsisten",
+      solution: "Konsisten sesuai SOP & knowledge",
+      description: "Semua jawaban mengikuti SOP yang sama, tanpa inkonsistensi antar tim.",
+      icon: <CheckCircle className="w-6 h-6" />
+    }
+  ];
+
+  // Extension examples
+  const extensions = [
+    { name: "Webhook / API Action", icon: <Code />, desc: "Trigger ke external system" },
+    { name: "Google Sheets", icon: <FileText />, desc: "Simpan data ke spreadsheet" },
+    { name: "CRM Integration", icon: <Users />, desc: "Sync ke CRM system" },
+    { name: "Booking System", icon: <Calendar />, desc: "Jadwalkan meeting otomatis" },
+    { name: "E-commerce", icon: <ShoppingCart />, desc: "Cek status pesanan" },
+    { name: "Custom Tool", icon: <Puzzle />, desc: "Buat tool sendiri" }
+  ];
+
+  // Use Cases
+  const useCases = [
+    {
+      icon: <HeadphonesIcon className="w-8 h-8" />,
+      title: "Customer Support",
+      problem: "Tim CS kewalahan handle pertanyaan berulang",
+      solution: "AI agent jawab FAQ 24/7, complex case handover ke tim",
+      result: "80% pertanyaan terotomasi"
+    },
+    {
+      icon: <TrendingUp className="w-8 h-8" />,
+      title: "Sales & Lead Generation",
+      problem: "Leads hilang karena respon lambat",
+      solution: "Agent kualifikasi leads dan jadwalkan meeting",
+      result: "3x lebih banyak follow-up"
+    },
+    {
+      icon: <Calendar className="w-8 h-8" />,
+      title: "Booking & Reservasi",
+      problem: "Proses booking manual dan lambat",
+      solution: "AI agent handle booking dan kirim konfirmasi otomatis",
+      result: "90% booking tanpa tim"
+    },
+    {
+      icon: <ShoppingCart className="w-8 h-8" />,
+      title: "E-commerce",
+      problem: "Customer tanya status order terus menerus",
+      solution: "Agent cek status dan update real-time",
+      result: "60% reduction di CS inquiry"
+    },
+    {
+      icon: <Building2 className="w-8 h-8" />,
+      title: "Internal Knowledge Assistant",
+      problem: "Employee susah cari informasi internal",
+      solution: "AI agent jawab berdasarkan dokumen perusahaan",
+      result: "2x lebih produktif"
+    },
+    {
+      icon: <MessageSquare className="w-8 h-8" />,
+      title: "WhatsApp Business",
+      problem: "Pesan WA menumpuk tidak terjawab",
+      solution: "Auto-reply dengan context knowledge base",
+      result: "24/7 respons WhatsApp"
+    }
+  ];
+
+  // Integrations
+  const integrations = [
+    { name: "WhatsApp", icon: "📱", color: "bg-green-500" },
+    { name: "Website Widget", icon: "💬", color: "bg-blue-500" },
+    { name: "WordPress", icon: "📝", color: "bg-indigo-500" },
+    { name: "Webflow", icon: "🌐", color: "bg-blue-600" },
+    { name: "Shopify", icon: "🛒", color: "bg-green-600" },
+    { name: "Webhook", icon: "🔗", color: "bg-purple-500" },
+    { name: "Zapier", icon: "⚡", color: "bg-orange-500" },
+    { name: "Make", icon: "🔄", color: "bg-purple-600" }
+  ];
+
+  // Pricing plans
+  const pricingPlans = [
+    {
+      name: "Starter",
+      description: "Untuk bisnis yang baru mulai",
+      price: "Gratis",
+      period: "",
+      features: [
+        "1 AI Agent",
+        "Website Widget",
+        "100 chat/bulan",
+        "Basic knowledge base",
+        "Community support"
+      ],
+      cta: "Mulai Gratis",
+      primary: false
+    },
+    {
+      name: "Pro",
+      description: "Untuk bisnis yang berkembang",
+      price: "Rp 499.000",
+      period: "/bulan",
+      features: [
+        "3 AI Agents",
+        "Website + WhatsApp",
+        "5.000 chat/bulan",
+        "Advanced knowledge base",
+        "Analytics dashboard",
+        "Email support"
+      ],
+      cta: "Mulai Trial",
+      primary: true
+    },
+    {
+      name: "Bisnis",
+      description: "Untuk perusahaan besar",
+      price: "Hubungi Sales",
+      period: "",
+      features: [
+        "Unlimited AI Agents",
+        "All channels",
+        "Unlimited chat",
+        "Custom knowledge base",
+        "Advanced analytics",
+        "Priority support",
+        "Custom integrations",
+        "SLA guarantee"
+      ],
+      cta: "Minta Demo",
+      primary: false
+    }
+  ];
+
+  // FAQ items
+  const faqs = [
+    {
+      question: "Apakah bisa tanpa coding?",
+      answer: "Ya, 100% no-code. Anda bisa membuat AI agent dengan drag-and-drop dan form sederhana. Tanpa perlu technical skills sama sekali."
+    },
+    {
+      question: "WhatsApp pakai official API atau bagaimana?",
+      answer: "Kami menggunakan WhatsApp Business API resmi dari Meta. Anda akan mendapatkan nomor WhatsApp bisnis yang terverifikasi dan aman untuk digunakan."
+    },
+    {
+      question: "Bisa pakai SOP/FAQ/dokumen?",
+      answer: "Ya, Anda bisa upload berbagai format dokumen (PDF, Word, Excel), tambahkan FAQ, atau berikan URL website. AI akan belajar dari semua sumber knowledge tersebut."
+    },
+    {
+      question: "Bisa handover ke admin manusia?",
+      answer: "Tentu saja. Anda bisa set rule kapan AI harus handover ke tim manusia. Misalnya untuk pertanyaan complex, complaint, atau request spesifik."
+    },
+    {
+      question: "Support Bahasa Indonesia?",
+      answer: "Ya, full support Bahasa Indonesia. AI agent bisa berbicara dalam Bahasa Indonesia yang natural dan sesuai dengan kebutuhan bisnis Anda."
+    },
+    {
+      question: "Keamanan data bagaimana?",
+      answer: "Data Anda dienkripsi dan dilindungi dengan standar keamanan enterprise. Kami tidak menggunakan data Anda untuk training model AI lain. Privasi terjamin."
+    },
+    {
+      question: "Berapa lama setup AI agent?",
+      answer: "Untuk agent sederhana, cukup 5-10 menit. Untuk agent dengan knowledge base yang kompleks, biasanya 1-2 jam. Kami juga provide template untuk mempercepat setup."
+    }
+  ];
+
+  // Testimonial
+  const testimonial = {
+    quote: "Maldevta membantu kami mengurangi workload CS hingga 70% dan meningkatkan customer satisfaction. Sangat recommended!",
+    author: "Budi Santoso",
+    role: "Head of Customer Experience",
+    company: "TechStartup Indonesia",
+    rating: 5
+  };
+
   return (
-    <div className="min-h-screen bg-white overflow-hidden relative">
-      {/* Advanced AI-themed Background */}
-      <div className="fixed inset-0">
-        {/* Light gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-white via-blue-50/50 to-blue-100/30"></div>
-
-        {/* Animated gradient mesh */}
-        <div className="absolute inset-0">
-          <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-gradient-to-br from-blue-200/20 to-blue-300/15 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute top-1/4 right-1/4 w-[500px] h-[500px] bg-gradient-to-br from-blue-100/15 to-indigo-200/10 rounded-full blur-3xl animate-pulse" style={{animationDelay: "1s"}}></div>
-          <div className="absolute bottom-0 left-1/3 w-[600px] h-[600px] bg-gradient-to-br from-blue-150/15 to-cyan-200/10 rounded-full blur-3xl animate-pulse" style={{animationDelay: "2s"}}></div>
-          <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-gradient-to-br from-indigo-100/10 to-blue-200/10 rounded-full blur-3xl animate-pulse" style={{animationDelay: "0.5s"}}></div>
-        </div>
-
-        {/* Neural network grid pattern */}
-        <div className="absolute inset-0 opacity-5">
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#3b82f6_1px,transparent_1px),linear-gradient(to_bottom,#3b82f6_1px,transparent_1px)] bg-[size:80px_80px]"></div>
-        </div>
-
-        {/* Animated particles */}
-        <div className="absolute inset-0">
-          {[...Array(30)].map((_, i) => (
-            <div
-              key={i}
-              className="absolute w-1 h-1 bg-blue-300 rounded-full animate-particle"
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                animationDelay: `${Math.random() * 5}s`,
-                animationDuration: `${10 + Math.random() * 10}s`
-              }}
-            ></div>
-          ))}
-        </div>
-
-        {/* Neural network connections */}
-        <svg className="absolute inset-0 w-full h-full opacity-5">
-          {neuralNodes.map((node, i) => (
-            <g key={i}>
-              <circle cx={`${node.x}%`} cy={`${node.y}%`} r="3" fill="#3b82f6" />
-              {neuralNodes.slice(i + 1).filter((_n, idx) => idx < 3).map((target, j) => (
-                <line
-                  key={j}
-                  x1={`${node.x}%`}
-                  y1={`${node.y}%`}
-                  x2={`${target.x}%`}
-                  y2={`${target.y}%`}
-                  stroke="#3b82f6"
-                  strokeWidth="0.5"
-                  strokeDasharray="4 4"
-                >
-                  <animate
-                    attributeName="stroke-dashoffset"
-                    from="8"
-                    to="0"
-                    dur={`${3 + Math.random() * 2}s`}
-                    repeatCount="indefinite"
-                  />
-                </line>
-              ))}
-            </g>
-          ))}
-        </svg>
-      </div>
-
-      {/* Navigation */}
-      <nav
+    <div className="min-h-screen bg-slate-950">
+      {/* HEADER */}
+      <header
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          isScrolled ? "bg-white/98 backdrop-blur-lg shadow-sm border-b border-blue-200" : "bg-transparent"
+          isScrolled
+            ? "bg-slate-950/95 backdrop-blur-md shadow-lg border-b border-slate-800"
+            : "bg-transparent"
         }`}
       >
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex-shrink-0 flex items-center cursor-pointer" onClick={() => setLocation("/")}>
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-400/30">
-                  <Sparkles className="w-4 h-4 text-white" />
-                </div>
-                <span className="text-xl font-bold text-blue-600">
-                  Maldevta
-                </span>
+            {/* Logo */}
+            <div
+              className="flex items-center cursor-pointer"
+              onClick={() => setLocation("/")}
+            >
+              <div className="w-8 h-8 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-lg flex items-center justify-center">
+                <Bot className="w-5 h-5 text-white" />
               </div>
+              <span className="ml-2 text-xl font-bold text-white">Maldevta</span>
             </div>
 
-            <div className="hidden lg:flex items-center space-x-8">
-              {["Features", "Extensions", "Integrations", "Pricing"].map((item) => (
-                <a
-                  key={item}
-                  href={`#${item.toLowerCase()}`}
-                  className="text-slate-800 hover:text-blue-600 font-medium transition-colors duration-200"
-                >
-                  {item}
-                </a>
-              ))}
-            </div>
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex items-center space-x-8">
+              <button
+                onClick={() => scrollToSection("features")}
+                className="text-slate-300 hover:text-white transition-colors"
+              >
+                Produk
+              </button>
+              <button
+                onClick={() => scrollToSection("usecases")}
+                className="text-slate-300 hover:text-white transition-colors"
+              >
+                Solusi
+              </button>
+              <button
+                onClick={() => scrollToSection("pricing")}
+                className="text-slate-300 hover:text-white transition-colors"
+              >
+                Harga
+              </button>
+              <button
+                onClick={() => scrollToSection("integrations")}
+                className="text-slate-300 hover:text-white transition-colors"
+              >
+                Dokumentasi
+              </button>
+            </nav>
 
-            <div className="hidden lg:flex items-center space-x-4">
-              <button onClick={() => setLocation("/login")} className="text-slate-800 hover:text-blue-600 font-medium transition-colors">
-                Sign In
+            {/* CTA Buttons */}
+            <div className="hidden md:flex items-center space-x-4">
+              <button
+                onClick={() => setLocation("/login")}
+                className="text-slate-300 hover:text-white transition-colors"
+              >
+                Masuk
               </button>
               <button
                 onClick={() => setLocation("/login")}
-                className="px-5 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-full hover:shadow-lg hover:shadow-blue-400/30 hover:scale-105 transition-all duration-300"
+                className="px-4 py-2 text-sm font-medium text-slate-300 border border-slate-600 rounded-lg hover:bg-slate-800 transition-colors"
               >
-                Get Started Free
+                Minta Demo
+              </button>
+              <button
+                onClick={() => setLocation("/login")}
+                className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg hover:from-cyan-600 hover:to-blue-700 transition-all shadow-lg shadow-cyan-500/20"
+              >
+                Mulai Gratis
               </button>
             </div>
 
+            {/* Mobile menu button */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="lg:hidden p-2 rounded-lg hover:bg-blue-100 transition-colors"
+              className="md:hidden text-slate-300"
             >
-              {isMobileMenuOpen ? <X className="w-6 h-6 text-slate-900" /> : <Menu className="w-6 h-6 text-slate-900" />}
+              {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
         </div>
 
+        {/* Mobile Menu */}
         {isMobileMenuOpen && (
-          <div className="lg:hidden bg-white/98 backdrop-blur-lg border-t border-blue-200 py-4">
-            <div className="px-6 space-y-3">
-              {["Features", "Extensions", "Integrations", "Pricing"].map((item) => (
-                <a
-                  key={item}
-                  href={`#${item.toLowerCase()}`}
-                  className="block py-2 text-slate-800 hover:text-blue-600 font-medium"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  {item}
-                </a>
-              ))}
-              <div className="pt-4 space-y-2">
-                <button onClick={() => { setIsMobileMenuOpen(false); setLocation("/login"); }} className="w-full py-2 text-slate-800 hover:text-blue-600 font-medium">
-                  Sign In
-                </button>
-                <button onClick={() => { setIsMobileMenuOpen(false); setLocation("/login"); }} className="w-full py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-full">
-                  Get Started Free
-                </button>
-              </div>
+          <div className="md:hidden bg-slate-900/95 backdrop-blur-md border-t border-slate-800">
+            <div className="px-4 py-4 space-y-3">
+              <button
+                onClick={() => scrollToSection("features")}
+                className="block w-full text-left text-slate-300 hover:text-white py-2"
+              >
+                Produk
+              </button>
+              <button
+                onClick={() => scrollToSection("usecases")}
+                className="block w-full text-left text-slate-300 hover:text-white py-2"
+              >
+                Solusi
+              </button>
+              <button
+                onClick={() => scrollToSection("pricing")}
+                className="block w-full text-left text-slate-300 hover:text-white py-2"
+              >
+                Harga
+              </button>
+              <button
+                onClick={() => scrollToSection("integrations")}
+                className="block w-full text-left text-slate-300 hover:text-white py-2"
+              >
+                Dokumentasi
+              </button>
+              <hr className="border-slate-700" />
+              <button
+                onClick={() => setLocation("/login")}
+                className="block w-full text-left text-slate-300 hover:text-white py-2"
+              >
+                Masuk
+              </button>
+              <button
+                onClick={() => setLocation("/login")}
+                className="w-full px-4 py-2 text-sm font-medium text-slate-300 border border-slate-600 rounded-lg"
+              >
+                Minta Demo
+              </button>
+              <button
+                onClick={() => setLocation("/login")}
+                className="w-full px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg"
+              >
+                Mulai Gratis
+              </button>
             </div>
           </div>
         )}
-      </nav>
+      </header>
 
-      {/* Hero Section */}
-      <section className="relative pt-32 pb-20 px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div className="max-w-2xl">
-              <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-100 to-blue-50 border border-blue-300 rounded-full mb-6 backdrop-blur-sm">
-                <Sparkles className="w-4 h-4 mr-2 text-blue-600" />
-                <span className="text-sm font-medium text-slate-800">AI-powered platform for modern teams</span>
-              </div>
+      {/* HERO SECTION */}
+      <section className="relative pt-32 pb-20 overflow-hidden">
+        {/* Background effects */}
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-blue-950/50 to-indigo-950/50"></div>
+        <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-gradient-to-br from-cyan-500/20 to-blue-600/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-gradient-to-br from-violet-500/20 to-purple-600/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
 
-              <h1 className="text-5xl lg:text-7xl font-bold text-slate-900 mb-6 leading-tight">
-                Multi-Tenant
-                <br />
-                <span className="text-blue-600">
-                  AI Platform
-                </span>
-              </h1>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6">
+              Buat AI Agent untuk Bisnis.
+              <br />
+              <span className="bg-gradient-to-r from-cyan-400 to-blue-600 bg-clip-text text-transparent">
+                Pasang di Website & WhatsApp.
+              </span>
+            </h1>
 
-              <p className="text-xl text-slate-700 mb-8 leading-relaxed">
-                Complete AI chat solution with intelligent extensions, seamless integrations, and enterprise-grade multi-tenant architecture.
-              </p>
+            <p className="text-xl text-slate-300 mb-8 max-w-3xl mx-auto">
+              Platform no-code untuk membuat AI agent yang bisa di-embed ke website dan
+              terhubung ke WhatsApp. Atur context, knowledge base, dan biar AI handle customer
+              support 24/7.
+            </p>
 
-              <div className="flex flex-col sm:flex-row items-center gap-4 mb-8">
-                <button
-                  onClick={() => setLocation("/login")}
-                  className="group px-8 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-full hover:shadow-xl hover:shadow-blue-400/30 hover:scale-105 transition-all duration-300"
-                >
-                  <span className="flex items-center space-x-2">
-                    <span>Start Free Trial</span>
-                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
-                  </span>
-                </button>
-                <button className="group px-8 py-4 bg-blue-50/50 text-slate-900 font-semibold rounded-full border border-blue-200 hover:border-blue-400 hover:shadow-lg hover:shadow-blue-300/20 transition-all duration-300 backdrop-blur-sm">
-                  <span className="flex items-center space-x-2">
-                    <Play className="w-5 h-5 text-blue-600" />
-                    <span>Watch Demo</span>
-                  </span>
-                </button>
-              </div>
-
-              <div className="flex items-center space-x-6 text-sm text-slate-600">
-                <div className="flex items-center space-x-2">
-                  <Check className="w-5 h-5 text-emerald-400" />
-                  <span>No credit card required</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Check className="w-5 h-5 text-emerald-400" />
-                  <span>14-day free trial</span>
-                </div>
-              </div>
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
+              <button
+                onClick={() => setLocation("/login")}
+                className="group px-8 py-4 text-lg font-semibold text-white bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl hover:from-cyan-600 hover:to-blue-700 transition-all shadow-xl shadow-cyan-500/30 flex items-center"
+              >
+                Mulai Gratis
+                <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </button>
+              <button
+                onClick={() => scrollToSection("features")}
+                className="px-8 py-4 text-lg font-semibold text-slate-300 border-2 border-slate-600 rounded-xl hover:bg-slate-800 transition-colors flex items-center"
+              >
+                <Play className="mr-2 w-5 h-5" />
+                Lihat Demo
+              </button>
             </div>
 
-            {/* Dashboard Preview with Glassmorphism */}
-            <div className="relative">
-              <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-blue-300/20 border border-blue-200 backdrop-blur-xl">
-                {/* Browser Frame */}
-                <div className="bg-gradient-to-r from-slate-100 to-slate-50 px-4 py-3 flex items-center space-x-2 border-b border-blue-200 backdrop-blur-sm">
-                  <div className="flex space-x-2">
-                    <div className="w-3 h-3 rounded-full bg-red-400/80"></div>
-                    <div className="w-3 h-3 rounded-full bg-yellow-400/80"></div>
-                    <div className="w-3 h-3 rounded-full bg-green-400/80"></div>
-                  </div>
-                  <div className="flex-1 mx-4">
-                    <div className="bg-slate-200 rounded-md px-3 py-1 text-xs text-slate-600 text-center shadow-sm backdrop-blur-sm">
-                      app.maldevta.com
-                    </div>
-                  </div>
-                </div>
-
-                {/* Dashboard Content */}
-                <div className="bg-gradient-to-br from-blue-50 to-white p-6 backdrop-blur-xl">
-                  <div className="flex items-center justify-between mb-6">
-                    <div>
-                      <div className="h-6 w-32 bg-slate-300 rounded mb-2"></div>
-                      <div className="h-4 w-48 bg-slate-200 rounded"></div>
-                    </div>
-                    <div className="flex space-x-2">
-                      <div className="w-10 h-10 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-full"></div>
-                      <div className="w-10 h-10 bg-slate-700 rounded-full"></div>
-                    </div>
-                  </div>
-
-                  {/* Chat Messages */}
-                  <div className="space-y-4 mb-6">
-                    <div className="flex justify-start">
-                      <div className="max-w-xs bg-gradient-to-br from-slate-200 to-slate-100 rounded-2xl rounded-bl-sm px-4 py-3 border border-slate-300">
-                        <div className="h-3 w-24 bg-slate-400 rounded mb-2"></div>
-                        <div className="h-3 w-32 bg-slate-400 rounded"></div>
-                      </div>
-                    </div>
-                    <div className="flex justify-end">
-                      <div className="max-w-xs bg-gradient-to-r from-cyan-500 to-blue-600 rounded-2xl rounded-br-sm px-4 py-3">
-                        <div className="h-3 w-28 bg-white/50 rounded mb-2"></div>
-                        <div className="h-3 w-20 bg-white/50 rounded"></div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Input */}
-                  <div className="bg-gradient-to-r from-slate-200 to-slate-100 border border-slate-300 rounded-xl px-4 py-3 flex items-center">
-                    <div className="flex-1 h-4 bg-slate-400 rounded"></div>
-                    <div className="ml-2 flex space-x-1">
-                      <div className="w-6 h-6 bg-slate-600 rounded"></div>
-                      <div className="w-8 h-6 bg-gradient-to-r from-cyan-500 to-blue-600 rounded"></div>
-                    </div>
-                  </div>
-                </div>
+            {/* Quick bullets */}
+            <div className="flex flex-wrap items-center justify-center gap-6 text-slate-400">
+              <div className="flex items-center">
+                <Check className="w-5 h-5 mr-2 text-cyan-400" />
+                <span>Embed ke Website</span>
               </div>
+              <div className="flex items-center">
+                <Check className="w-5 h-5 mr-2 text-cyan-400" />
+                <span>Integrasi WhatsApp</span>
+              </div>
+              <div className="flex items-center">
+                <Check className="w-5 h-5 mr-2 text-cyan-400" />
+                <span>Atur Context & SOP</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
-              {/* Floating Badge */}
-              <div className="absolute -bottom-4 -right-4 bg-white/95 backdrop-blur-xl rounded-xl shadow-lg border border-blue-200 px-4 py-3">
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
-                    <Zap className="w-4 h-4 text-white" />
-                  </div>
-                  <div>
-                    <div className="text-xs text-slate-600">AI Response</div>
-                    <div className="text-sm font-semibold text-slate-900">0.8s</div>
-                  </div>
+      {/* TRUST / SOCIAL PROOF */}
+      <section className="py-16 bg-slate-900/50 border-y border-slate-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <p className="text-slate-400 mb-8">Dipercaya oleh bisnis di Indonesia</p>
+            <div className="flex flex-wrap items-center justify-center gap-12 text-slate-500">
+              <div className="flex items-center space-x-2">
+                <Building2 className="w-8 h-8" />
+                <span className="font-semibold">TechStartup</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Building2 className="w-8 h-8" />
+                <span className="font-semibold">E-commerce ID</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Building2 className="w-8 h-8" />
+                <span className="font-semibold">Retail Indo</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Building2 className="w-8 h-8" />
+                <span className="font-semibold">Service Co</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Stats */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 text-center">
+            <div>
+              <div className="text-4xl font-bold text-white mb-2">500+</div>
+              <div className="text-slate-400">AI Agent Dibuat</div>
+            </div>
+            <div>
+              <div className="text-4xl font-bold text-white mb-2">1M+</div>
+              <div className="text-slate-400">Percakapan</div>
+            </div>
+            <div>
+              <div className="text-4xl font-bold text-white mb-2">200+</div>
+              <div className="text-slate-400">Bisnis</div>
+            </div>
+          </div>
+
+          {/* Testimonial */}
+          <div className="mt-16 max-w-3xl mx-auto">
+            <div className="bg-slate-800/50 rounded-2xl p-8 border border-slate-700">
+              <div className="flex items-center mb-4">
+                {[...Array(testimonial.rating)].map((_, i) => (
+                  <Star key={i} className="w-5 h-5 text-yellow-400 fill-yellow-400" />
+                ))}
+              </div>
+              <p className="text-lg text-slate-300 mb-6 italic">&quot;{testimonial.quote}&quot;</p>
+              <div className="flex items-center">
+                <div className="w-12 h-12 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-full flex items-center justify-center text-white font-bold">
+                  {testimonial.author.charAt(0)}
+                </div>
+                <div className="ml-4">
+                  <div className="text-white font-semibold">{testimonial.author}</div>
+                  <div className="text-slate-400 text-sm">{testimonial.role}, {testimonial.company}</div>
                 </div>
               </div>
             </div>
@@ -679,359 +538,119 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Feature Slides Section */}
-      <section id="features" className="py-20 px-6 lg:px-8 bg-white relative overflow-hidden">
-        {/* Animated background elements */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full blur-3xl opacity-20 animate-pulse"></div>
-          <div className="absolute bottom-0 left-0 w-80 h-80 bg-gradient-to-tr from-indigo-100 to-blue-100 rounded-full blur-3xl opacity-20 animate-pulse" style={{animationDelay: '1s'}}></div>
-        </div>
-        <div className="max-w-7xl mx-auto relative z-10">
+      {/* PROBLEM → SOLUTION */}
+      <section className="py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-100 to-blue-50 border border-blue-300 rounded-full mb-4 backdrop-blur-sm">
-              <Sparkles className="w-4 h-4 mr-2 text-blue-600" />
-              <span className="text-sm font-medium text-slate-800">Feature Showcase</span>
-            </div>
-            <h2 className="text-4xl lg:text-5xl font-bold text-slate-900 mb-4">Explore Our Features</h2>
-            <p className="text-xl text-slate-700 max-w-2xl mx-auto">
-              Discover powerful AI capabilities with detailed explanations
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+              Masalah yang Kami Selesaikan
+            </h2>
+            <p className="text-xl text-slate-400">
+              Dari problem ke outcome yang nyata
             </p>
           </div>
 
-          {/* Feature Slider */}
-          <div className="relative">
-            {/* Main Feature Card */}
-            <div className="bg-gradient-to-br from-white to-blue-50 rounded-3xl border border-blue-200 backdrop-blur-xl overflow-hidden shadow-2xl shadow-blue-300/20">
-              <div className="grid lg:grid-cols-2 gap-0">
-                {/* Left - Image/Visual */}
-                <div className={`relative p-12 flex items-center justify-center bg-gradient-to-br ${featureSlides[currentFeatureSlide].gradient}`}>
-                  <div className="absolute inset-0 opacity-10">
-                    <div className="absolute top-0 left-0 w-full h-full bg-[linear-gradient(to_right,#ffffff_1px,transparent_1px),linear-gradient(to_bottom,#ffffff_1px,transparent_1px)] bg-[size:40px_40px]"></div>
-                  </div>
-                  <div className="relative z-10 text-center">
-                    <div className="rounded-xl overflow-hidden shadow-2xl shadow-blue-400/20 mb-6">
-                      <img
-                        src={featureSlides[currentFeatureSlide].image}
-                        alt={featureSlides[currentFeatureSlide].title}
-                        className="w-full h-auto object-cover"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
-                          const fallback = target.nextElementSibling as HTMLElement;
-                          if (fallback) fallback.style.display = 'block';
-                        }}
-                      />
-                      <div className="text-9xl py-12 hidden" style={{display: 'none'}}>
-                        {featureSlides[currentFeatureSlide].imageFallback}
-                      </div>
-                    </div>
-                    <div className="inline-flex items-center px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full">
-                      <Sparkles className="w-4 h-4 mr-2 text-white" />
-                      <span className="text-sm font-medium text-white">Interactive Demo</span>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {problems.map((item, idx) => (
+              <div
+                key={idx}
+                className="relative group bg-slate-900/50 rounded-2xl p-8 border border-slate-800 hover:border-cyan-500/50 transition-all"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-blue-600/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+
+                <div className="relative">
+                  <div className="w-14 h-14 bg-gradient-to-br from-red-500/20 to-orange-600/20 rounded-xl flex items-center justify-center mb-6">
+                    <div className="text-red-400">
+                      {item.icon}
                     </div>
                   </div>
-                </div>
 
-                {/* Right - Content */}
-                <div className="p-12 flex flex-col justify-center">
-                  <div className={`inline-flex w-16 h-16 bg-gradient-to-br ${featureSlides[currentFeatureSlide].gradient} rounded-2xl flex items-center justify-center text-white mb-6 shadow-lg`}>
-                    {featureSlides[currentFeatureSlide].icon}
-                  </div>
-
-                  <h3 className="text-3xl font-bold text-slate-900 mb-2">
-                    {featureSlides[currentFeatureSlide].title}
+                  <h3 className="text-lg font-semibold text-red-400 mb-3">
+                    {item.problem}
                   </h3>
-                  <p className="text-lg font-semibold text-blue-600 mb-4">
-                    {featureSlides[currentFeatureSlide].subtitle}
-                  </p>
-                  <p className="text-slate-700 leading-relaxed mb-8">
-                    {featureSlides[currentFeatureSlide].description}
-                  </p>
 
-                  {/* Features List */}
-                  <div className="space-y-4 mb-8">
-                    {featureSlides[currentFeatureSlide].features.map((feature, idx) => (
-                      <div key={idx} className="flex items-start space-x-3">
-                        <div className={`w-10 h-10 bg-gradient-to-br ${featureSlides[currentFeatureSlide].gradient}/10 rounded-xl flex items-center justify-center flex-shrink-0`}>
-                          <div className="text-blue-600">
-                            {feature.icon}
-                          </div>
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="text-slate-900 font-semibold mb-1">{feature.text}</h4>
-                          <p className="text-sm text-slate-600">{feature.desc}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  <div className="w-12 h-0.5 bg-gradient-to-r from-cyan-500 to-blue-600 mb-4"></div>
 
-                  {/* Stats */}
-                  <div className="grid grid-cols-3 gap-4">
-                    {featureSlides[currentFeatureSlide].stats.map((stat, idx) => (
-                      <div key={idx} className="text-center p-4 bg-slate-100 rounded-xl border border-blue-200">
-                        <div className="text-2xl font-bold text-blue-600 mb-1">
-                          {stat.value}
-                        </div>
-                        <div className="text-xs text-slate-600">{stat.label}</div>
-                      </div>
-                    ))}
-                  </div>
+                  <h4 className="text-xl font-bold text-white mb-3">
+                    {item.solution}
+                  </h4>
+
+                  <p className="text-slate-400">
+                    {item.description}
+                  </p>
                 </div>
               </div>
-            </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-            {/* Navigation Dots */}
-            <div className="flex items-center justify-center space-x-3 mt-8">
-              {featureSlides.map((_, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setCurrentFeatureSlide(idx)}
-                  className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                    idx === currentFeatureSlide
-                      ? "bg-gradient-to-r from-blue-500 to-blue-600 w-8"
-                      : "bg-slate-300 hover:bg-slate-400"
-                  }`}
-                />
-              ))}
-            </div>
-
-            {/* Navigation Arrows */}
-            <button
-              onClick={() => setCurrentFeatureSlide((prev) => prev === 0 ? featureSlides.length - 1 : prev - 1)}
-              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 w-12 h-12 bg-white/80 backdrop-blur-sm rounded-full border border-blue-200 flex items-center justify-center text-slate-900 hover:bg-slate-50/80 hover:border-blue-400 transition-all duration-300"
-            >
-              <ChevronLeft className="w-6 h-6" />
-            </button>
-            <button
-              onClick={() => setCurrentFeatureSlide((prev) => (prev + 1) % featureSlides.length)}
-              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 w-12 h-12 bg-white/80 backdrop-blur-sm rounded-full border border-blue-200 flex items-center justify-center text-slate-900 hover:bg-slate-50/80 hover:border-blue-400 transition-all duration-300"
-            >
-              <ChevronRight className="w-6 h-6" />
-            </button>
+      {/* CORE FEATURES */}
+      <section id="features" className="py-20 bg-slate-900/30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+              Fitur Utama
+            </h2>
+            <p className="text-xl text-slate-400">
+              Semua yang Anda butuhkan untuk AI agent yang powerful
+            </p>
           </div>
 
-          {/* Quick Feature Cards */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mt-12">
-            {coreFeatures.map((feature, index) => {
-              const isActive = index === currentFeatureSlide;
-              const colors = colorClasses[feature.color as keyof typeof colorClasses];
-              return (
-                <button
-                  key={index}
-                  onClick={() => setCurrentFeatureSlide(index)}
-                  className={`group p-4 rounded-xl border transition-all duration-300 ${
-                    isActive
-                      ? `bg-gradient-to-br ${colors.gradient}/10 border-blue-400`
-                      : "bg-slate-50 border-blue-200 hover:bg-slate-100 hover:border-blue-300"
-                  }`}
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-10 h-10 bg-gradient-to-br ${colors.gradient} rounded-lg flex items-center justify-center text-white`}>
+          <div className="space-y-24">
+            {coreFeatures.map((feature, idx) => (
+              <div
+                key={idx}
+                className={`grid grid-cols-1 lg:grid-cols-2 gap-12 items-center ${
+                  idx % 2 === 1 ? "lg:flex-row-reverse" : ""
+                }`}
+              >
+                {/* Image */}
+                <div className="relative">
+                  <div className="aspect-video bg-slate-800 rounded-2xl overflow-hidden border border-slate-700 shadow-2xl">
+                    <img
+                      src={feature.image}
+                      alt={feature.title}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = "none";
+                        const fallback = target.nextElementSibling as HTMLElement;
+                        if (fallback) fallback.style.display = "flex";
+                      }}
+                    />
+                    <div className="w-full h-full items-center justify-center text-6xl hidden">
                       {feature.icon}
                     </div>
-                    <div className="text-left">
-                      <h4 className={`font-semibold ${isActive ? 'text-slate-900' : 'text-slate-800'}`}>{feature.title}</h4>
-                      <p className="text-xs text-slate-600 line-clamp-1">{feature.description}</p>
+                  </div>
+
+                  {/* Gradient glow */}
+                  <div className={`absolute -inset-4 bg-gradient-to-r ${feature.gradient} opacity-20 blur-3xl rounded-3xl -z-10`}></div>
+                </div>
+
+                {/* Content */}
+                <div>
+                  <div className={`inline-flex p-3 bg-gradient-to-br ${feature.gradient} rounded-xl mb-6`}>
+                    <div className="text-white">
+                      {feature.icon}
                     </div>
                   </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </section>
 
-      {/* Extensions Section */}
-      <section id="extensions" className="py-20 px-6 lg:px-8 bg-gradient-to-b from-blue-50 via-white to-white relative overflow-hidden">
-        {/* Background animations */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-gradient-to-br from-blue-200 to-indigo-200 rounded-full blur-3xl opacity-15 animate-pulse"></div>
-          <div className="absolute bottom-20 right-10 w-96 h-96 bg-gradient-to-tl from-blue-100 to-cyan-100 rounded-full blur-3xl opacity-15 animate-pulse" style={{animationDelay: '2s'}}></div>
-          {/* Floating AI nodes */}
-          <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
-          <div className="absolute top-1/3 right-1/3 w-2 h-2 bg-indigo-400 rounded-full animate-pulse" style={{animationDelay: '0.5s'}}></div>
-          <div className="absolute bottom-1/3 left-1/3 w-2 h-2 bg-blue-300 rounded-full animate-pulse" style={{animationDelay: '1s'}}></div>
-        </div>
-        <div className="max-w-7xl mx-auto relative z-10">
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-100 to-blue-50 border border-blue-300 rounded-full mb-4 backdrop-blur-sm">
-              <Puzzle className="w-4 h-4 mr-2 text-blue-600" />
-              <span className="text-sm font-medium text-slate-800">Extensions Ecosystem</span>
-            </div>
-            <h2 className="text-4xl lg:text-5xl font-bold text-slate-900 mb-4">17+ AI Extensions</h2>
-            <p className="text-xl text-slate-700 max-w-2xl mx-auto">
-              Powerful extensions for documents, databases, visualization, and more
-            </p>
-          </div>
+                  <h3 className="text-2xl sm:text-3xl font-bold text-white mb-4">
+                    {feature.title}
+                  </h3>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {extensionCategories.map((category, index) => {
-              const colors = colorClasses[category.color as keyof typeof colorClasses];
-              return (
-                <div
-                  key={index}
-                  className={`${colors.bgLight}/30 rounded-2xl p-6 border border-blue-200 hover:shadow-lg hover:shadow-blue-300/20 transition-all duration-300 backdrop-blur-sm`}
-                >
-                  <div className={`inline-flex w-12 h-12 bg-gradient-to-br ${colors.gradient} rounded-xl flex items-center justify-center text-white mb-4 shadow-lg ${colors.shadow}`}>
-                    {category.icon}
-                  </div>
-                  <h3 className="text-lg font-bold text-slate-900 mb-3">{category.name}</h3>
-                  <div className="space-y-2">
-                    {category.extensions.map((ext, i) => (
-                      <div key={i} className="flex items-center space-x-2">
-                        <Check className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                        <span className="text-sm text-slate-800">{ext}</span>
+                  <p className="text-lg text-slate-300 mb-6">
+                    {feature.description}
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    {feature.highlights.map((highlight, i) => (
+                      <div key={i} className="flex items-center text-slate-400">
+                        <Check className="w-4 h-4 mr-2 text-cyan-400" />
+                        <span className="text-sm">{highlight}</span>
                       </div>
                     ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* System Foundation */}
-      <section className="py-20 px-6 lg:px-8 bg-white relative overflow-hidden">
-        {/* Interactive background elements */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-blue-100 to-transparent rounded-full blur-3xl opacity-30"></div>
-          <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-tr from-indigo-100 to-transparent rounded-full blur-3xl opacity-30"></div>
-          {/* Floating nodes */}
-          <svg className="absolute inset-0 w-full h-full" style={{opacity: 0.05}} preserveAspectRatio="xMidYMid slice">
-            <defs>
-              <linearGradient id="nodeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" style={{stopColor: '#3b82f6', stopOpacity: 1}} />
-                <stop offset="100%" style={{stopColor: '#6366f1', stopOpacity: 1}} />
-              </linearGradient>
-            </defs>
-            <circle cx="20%" cy="30%" r="3" fill="url(#nodeGradient)" />
-            <circle cx="40%" cy="70%" r="3" fill="url(#nodeGradient)" />
-            <circle cx="60%" cy="40%" r="3" fill="url(#nodeGradient)" />
-            <circle cx="80%" cy="60%" r="3" fill="url(#nodeGradient)" />
-            <circle cx="50%" cy="80%" r="3" fill="url(#nodeGradient)" />
-          </svg>
-        </div>
-        <div className="max-w-7xl mx-auto relative z-10">
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-100 to-blue-50 border border-blue-300 rounded-full mb-4 backdrop-blur-sm">
-              <Shield className="w-4 h-4 mr-2 text-blue-600" />
-              <span className="text-sm font-medium text-slate-800">AI Principles</span>
-            </div>
-            <h2 className="text-4xl lg:text-5xl font-bold text-slate-900 mb-4">Built on Trust</h2>
-            <p className="text-xl text-slate-700 max-w-2xl mx-auto">
-              Our AI system follows three core principles
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {capabilities.map((capability, index) => {
-              const colors = colorClasses[capability.color as keyof typeof colorClasses];
-              return (
-                <div
-                  key={index}
-                  className={`relative rounded-2xl p-8 border backdrop-blur-sm ${
-                    index === 1
-                      ? `bg-gradient-to-br ${colors.gradientLight}/40 border-2 border-blue-300`
-                      : "bg-gradient-to-br from-slate-100 to-blue-50 border-blue-200"
-                  } hover:shadow-xl hover:shadow-blue-300/20 hover:-translate-y-1 transition-all duration-300`}
-                >
-                  {index === 1 && (
-                    <div className={`absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r ${colors.gradient} text-white text-sm font-semibold rounded-full shadow-lg`}>
-                      Core
-                    </div>
-                  )}
-                  <div className={`w-16 h-16 ${colors.bgLight}/20 rounded-2xl flex items-center justify-center mb-6`}>
-                    <div className="text-blue-600">
-                      {capability.icon}
-                    </div>
-                  </div>
-                  <h3 className="text-2xl font-bold text-slate-900 mb-4">{capability.title}</h3>
-                  <p className="text-slate-700 leading-relaxed mb-6">{capability.description}</p>
-                  <ul className="space-y-2">
-                    {capability.metrics.map((metric, i) => (
-                      <li key={i} className="flex items-center space-x-2">
-                        <Check className="w-4 h-4 text-emerald-500" />
-                        <span className="text-sm text-slate-800">{metric}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* Integrations */}
-      <section id="integrations" className="py-20 px-6 lg:px-8 bg-gradient-to-b from-white via-blue-50 to-white relative overflow-hidden">
-        {/* Animated background */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full max-w-4xl">
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-100/50 via-transparent to-indigo-100/50 rounded-full blur-3xl animate-pulse"></div>
-          </div>
-        </div>
-        <div className="max-w-7xl mx-auto relative z-10">
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-100 to-blue-50 border border-blue-300 rounded-full mb-4 backdrop-blur-sm">
-              <Layers className="w-4 h-4 mr-2 text-blue-600" />
-              <span className="text-sm font-medium text-slate-800">Integrations</span>
-            </div>
-            <h2 className="text-4xl lg:text-5xl font-bold text-slate-900 mb-4">Seamless Connections</h2>
-            <p className="text-xl text-slate-700 max-w-2xl mx-auto">
-              Connect with the tools you already use
-            </p>
-          </div>
-
-          <div className="bg-gradient-to-br from-slate-50 to-blue-50 rounded-2xl p-8 border border-blue-200 backdrop-blur-sm">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {integrations.map((integration, index) => (
-                <div
-                  key={index}
-                  className="flex flex-col items-center justify-center p-6 rounded-xl bg-white hover:shadow-xl hover:shadow-blue-300/20 hover:-translate-y-1 transition-all cursor-pointer group backdrop-blur-sm border border-blue-200"
-                >
-                  <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">{integration.icon}</div>
-                  <div className="text-sm font-semibold text-slate-900 mb-1">{integration.name}</div>
-                  <div className="text-xs text-slate-600">{integration.desc}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section className="py-20 px-6 lg:px-8 bg-white relative overflow-hidden">
-        {/* Subtle animated background */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 right-1/4 w-80 h-80 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full blur-3xl opacity-20 animate-pulse" style={{animationDuration: '4s'}}></div>
-          <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-gradient-to-tr from-indigo-100 to-blue-100 rounded-full blur-3xl opacity-20 animate-pulse" style={{animationDuration: '5s', animationDelay: '1s'}}></div>
-        </div>
-        <div className="max-w-7xl mx-auto relative z-10">
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-100 to-blue-50 border border-blue-300 rounded-full mb-4 backdrop-blur-sm">
-              <Star className="w-4 h-4 mr-2 text-yellow-500" />
-              <span className="text-sm font-medium text-slate-800">Testimonials</span>
-            </div>
-            <h2 className="text-4xl lg:text-5xl font-bold text-slate-900 mb-4">Trusted by Teams</h2>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, index) => (
-              <div key={index} className="bg-gradient-to-br from-slate-50 to-blue-50 rounded-2xl p-8 border border-blue-200 hover:shadow-xl hover:shadow-blue-300/20 transition-all backdrop-blur-sm">
-                <div className="flex items-center space-x-1 mb-4">
-                  {[...Array(testimonial.rating)].map((_, i) => (
-                    <Star key={i} className="w-5 h-5 text-yellow-500 fill-yellow-500" />
-                  ))}
-                </div>
-                <p className="text-slate-700 mb-6 leading-relaxed">"{testimonial.content}"</p>
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
-                    <span className="text-sm font-semibold text-white">{testimonial.avatar}</span>
-                  </div>
-                  <div>
-                    <div className="font-semibold text-slate-900">{testimonial.name}</div>
-                    <div className="text-sm text-slate-600">{testimonial.role}</div>
                   </div>
                 </div>
               </div>
@@ -1040,156 +659,474 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 px-6 lg:px-8 bg-white">
-        <div className="max-w-4xl mx-auto">
-          <div className="relative overflow-hidden bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 rounded-3xl p-12 lg:p-16 shadow-2xl shadow-blue-400/30">
-            <div className="absolute inset-0">
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-400/20 via-blue-500/20 to-indigo-500/20 animate-gradient-shift"></div>
-              <div className="absolute top-0 left-0 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
-              <div className="absolute bottom-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
+      {/* HOW IT WORKS */}
+      <section className="py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+              Cara Kerja
+            </h2>
+            <p className="text-xl text-slate-400">
+              Hanya 3 langkah untuk AI agent yang siap digunakan
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Step 1 */}
+            <div className="relative">
+              <div className="bg-slate-900/50 rounded-2xl p-8 border border-slate-800 h-full">
+                <div className="w-16 h-16 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center text-white text-2xl font-bold mb-6">
+                  1
+                </div>
+
+                <h3 className="text-xl font-bold text-white mb-3">
+                  Buat Agent
+                </h3>
+
+                <p className="text-slate-400 mb-4">
+                  Pilih template atau mulai dari nol. Define personality, aturan, dan tujuan agent Anda.
+                </p>
+
+                <div className="flex flex-wrap gap-2">
+                  <span className="px-3 py-1 bg-slate-800 rounded-full text-xs text-slate-300">Template</span>
+                  <span className="px-3 py-1 bg-slate-800 rounded-full text-xs text-slate-300">Custom</span>
+                  <span className="px-3 py-1 bg-slate-800 rounded-full text-xs text-slate-300">No-code</span>
+                </div>
+              </div>
+
+              {/* Arrow */}
+              <div className="hidden md:block absolute top-1/2 -right-4 transform -translate-y-1/2 z-10">
+                <ArrowRight className="w-8 h-8 text-cyan-500" />
+              </div>
             </div>
 
-            <div className="relative z-10 text-center">
-              <h2 className="text-4xl lg:text-5xl font-bold text-white mb-6">
-                Ready to Transform Your Workflows?
-              </h2>
-              <p className="text-xl text-white mb-10">
-                Join thousands of teams using Maldevta's AI platform
-              </p>
-              <button
-                onClick={() => setLocation("/login")}
-                className="group px-10 py-4 bg-white text-blue-600 font-semibold rounded-full hover:shadow-xl hover:scale-105 transition-all duration-300"
+            {/* Step 2 */}
+            <div className="relative">
+              <div className="bg-slate-900/50 rounded-2xl p-8 border border-slate-800 h-full">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white text-2xl font-bold mb-6">
+                  2
+                </div>
+
+                <h3 className="text-xl font-bold text-white mb-3">
+                  Tambahkan Context
+                </h3>
+
+                <p className="text-slate-400 mb-4">
+                  Upload SOP, FAQ, dokumen, atau URL. Agent akan belajar dari semua knowledge tersebut.
+                </p>
+
+                <div className="flex flex-wrap gap-2">
+                  <span className="px-3 py-1 bg-slate-800 rounded-full text-xs text-slate-300">SOP</span>
+                  <span className="px-3 py-1 bg-slate-800 rounded-full text-xs text-slate-300">FAQ</span>
+                  <span className="px-3 py-1 bg-slate-800 rounded-full text-xs text-slate-300">URL</span>
+                </div>
+              </div>
+
+              {/* Arrow */}
+              <div className="hidden md:block absolute top-1/2 -right-4 transform -translate-y-1/2 z-10">
+                <ArrowRight className="w-8 h-8 text-cyan-500" />
+              </div>
+            </div>
+
+            {/* Step 3 */}
+            <div className="relative">
+              <div className="bg-slate-900/50 rounded-2xl p-8 border border-slate-800 h-full">
+                <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center text-white text-2xl font-bold mb-6">
+                  3
+                </div>
+
+                <h3 className="text-xl font-bold text-white mb-3">
+                  Publikasikan
+                </h3>
+
+                <p className="text-slate-400 mb-4">
+                  Embed ke website atau hubungkan ke WhatsApp. Agent siap menerima pesan 24/7.
+                </p>
+
+                <div className="flex flex-wrap gap-2">
+                  <span className="px-3 py-1 bg-slate-800 rounded-full text-xs text-slate-300">Widget</span>
+                  <span className="px-3 py-1 bg-slate-800 rounded-full text-xs text-slate-300">WhatsApp</span>
+                  <span className="px-3 py-1 bg-slate-800 rounded-full text-xs text-slate-300">API</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Mini CTA */}
+          <div className="mt-12 text-center">
+            <button
+              onClick={() => setLocation("/login")}
+              className="inline-flex items-center px-6 py-3 text-white bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl hover:from-cyan-600 hover:to-blue-700 transition-all shadow-lg"
+            >
+              Coba buat agent dalam 5 menit
+              <ArrowRight className="ml-2 w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* EXTENSIONS */}
+      <section className="py-20 bg-slate-900/30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center px-4 py-2 bg-purple-500/10 rounded-full text-purple-400 text-sm font-medium mb-4">
+              <Puzzle className="w-4 h-4 mr-2" />
+              Platform, bukan sekadar chatbot
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+              Perlu fitur lebih? Tambahkan Extension
+            </h2>
+            <p className="text-xl text-slate-400 max-w-2xl mx-auto">
+              Extension untuk konek tool, aksi otomatis, dan integrasi dengan sistem yang sudah Anda gunakan
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {extensions.map((ext, idx) => (
+              <div
+                key={idx}
+                className="group bg-slate-900/50 rounded-xl p-6 border border-slate-800 hover:border-purple-500/50 transition-all"
               >
-                <span className="flex items-center space-x-2">
-                  <span>Get Started Now</span>
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
-                </span>
+                <div className="flex items-start">
+                  <div className="w-12 h-12 bg-gradient-to-br from-purple-500/20 to-pink-600/20 rounded-lg flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
+                    <div className="text-purple-400">
+                      {ext.icon}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg font-semibold text-white mb-1">
+                      {ext.name}
+                    </h3>
+                    <p className="text-sm text-slate-400">
+                      {ext.desc}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-12 text-center">
+            <button
+              onClick={() => setLocation("/login")}
+              className="inline-flex items-center px-6 py-3 text-white border border-purple-500 rounded-xl hover:bg-purple-500/10 transition-colors"
+            >
+              Lihat Semua Extension
+              <ArrowRight className="ml-2 w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* USE CASES */}
+      <section id="usecases" className="py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+              Solusi untuk Berbagai Kebutuhan
+            </h2>
+            <p className="text-xl text-slate-400">
+              Pilih use case yang sesuai dengan bisnis Anda
+            </p>
+          </div>
+
+          {/* Tabs */}
+          <div className="flex flex-wrap justify-center gap-2 mb-12">
+            {useCases.map((useCase, idx) => (
+              <button
+                key={idx}
+                onClick={() => setActiveUseCase(idx)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  activeUseCase === idx
+                    ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white"
+                    : "bg-slate-800 text-slate-400 hover:bg-slate-700"
+                }`}
+              >
+                {useCase.title}
               </button>
+            ))}
+          </div>
+
+          {/* Use Case Content */}
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-slate-900/50 rounded-2xl p-8 border border-slate-800">
+              <div className="flex items-center mb-6">
+                <div className="w-16 h-16 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center mr-6">
+                  <div className="text-white text-2xl">
+                    {useCases[activeUseCase].icon}
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-white mb-1">
+                    {useCases[activeUseCase].title}
+                  </h3>
+                  <div className="inline-flex items-center px-3 py-1 bg-green-500/10 rounded-full text-green-400 text-sm font-medium">
+                    <Check className="w-3 h-3 mr-1" />
+                    {useCases[activeUseCase].result}
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-start">
+                  <div className="w-8 h-8 bg-red-500/20 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
+                    <X className="w-4 h-4 text-red-400" />
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-semibold text-white mb-1">Problem</h4>
+                    <p className="text-slate-400">{useCases[activeUseCase].problem}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start">
+                  <div className="w-8 h-8 bg-green-500/20 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
+                    <Check className="w-4 h-4 text-green-400" />
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-semibold text-white mb-1">Solution</h4>
+                    <p className="text-slate-400">{useCases[activeUseCase].solution}</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="py-16 px-6 lg:px-8 bg-slate-50 border-t border-blue-200">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid md:grid-cols-4 gap-8 mb-12">
-            <div className="md:col-span-2">
-              <div className="flex items-center space-x-2 mb-4">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-                  <Sparkles className="w-4 h-4 text-white" />
-                </div>
-                <span className="text-lg font-bold text-slate-900">Maldevta</span>
-              </div>
-              <p className="text-slate-600 text-sm mb-6 max-w-sm">
-                Multi-tenant AI platform with intelligent extensions, seamless integrations, and powerful developer tools.
-              </p>
-              <div className="flex space-x-4">
-                <a href="#" className="text-slate-600 hover:text-blue-600 transition-colors">
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-                </a>
-                <a href="#" className="text-slate-600 hover:text-blue-600 transition-colors">
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
-                </a>
-                <a href="#" className="text-slate-600 hover:text-blue-600 transition-colors">
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-                </a>
-              </div>
-            </div>
+      {/* INTEGRATIONS */}
+      <section id="integrations" className="py-20 bg-slate-900/30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+              Integrasi dengan Tool Favorit Anda
+            </h2>
+            <p className="text-xl text-slate-400">
+              Connect dengan berbagai platform dan sistem
+            </p>
+          </div>
 
-            {[
-              { title: "Product", links: ["Features", "Extensions", "Integrations", "Security"] },
-              { title: "Company", links: ["About", "Blog", "Careers", "Contact"] },
-              { title: "Resources", links: ["Docs", "API Reference", "Help Center", "Status"] }
-            ].map((column, index) => (
-              <div key={index}>
-                <h4 className="font-semibold text-slate-900 mb-4">{column.title}</h4>
-                <ul className="space-y-2">
-                  {column.links.map((link) => (
-                    <li key={link}>
-                      <a href="#" className="text-slate-600 hover:text-blue-600 text-sm transition-colors">{link}</a>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+            {integrations.map((integration, idx) => (
+              <div
+                key={idx}
+                className="group bg-slate-900/50 rounded-xl p-6 border border-slate-800 hover:border-cyan-500/50 transition-all text-center"
+              >
+                <div className={`w-16 h-16 ${integration.color} rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 group-hover:scale-110 transition-transform`}>
+                  {integration.icon}
+                </div>
+                <div className="text-white font-medium">{integration.name}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* PRICING */}
+      <section id="pricing" className="py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+              Harga yang Sesuai untuk Bisnis Anda
+            </h2>
+            <p className="text-xl text-slate-400">
+              Mulai gratis, upgrade kapanpun Anda siap
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {pricingPlans.map((plan, idx) => (
+              <div
+                key={idx}
+                className={`relative rounded-2xl p-8 ${
+                  plan.primary
+                    ? "bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border-2 border-cyan-500"
+                    : "bg-slate-900/50 border border-slate-800"
+                }`}
+              >
+                {plan.primary && (
+                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                    <span className="px-4 py-1 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full text-white text-sm font-medium">
+                      Popular
+                    </span>
+                  </div>
+                )}
+
+                <div className="text-center mb-8">
+                  <h3 className="text-xl font-bold text-white mb-2">{plan.name}</h3>
+                  <p className="text-slate-400 text-sm mb-4">{plan.description}</p>
+                  <div className="flex items-center justify-center">
+                    <span className="text-4xl font-bold text-white">{plan.price}</span>
+                    {plan.period && (
+                      <span className="text-slate-400 ml-2">{plan.period}</span>
+                    )}
+                  </div>
+                </div>
+
+                <ul className="space-y-4 mb-8">
+                  {plan.features.map((feature, i) => (
+                    <li key={i} className="flex items-start">
+                      <Check className="w-5 h-5 text-cyan-400 mr-3 flex-shrink-0 mt-0.5" />
+                      <span className="text-slate-300">{feature}</span>
                     </li>
                   ))}
                 </ul>
+
+                <button
+                  onClick={() => setLocation("/login")}
+                  className={`w-full py-3 rounded-xl font-medium transition-all ${
+                    plan.primary
+                      ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:from-cyan-600 hover:to-blue-700 shadow-lg shadow-cyan-500/30"
+                      : "bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700"
+                  }`}
+                >
+                  {plan.cta}
+                </button>
               </div>
             ))}
           </div>
 
-          <div className="border-t border-blue-200 pt-8 flex flex-col md:flex-row items-center justify-between">
-            <p className="text-sm text-slate-600">© 2026 Maldevta. All rights reserved.</p>
+          <div className="mt-12 text-center">
+            <button
+              onClick={() => scrollToSection("contact")}
+              className="text-cyan-400 hover:text-cyan-300 font-medium inline-flex items-center"
+            >
+              Lihat Detail Harga
+              <ArrowRight className="ml-2 w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="py-20 bg-slate-900/30">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+              Frequently Asked Questions
+            </h2>
+            <p className="text-xl text-slate-400">
+              Pertanyaan yang sering ditanyakan
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            {faqs.map((faq, idx) => (
+              <div
+                key={idx}
+                className="bg-slate-900/50 rounded-xl border border-slate-800 overflow-hidden"
+              >
+                <button
+                  onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
+                  className="w-full px-6 py-4 flex items-center justify-between text-left"
+                >
+                  <span className="text-lg font-medium text-white">{faq.question}</span>
+                  {openFaq === idx ? (
+                    <ChevronUp className="w-5 h-5 text-slate-400 flex-shrink-0 ml-4" />
+                  ) : (
+                    <ChevronDown className="w-5 h-5 text-slate-400 flex-shrink-0 ml-4" />
+                  )}
+                </button>
+                {openFaq === idx && (
+                  <div className="px-6 pb-4">
+                    <p className="text-slate-400">{faq.answer}</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CLOSING CTA */}
+      <section className="py-20">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+            Mulai pasang AI Agent untuk bisnis Anda hari ini
+          </h2>
+          <p className="text-xl text-slate-400 mb-8">
+            Tanpa kartu kredit • Setup dalam 5 menit • Support Bahasa Indonesia
+          </p>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <button
+              onClick={() => setLocation("/login")}
+              className="px-8 py-4 text-lg font-semibold text-white bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl hover:from-cyan-600 hover:to-blue-700 transition-all shadow-xl shadow-cyan-500/30"
+            >
+              Mulai Gratis
+            </button>
+            <button
+              onClick={() => setLocation("/login")}
+              className="px-8 py-4 text-lg font-semibold text-slate-300 border-2 border-slate-600 rounded-xl hover:bg-slate-800 transition-colors"
+            >
+              Minta Demo
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer className="py-12 bg-slate-900/50 border-t border-slate-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
+            {/* Brand */}
+            <div className="col-span-2">
+              <div className="flex items-center mb-4">
+                <div className="w-8 h-8 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-lg flex items-center justify-center">
+                  <Bot className="w-5 h-5 text-white" />
+                </div>
+                <span className="ml-2 text-xl font-bold text-white">Maldevta</span>
+              </div>
+              <p className="text-slate-400 text-sm mb-4">
+                Platform no-code untuk membuat AI agent yang bisa di-embed ke website dan WhatsApp.
+              </p>
+            </div>
+
+            {/* Product */}
+            <div>
+              <h4 className="text-white font-semibold mb-4">Produk</h4>
+              <ul className="space-y-2">
+                <li><a href="#features" className="text-slate-400 hover:text-white text-sm">Fitur</a></li>
+                <li><a href="#pricing" className="text-slate-400 hover:text-white text-sm">Harga</a></li>
+                <li><a href="#integrations" className="text-slate-400 hover:text-white text-sm">Integrasi</a></li>
+                <li><a href="#" className="text-slate-400 hover:text-white text-sm">Extension</a></li>
+              </ul>
+            </div>
+
+            {/* Solutions */}
+            <div>
+              <h4 className="text-white font-semibold mb-4">Solusi</h4>
+              <ul className="space-y-2">
+                <li><a href="#usecases" className="text-slate-400 hover:text-white text-sm">Customer Support</a></li>
+                <li><a href="#usecases" className="text-slate-400 hover:text-white text-sm">Sales</a></li>
+                <li><a href="#usecases" className="text-slate-400 hover:text-white text-sm">Booking</a></li>
+                <li><a href="#usecases" className="text-slate-400 hover:text-white text-sm">E-commerce</a></li>
+              </ul>
+            </div>
+
+            {/* Company */}
+            <div>
+              <h4 className="text-white font-semibold mb-4">Perusahaan</h4>
+              <ul className="space-y-2">
+                <li><a href="#" className="text-slate-400 hover:text-white text-sm">Tentang</a></li>
+                <li><a href="#" className="text-slate-400 hover:text-white text-sm">Blog</a></li>
+                <li><a href="#" className="text-slate-400 hover:text-white text-sm">Karir</a></li>
+                <li><a href="#" className="text-slate-400 hover:text-white text-sm">Kontak</a></li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="mt-12 pt-8 border-t border-slate-800 flex flex-col md:flex-row items-center justify-between">
+            <p className="text-slate-400 text-sm">
+              © 2025 Maldevta. All rights reserved.
+            </p>
             <div className="flex space-x-6 mt-4 md:mt-0">
-              <a href="#" className="text-slate-600 hover:text-blue-600 text-sm transition-colors">Privacy</a>
-              <a href="#" className="text-slate-600 hover:text-blue-600 text-sm transition-colors">Terms</a>
+              <a href="#" className="text-slate-400 hover:text-white text-sm">Privacy</a>
+              <a href="#" className="text-slate-400 hover:text-white text-sm">Terms</a>
             </div>
           </div>
         </div>
       </footer>
-
-      <style>{`
-        @keyframes particle {
-          0%, 100% {
-            transform: translate(0, 0) scale(1);
-            opacity: 0;
-          }
-          10% {
-            opacity: 1;
-          }
-          90% {
-            opacity: 1;
-          }
-          100% {
-            transform: translate(var(--tx, 100px), var(--ty, -100px)) scale(0);
-            opacity: 0;
-          }
-        }
-        .animate-particle {
-          animation: particle 15s linear infinite;
-        }
-
-        @keyframes gradient-shift {
-          0%, 100% {
-            opacity: 0.2;
-          }
-          50% {
-            opacity: 0.3;
-          }
-        }
-        .animate-gradient-shift {
-          animation: gradient-shift 4s ease-in-out infinite;
-        }
-      `}</style>
     </div>
-  );
-}
-
-function QrCode({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <rect x="3" y="3" width="7" height="7" className="fill-current" />
-      <rect x="14" y="3" width="7" height="7" className="fill-current" />
-      <rect x="3" y="14" width="7" height="7" className="fill-current" />
-      <rect x="6" y="6" width="3" height="3" className="fill-white" />
-      <rect x="17" y="6" width="3" height="3" className="fill-white" />
-      <rect x="6" y="17" width="3" height="3" className="fill-white" />
-      <path d="M14 14h1v1h-1z" className="fill-current" />
-      <path d="M16 14h1v1h-1z" className="fill-current" />
-      <path d="M14 16h1v1h-1z" className="fill-current" />
-      <path d="M17 17h1v1h-1z" className="fill-current" />
-      <path d="M19 14h1v1h-1z" className="fill-current" />
-      <path d="M14 19h1v1h-1z" className="fill-current" />
-      <path d="M16 16h1v1h-1z" className="fill-current" />
-      <path d="M18 16h1v1h-1z" className="fill-current" />
-      <path d="M16 18h1v1h-1z" className="fill-current" />
-      <path d="M18 18h1v1h-1z" className="fill-current" />
-      <path d="M20 16h1v1h-1z" className="fill-current" />
-      <path d="M20 18h1v1h-1z" className="fill-current" />
-    </svg>
   );
 }

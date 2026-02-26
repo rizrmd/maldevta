@@ -52,14 +52,6 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { MoreVertical } from "lucide-react";
-import { MessageCircle as WhatsAppIcon } from "lucide-react";
 
 type ApiError = {
   message: string;
@@ -477,17 +469,6 @@ export default function SubClientManagementPage() {
       pathname: subClient.pathname,
     });
     setEditDialogOpen(true);
-  };
-
-  // Open delete dialog
-  const openDeleteDialog = (subClient: SubClient) => {
-    setEditForm({
-      id: subClient.id,
-      name: subClient.name,
-      description: subClient.description || "",
-      pathname: subClient.pathname,
-    });
-    setDeleteDialogOpen(true);
   };
 
   // Show loading state
