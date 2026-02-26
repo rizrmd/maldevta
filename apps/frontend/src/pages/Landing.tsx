@@ -59,7 +59,7 @@ export default function LandingPage() {
       description: "Buat agent sesuai kebutuhan: gaya bicara, aturan, dan tujuan bisnis Anda.",
       highlights: ["Custom personality", "Aturan bisnis", "Multi-language", "Context aware"],
       image: "/screenshots/chat.png",
-      gradient: "from-cyan-400 to-blue-600"
+      gradient: "from-blue-500 to-blue-600"
     },
     {
       icon: <Globe className="w-8 h-8" />,
@@ -67,7 +67,7 @@ export default function LandingPage() {
       description: "Widget siap pakai, bisa custom tampilan sesuai brand Anda.",
       highlights: ["One-line embed", "Custom CSS", "Branded design", "Mobile responsive"],
       image: "/screenshots/embed.png",
-      gradient: "from-blue-400 to-indigo-600"
+      gradient: "from-blue-600 to-indigo-600"
     },
     {
       icon: <Smartphone className="w-8 h-8" />,
@@ -75,7 +75,7 @@ export default function LandingPage() {
       description: "Agent menjawab via WhatsApp untuk CS & sales dengan resmi.",
       highlights: ["Official API", "QR connection", "Auto-reply", "Real-time sync"],
       image: "/screenshots/whatsapp.png",
-      gradient: "from-emerald-400 to-emerald-600"
+      gradient: "from-blue-500 to-cyan-600"
     },
     {
       icon: <Database className="w-8 h-8" />,
@@ -83,7 +83,7 @@ export default function LandingPage() {
       description: "Tambahkan konteks: SOP, FAQ, dokumen, URL, dan instruksi.",
       highlights: ["SOP upload", "FAQ training", "URL scraping", "Document search"],
       image: "/screenshots/Files.png",
-      gradient: "from-violet-400 to-purple-600"
+      gradient: "from-indigo-500 to-blue-600"
     },
     {
       icon: <BarChart className="w-8 h-8" />,
@@ -91,7 +91,7 @@ export default function LandingPage() {
       description: "Riwayat chat, insight, dan alihkan ke tim manusia bila perlu.",
       highlights: ["Chat history", "Analytics dashboard", "Human handover", "Performance metrics"],
       image: "/screenshots/history.png",
-      gradient: "from-indigo-400 to-blue-600"
+      gradient: "from-blue-600 to-blue-700"
     }
   ];
 
@@ -280,12 +280,12 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="min-h-screen bg-white">
       {/* HEADER */}
       <header
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
           isScrolled
-            ? "bg-slate-950/95 backdrop-blur-md shadow-lg border-b border-slate-800"
+            ? "bg-white/95 backdrop-blur-md shadow-lg border-b border-gray-200"
             : "bg-transparent"
         }`}
       >
@@ -296,35 +296,35 @@ export default function LandingPage() {
               className="flex items-center cursor-pointer"
               onClick={() => setLocation("/")}
             >
-              <div className="w-8 h-8 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
                 <Bot className="w-5 h-5 text-white" />
               </div>
-              <span className="ml-2 text-xl font-bold text-white">Maldevta</span>
+              <span className="ml-2 text-xl font-bold text-gray-900">Maldevta</span>
             </div>
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center space-x-8">
               <button
                 onClick={() => scrollToSection("features")}
-                className="text-slate-300 hover:text-white transition-colors"
+                className="text-gray-600 hover:text-blue-600 transition-colors"
               >
                 Produk
               </button>
               <button
                 onClick={() => scrollToSection("usecases")}
-                className="text-slate-300 hover:text-white transition-colors"
+                className="text-gray-600 hover:text-blue-600 transition-colors"
               >
                 Solusi
               </button>
               <button
                 onClick={() => scrollToSection("pricing")}
-                className="text-slate-300 hover:text-white transition-colors"
+                className="text-gray-600 hover:text-blue-600 transition-colors"
               >
                 Harga
               </button>
               <button
                 onClick={() => scrollToSection("integrations")}
-                className="text-slate-300 hover:text-white transition-colors"
+                className="text-gray-600 hover:text-blue-600 transition-colors"
               >
                 Dokumentasi
               </button>
@@ -334,19 +334,19 @@ export default function LandingPage() {
             <div className="hidden md:flex items-center space-x-4">
               <button
                 onClick={() => setLocation("/login")}
-                className="text-slate-300 hover:text-white transition-colors"
+                className="text-gray-600 hover:text-blue-600 transition-colors"
               >
                 Masuk
               </button>
               <button
                 onClick={() => setLocation("/login")}
-                className="px-4 py-2 text-sm font-medium text-slate-300 border border-slate-600 rounded-lg hover:bg-slate-800 transition-colors"
+                className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 Minta Demo
               </button>
               <button
                 onClick={() => setLocation("/login")}
-                className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg hover:from-cyan-600 hover:to-blue-700 transition-all shadow-lg shadow-cyan-500/20"
+                className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all shadow-lg shadow-blue-500/20"
               >
                 Mulai Gratis
               </button>
@@ -355,7 +355,7 @@ export default function LandingPage() {
             {/* Mobile menu button */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden text-slate-300"
+              className="md:hidden text-gray-600"
             >
               {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
@@ -364,48 +364,48 @@ export default function LandingPage() {
 
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
-          <div className="md:hidden bg-slate-900/95 backdrop-blur-md border-t border-slate-800">
+          <div className="md:hidden bg-white/95 backdrop-blur-md border-t border-gray-200">
             <div className="px-4 py-4 space-y-3">
               <button
                 onClick={() => scrollToSection("features")}
-                className="block w-full text-left text-slate-300 hover:text-white py-2"
+                className="block w-full text-left text-gray-600 hover:text-blue-600 py-2"
               >
                 Produk
               </button>
               <button
                 onClick={() => scrollToSection("usecases")}
-                className="block w-full text-left text-slate-300 hover:text-white py-2"
+                className="block w-full text-left text-gray-600 hover:text-blue-600 py-2"
               >
                 Solusi
               </button>
               <button
                 onClick={() => scrollToSection("pricing")}
-                className="block w-full text-left text-slate-300 hover:text-white py-2"
+                className="block w-full text-left text-gray-600 hover:text-blue-600 py-2"
               >
                 Harga
               </button>
               <button
                 onClick={() => scrollToSection("integrations")}
-                className="block w-full text-left text-slate-300 hover:text-white py-2"
+                className="block w-full text-left text-gray-600 hover:text-blue-600 py-2"
               >
                 Dokumentasi
               </button>
-              <hr className="border-slate-700" />
+              <hr className="border-gray-200" />
               <button
                 onClick={() => setLocation("/login")}
-                className="block w-full text-left text-slate-300 hover:text-white py-2"
+                className="block w-full text-left text-gray-600 hover:text-blue-600 py-2"
               >
                 Masuk
               </button>
               <button
                 onClick={() => setLocation("/login")}
-                className="w-full px-4 py-2 text-sm font-medium text-slate-300 border border-slate-600 rounded-lg"
+                className="w-full px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg"
               >
                 Minta Demo
               </button>
               <button
                 onClick={() => setLocation("/login")}
-                className="w-full px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg"
+                className="w-full px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg"
               >
                 Mulai Gratis
               </button>
@@ -415,23 +415,22 @@ export default function LandingPage() {
       </header>
 
       {/* HERO SECTION */}
-      <section className="relative pt-32 pb-20 overflow-hidden">
+      <section className="relative pt-32 pb-20 overflow-hidden bg-gradient-to-b from-blue-50 to-white">
         {/* Background effects */}
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-blue-950/50 to-indigo-950/50"></div>
-        <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-gradient-to-br from-cyan-500/20 to-blue-600/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-gradient-to-br from-violet-500/20 to-purple-600/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-gradient-to-br from-blue-200/40 to-blue-300/40 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-gradient-to-br from-blue-100/40 to-blue-200/40 rounded-full blur-3xl animate-pulse delay-1000"></div>
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
               Buat AI Agent untuk Bisnis.
               <br />
-              <span className="bg-gradient-to-r from-cyan-400 to-blue-600 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-blue-500 to-blue-600 bg-clip-text text-transparent">
                 Pasang di Website & WhatsApp.
               </span>
             </h1>
 
-            <p className="text-xl text-slate-300 mb-8 max-w-3xl mx-auto">
+            <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
               Platform no-code untuk membuat AI agent yang bisa di-embed ke website dan
               terhubung ke WhatsApp. Atur context, knowledge base, dan biar AI handle customer
               support 24/7.
@@ -441,14 +440,14 @@ export default function LandingPage() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
               <button
                 onClick={() => setLocation("/login")}
-                className="group px-8 py-4 text-lg font-semibold text-white bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl hover:from-cyan-600 hover:to-blue-700 transition-all shadow-xl shadow-cyan-500/30 flex items-center"
+                className="group px-8 py-4 text-lg font-semibold text-white bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all shadow-xl shadow-blue-500/30 flex items-center"
               >
                 Mulai Gratis
                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
               <button
                 onClick={() => scrollToSection("features")}
-                className="px-8 py-4 text-lg font-semibold text-slate-300 border-2 border-slate-600 rounded-xl hover:bg-slate-800 transition-colors flex items-center"
+                className="px-8 py-4 text-lg font-semibold text-gray-700 border-2 border-gray-300 rounded-xl hover:bg-gray-50 transition-colors flex items-center"
               >
                 <Play className="mr-2 w-5 h-5" />
                 Lihat Demo
@@ -456,17 +455,17 @@ export default function LandingPage() {
             </div>
 
             {/* Quick bullets */}
-            <div className="flex flex-wrap items-center justify-center gap-6 text-slate-400">
+            <div className="flex flex-wrap items-center justify-center gap-6 text-gray-600">
               <div className="flex items-center">
-                <Check className="w-5 h-5 mr-2 text-cyan-400" />
+                <Check className="w-5 h-5 mr-2 text-blue-500" />
                 <span>Embed ke Website</span>
               </div>
               <div className="flex items-center">
-                <Check className="w-5 h-5 mr-2 text-cyan-400" />
+                <Check className="w-5 h-5 mr-2 text-blue-500" />
                 <span>Integrasi WhatsApp</span>
               </div>
               <div className="flex items-center">
-                <Check className="w-5 h-5 mr-2 text-cyan-400" />
+                <Check className="w-5 h-5 mr-2 text-blue-500" />
                 <span>Atur Context & SOP</span>
               </div>
             </div>
@@ -475,11 +474,11 @@ export default function LandingPage() {
       </section>
 
       {/* TRUST / SOCIAL PROOF */}
-      <section className="py-16 bg-slate-900/50 border-y border-slate-800">
+      <section className="py-16 bg-gray-50 border-y border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <p className="text-slate-400 mb-8">Dipercaya oleh bisnis di Indonesia</p>
-            <div className="flex flex-wrap items-center justify-center gap-12 text-slate-500">
+            <p className="text-gray-600 mb-8">Dipercaya oleh bisnis di Indonesia</p>
+            <div className="flex flex-wrap items-center justify-center gap-12 text-gray-400">
               <div className="flex items-center space-x-2">
                 <Building2 className="w-8 h-8" />
                 <span className="font-semibold">TechStartup</span>
@@ -502,35 +501,35 @@ export default function LandingPage() {
           {/* Stats */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 text-center">
             <div>
-              <div className="text-4xl font-bold text-white mb-2">500+</div>
-              <div className="text-slate-400">AI Agent Dibuat</div>
+              <div className="text-4xl font-bold text-gray-900 mb-2">500+</div>
+              <div className="text-gray-600">AI Agent Dibuat</div>
             </div>
             <div>
-              <div className="text-4xl font-bold text-white mb-2">1M+</div>
-              <div className="text-slate-400">Percakapan</div>
+              <div className="text-4xl font-bold text-gray-900 mb-2">1M+</div>
+              <div className="text-gray-600">Percakapan</div>
             </div>
             <div>
-              <div className="text-4xl font-bold text-white mb-2">200+</div>
-              <div className="text-slate-400">Bisnis</div>
+              <div className="text-4xl font-bold text-gray-900 mb-2">200+</div>
+              <div className="text-gray-600">Bisnis</div>
             </div>
           </div>
 
           {/* Testimonial */}
           <div className="mt-16 max-w-3xl mx-auto">
-            <div className="bg-slate-800/50 rounded-2xl p-8 border border-slate-700">
+            <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-lg">
               <div className="flex items-center mb-4">
                 {[...Array(testimonial.rating)].map((_, i) => (
                   <Star key={i} className="w-5 h-5 text-yellow-400 fill-yellow-400" />
                 ))}
               </div>
-              <p className="text-lg text-slate-300 mb-6 italic">&quot;{testimonial.quote}&quot;</p>
+              <p className="text-lg text-gray-700 mb-6 italic">&quot;{testimonial.quote}&quot;</p>
               <div className="flex items-center">
-                <div className="w-12 h-12 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-full flex items-center justify-center text-white font-bold">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold">
                   {testimonial.author.charAt(0)}
                 </div>
                 <div className="ml-4">
-                  <div className="text-white font-semibold">{testimonial.author}</div>
-                  <div className="text-slate-400 text-sm">{testimonial.role}, {testimonial.company}</div>
+                  <div className="text-gray-900 font-semibold">{testimonial.author}</div>
+                  <div className="text-gray-600 text-sm">{testimonial.role}, {testimonial.company}</div>
                 </div>
               </div>
             </div>
@@ -542,10 +541,10 @@ export default function LandingPage() {
       <section className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
               Masalah yang Kami Selesaikan
             </h2>
-            <p className="text-xl text-slate-400">
+            <p className="text-xl text-gray-600">
               Dari problem ke outcome yang nyata
             </p>
           </div>
@@ -554,28 +553,28 @@ export default function LandingPage() {
             {problems.map((item, idx) => (
               <div
                 key={idx}
-                className="relative group bg-slate-900/50 rounded-2xl p-8 border border-slate-800 hover:border-cyan-500/50 transition-all"
+                className="relative group bg-white rounded-2xl p-8 border border-gray-200 hover:border-blue-500/50 hover:shadow-xl transition-all"
               >
-                <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-blue-600/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
 
                 <div className="relative">
-                  <div className="w-14 h-14 bg-gradient-to-br from-red-500/20 to-orange-600/20 rounded-xl flex items-center justify-center mb-6">
-                    <div className="text-red-400">
+                  <div className="w-14 h-14 bg-gradient-to-br from-red-50 to-orange-50 rounded-xl flex items-center justify-center mb-6">
+                    <div className="text-red-500">
                       {item.icon}
                     </div>
                   </div>
 
-                  <h3 className="text-lg font-semibold text-red-400 mb-3">
+                  <h3 className="text-lg font-semibold text-red-500 mb-3">
                     {item.problem}
                   </h3>
 
-                  <div className="w-12 h-0.5 bg-gradient-to-r from-cyan-500 to-blue-600 mb-4"></div>
+                  <div className="w-12 h-0.5 bg-gradient-to-r from-blue-500 to-blue-600 mb-4"></div>
 
-                  <h4 className="text-xl font-bold text-white mb-3">
+                  <h4 className="text-xl font-bold text-gray-900 mb-3">
                     {item.solution}
                   </h4>
 
-                  <p className="text-slate-400">
+                  <p className="text-gray-600">
                     {item.description}
                   </p>
                 </div>
@@ -586,13 +585,13 @@ export default function LandingPage() {
       </section>
 
       {/* CORE FEATURES */}
-      <section id="features" className="py-20 bg-slate-900/30">
+      <section id="features" className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
               Fitur Utama
             </h2>
-            <p className="text-xl text-slate-400">
+            <p className="text-xl text-gray-600">
               Semua yang Anda butuhkan untuk AI agent yang powerful
             </p>
           </div>
@@ -607,7 +606,7 @@ export default function LandingPage() {
               >
                 {/* Image */}
                 <div className="relative">
-                  <div className="aspect-video bg-slate-800 rounded-2xl overflow-hidden border border-slate-700 shadow-2xl">
+                  <div className="aspect-video bg-white rounded-2xl overflow-hidden border border-gray-200 shadow-xl">
                     <img
                       src={feature.image}
                       alt={feature.title}
@@ -625,7 +624,7 @@ export default function LandingPage() {
                   </div>
 
                   {/* Gradient glow */}
-                  <div className={`absolute -inset-4 bg-gradient-to-r ${feature.gradient} opacity-20 blur-3xl rounded-3xl -z-10`}></div>
+                  <div className={`absolute -inset-4 bg-gradient-to-r ${feature.gradient} opacity-10 blur-3xl rounded-3xl -z-10`}></div>
                 </div>
 
                 {/* Content */}
@@ -636,18 +635,18 @@ export default function LandingPage() {
                     </div>
                   </div>
 
-                  <h3 className="text-2xl sm:text-3xl font-bold text-white mb-4">
+                  <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
                     {feature.title}
                   </h3>
 
-                  <p className="text-lg text-slate-300 mb-6">
+                  <p className="text-lg text-gray-600 mb-6">
                     {feature.description}
                   </p>
 
                   <div className="grid grid-cols-2 gap-3">
                     {feature.highlights.map((highlight, i) => (
-                      <div key={i} className="flex items-center text-slate-400">
-                        <Check className="w-4 h-4 mr-2 text-cyan-400" />
+                      <div key={i} className="flex items-center text-gray-600">
+                        <Check className="w-4 h-4 mr-2 text-blue-500" />
                         <span className="text-sm">{highlight}</span>
                       </div>
                     ))}
@@ -663,10 +662,10 @@ export default function LandingPage() {
       <section className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
               Cara Kerja
             </h2>
-            <p className="text-xl text-slate-400">
+            <p className="text-xl text-gray-600">
               Hanya 3 langkah untuk AI agent yang siap digunakan
             </p>
           </div>
@@ -674,79 +673,79 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Step 1 */}
             <div className="relative">
-              <div className="bg-slate-900/50 rounded-2xl p-8 border border-slate-800 h-full">
-                <div className="w-16 h-16 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center text-white text-2xl font-bold mb-6">
+              <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-lg h-full">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center text-white text-2xl font-bold mb-6">
                   1
                 </div>
 
-                <h3 className="text-xl font-bold text-white mb-3">
+                <h3 className="text-xl font-bold text-gray-900 mb-3">
                   Buat Agent
                 </h3>
 
-                <p className="text-slate-400 mb-4">
+                <p className="text-gray-600 mb-4">
                   Pilih template atau mulai dari nol. Define personality, aturan, dan tujuan agent Anda.
                 </p>
 
                 <div className="flex flex-wrap gap-2">
-                  <span className="px-3 py-1 bg-slate-800 rounded-full text-xs text-slate-300">Template</span>
-                  <span className="px-3 py-1 bg-slate-800 rounded-full text-xs text-slate-300">Custom</span>
-                  <span className="px-3 py-1 bg-slate-800 rounded-full text-xs text-slate-300">No-code</span>
+                  <span className="px-3 py-1 bg-gray-100 rounded-full text-xs text-gray-700">Template</span>
+                  <span className="px-3 py-1 bg-gray-100 rounded-full text-xs text-gray-700">Custom</span>
+                  <span className="px-3 py-1 bg-gray-100 rounded-full text-xs text-gray-700">No-code</span>
                 </div>
               </div>
 
               {/* Arrow */}
               <div className="hidden md:block absolute top-1/2 -right-4 transform -translate-y-1/2 z-10">
-                <ArrowRight className="w-8 h-8 text-cyan-500" />
+                <ArrowRight className="w-8 h-8 text-blue-500" />
               </div>
             </div>
 
             {/* Step 2 */}
             <div className="relative">
-              <div className="bg-slate-900/50 rounded-2xl p-8 border border-slate-800 h-full">
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white text-2xl font-bold mb-6">
+              <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-lg h-full">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center text-white text-2xl font-bold mb-6">
                   2
                 </div>
 
-                <h3 className="text-xl font-bold text-white mb-3">
+                <h3 className="text-xl font-bold text-gray-900 mb-3">
                   Tambahkan Context
                 </h3>
 
-                <p className="text-slate-400 mb-4">
+                <p className="text-gray-600 mb-4">
                   Upload SOP, FAQ, dokumen, atau URL. Agent akan belajar dari semua knowledge tersebut.
                 </p>
 
                 <div className="flex flex-wrap gap-2">
-                  <span className="px-3 py-1 bg-slate-800 rounded-full text-xs text-slate-300">SOP</span>
-                  <span className="px-3 py-1 bg-slate-800 rounded-full text-xs text-slate-300">FAQ</span>
-                  <span className="px-3 py-1 bg-slate-800 rounded-full text-xs text-slate-300">URL</span>
+                  <span className="px-3 py-1 bg-gray-100 rounded-full text-xs text-gray-700">SOP</span>
+                  <span className="px-3 py-1 bg-gray-100 rounded-full text-xs text-gray-700">FAQ</span>
+                  <span className="px-3 py-1 bg-gray-100 rounded-full text-xs text-gray-700">URL</span>
                 </div>
               </div>
 
               {/* Arrow */}
               <div className="hidden md:block absolute top-1/2 -right-4 transform -translate-y-1/2 z-10">
-                <ArrowRight className="w-8 h-8 text-cyan-500" />
+                <ArrowRight className="w-8 h-8 text-blue-500" />
               </div>
             </div>
 
             {/* Step 3 */}
             <div className="relative">
-              <div className="bg-slate-900/50 rounded-2xl p-8 border border-slate-800 h-full">
-                <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center text-white text-2xl font-bold mb-6">
+              <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-lg h-full">
+                <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-2xl flex items-center justify-center text-white text-2xl font-bold mb-6">
                   3
                 </div>
 
-                <h3 className="text-xl font-bold text-white mb-3">
+                <h3 className="text-xl font-bold text-gray-900 mb-3">
                   Publikasikan
                 </h3>
 
-                <p className="text-slate-400 mb-4">
+                <p className="text-gray-600 mb-4">
                   Embed ke website atau hubungkan ke WhatsApp. Agent siap menerima pesan 24/7.
                 </p>
 
                 <div className="flex flex-wrap gap-2">
-                  <span className="px-3 py-1 bg-slate-800 rounded-full text-xs text-slate-300">Widget</span>
-                  <span className="px-3 py-1 bg-slate-800 rounded-full text-xs text-slate-300">WhatsApp</span>
-                  <span className="px-3 py-1 bg-slate-800 rounded-full text-xs text-slate-300">API</span>
+                  <span className="px-3 py-1 bg-gray-100 rounded-full text-xs text-gray-700">Widget</span>
+                  <span className="px-3 py-1 bg-gray-100 rounded-full text-xs text-gray-700">WhatsApp</span>
+                  <span className="px-3 py-1 bg-gray-100 rounded-full text-xs text-gray-700">API</span>
                 </div>
               </div>
             </div>
@@ -756,7 +755,7 @@ export default function LandingPage() {
           <div className="mt-12 text-center">
             <button
               onClick={() => setLocation("/login")}
-              className="inline-flex items-center px-6 py-3 text-white bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl hover:from-cyan-600 hover:to-blue-700 transition-all shadow-lg"
+              className="inline-flex items-center px-6 py-3 text-white bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all shadow-lg"
             >
               Coba buat agent dalam 5 menit
               <ArrowRight className="ml-2 w-4 h-4" />
@@ -766,17 +765,17 @@ export default function LandingPage() {
       </section>
 
       {/* EXTENSIONS */}
-      <section className="py-20 bg-slate-900/30">
+      <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <div className="inline-flex items-center px-4 py-2 bg-purple-500/10 rounded-full text-purple-400 text-sm font-medium mb-4">
+            <div className="inline-flex items-center px-4 py-2 bg-purple-100 rounded-full text-purple-600 text-sm font-medium mb-4">
               <Puzzle className="w-4 h-4 mr-2" />
               Platform, bukan sekadar chatbot
             </div>
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
               Perlu fitur lebih? Tambahkan Extension
             </h2>
-            <p className="text-xl text-slate-400 max-w-2xl mx-auto">
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
               Extension untuk konek tool, aksi otomatis, dan integrasi dengan sistem yang sudah Anda gunakan
             </p>
           </div>
@@ -785,20 +784,20 @@ export default function LandingPage() {
             {extensions.map((ext, idx) => (
               <div
                 key={idx}
-                className="group bg-slate-900/50 rounded-xl p-6 border border-slate-800 hover:border-purple-500/50 transition-all"
+                className="group bg-white rounded-xl p-6 border border-gray-200 hover:border-purple-500/50 hover:shadow-lg transition-all"
               >
                 <div className="flex items-start">
-                  <div className="w-12 h-12 bg-gradient-to-br from-purple-500/20 to-pink-600/20 rounded-lg flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
-                    <div className="text-purple-400">
+                  <div className="w-12 h-12 bg-gradient-to-br from-purple-100 to-purple-50 rounded-lg flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
+                    <div className="text-purple-600">
                       {ext.icon}
                     </div>
                   </div>
 
                   <div>
-                    <h3 className="text-lg font-semibold text-white mb-1">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-1">
                       {ext.name}
                     </h3>
-                    <p className="text-sm text-slate-400">
+                    <p className="text-sm text-gray-600">
                       {ext.desc}
                     </p>
                   </div>
@@ -810,7 +809,7 @@ export default function LandingPage() {
           <div className="mt-12 text-center">
             <button
               onClick={() => setLocation("/login")}
-              className="inline-flex items-center px-6 py-3 text-white border border-purple-500 rounded-xl hover:bg-purple-500/10 transition-colors"
+              className="inline-flex items-center px-6 py-3 text-gray-700 border border-purple-500 rounded-xl hover:bg-purple-50 transition-colors"
             >
               Lihat Semua Extension
               <ArrowRight className="ml-2 w-4 h-4" />
@@ -823,10 +822,10 @@ export default function LandingPage() {
       <section id="usecases" className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
               Solusi untuk Berbagai Kebutuhan
             </h2>
-            <p className="text-xl text-slate-400">
+            <p className="text-xl text-gray-600">
               Pilih use case yang sesuai dengan bisnis Anda
             </p>
           </div>
@@ -839,8 +838,8 @@ export default function LandingPage() {
                 onClick={() => setActiveUseCase(idx)}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                   activeUseCase === idx
-                    ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white"
-                    : "bg-slate-800 text-slate-400 hover:bg-slate-700"
+                    ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
               >
                 {useCase.title}
@@ -850,18 +849,18 @@ export default function LandingPage() {
 
           {/* Use Case Content */}
           <div className="max-w-4xl mx-auto">
-            <div className="bg-slate-900/50 rounded-2xl p-8 border border-slate-800">
+            <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-lg">
               <div className="flex items-center mb-6">
-                <div className="w-16 h-16 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center mr-6">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center mr-6">
                   <div className="text-white text-2xl">
                     {useCases[activeUseCase].icon}
                   </div>
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold text-white mb-1">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-1">
                     {useCases[activeUseCase].title}
                   </h3>
-                  <div className="inline-flex items-center px-3 py-1 bg-green-500/10 rounded-full text-green-400 text-sm font-medium">
+                  <div className="inline-flex items-center px-3 py-1 bg-green-100 rounded-full text-green-600 text-sm font-medium">
                     <Check className="w-3 h-3 mr-1" />
                     {useCases[activeUseCase].result}
                   </div>
@@ -870,22 +869,22 @@ export default function LandingPage() {
 
               <div className="space-y-4">
                 <div className="flex items-start">
-                  <div className="w-8 h-8 bg-red-500/20 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
-                    <X className="w-4 h-4 text-red-400" />
+                  <div className="w-8 h-8 bg-red-50 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
+                    <X className="w-4 h-4 text-red-500" />
                   </div>
                   <div>
-                    <h4 className="text-lg font-semibold text-white mb-1">Problem</h4>
-                    <p className="text-slate-400">{useCases[activeUseCase].problem}</p>
+                    <h4 className="text-lg font-semibold text-gray-900 mb-1">Problem</h4>
+                    <p className="text-gray-600">{useCases[activeUseCase].problem}</p>
                   </div>
                 </div>
 
                 <div className="flex items-start">
-                  <div className="w-8 h-8 bg-green-500/20 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
-                    <Check className="w-4 h-4 text-green-400" />
+                  <div className="w-8 h-8 bg-green-50 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
+                    <Check className="w-4 h-4 text-green-500" />
                   </div>
                   <div>
-                    <h4 className="text-lg font-semibold text-white mb-1">Solution</h4>
-                    <p className="text-slate-400">{useCases[activeUseCase].solution}</p>
+                    <h4 className="text-lg font-semibold text-gray-900 mb-1">Solution</h4>
+                    <p className="text-gray-600">{useCases[activeUseCase].solution}</p>
                   </div>
                 </div>
               </div>
@@ -895,13 +894,13 @@ export default function LandingPage() {
       </section>
 
       {/* INTEGRATIONS */}
-      <section id="integrations" className="py-20 bg-slate-900/30">
+      <section id="integrations" className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
               Integrasi dengan Tool Favorit Anda
             </h2>
-            <p className="text-xl text-slate-400">
+            <p className="text-xl text-gray-600">
               Connect dengan berbagai platform dan sistem
             </p>
           </div>
@@ -910,12 +909,12 @@ export default function LandingPage() {
             {integrations.map((integration, idx) => (
               <div
                 key={idx}
-                className="group bg-slate-900/50 rounded-xl p-6 border border-slate-800 hover:border-cyan-500/50 transition-all text-center"
+                className="group bg-white rounded-xl p-6 border border-gray-200 hover:border-blue-500/50 hover:shadow-lg transition-all text-center"
               >
                 <div className={`w-16 h-16 ${integration.color} rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 group-hover:scale-110 transition-transform`}>
                   {integration.icon}
                 </div>
-                <div className="text-white font-medium">{integration.name}</div>
+                <div className="text-gray-900 font-medium">{integration.name}</div>
               </div>
             ))}
           </div>
@@ -926,10 +925,10 @@ export default function LandingPage() {
       <section id="pricing" className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
               Harga yang Sesuai untuk Bisnis Anda
             </h2>
-            <p className="text-xl text-slate-400">
+            <p className="text-xl text-gray-600">
               Mulai gratis, upgrade kapanpun Anda siap
             </p>
           </div>
@@ -940,25 +939,25 @@ export default function LandingPage() {
                 key={idx}
                 className={`relative rounded-2xl p-8 ${
                   plan.primary
-                    ? "bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border-2 border-cyan-500"
-                    : "bg-slate-900/50 border border-slate-800"
+                    ? "bg-gradient-to-br from-blue-500 to-blue-600 border-2 border-blue-500 shadow-xl"
+                    : "bg-white border border-gray-200 shadow-lg"
                 }`}
               >
                 {plan.primary && (
                   <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                    <span className="px-4 py-1 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full text-white text-sm font-medium">
+                    <span className="px-4 py-1 bg-white rounded-full text-blue-600 text-sm font-medium shadow-lg">
                       Popular
                     </span>
                   </div>
                 )}
 
                 <div className="text-center mb-8">
-                  <h3 className="text-xl font-bold text-white mb-2">{plan.name}</h3>
-                  <p className="text-slate-400 text-sm mb-4">{plan.description}</p>
+                  <h3 className={`text-xl font-bold mb-2 ${plan.primary ? "text-white" : "text-gray-900"}`}>{plan.name}</h3>
+                  <p className={`text-sm mb-4 ${plan.primary ? "text-blue-100" : "text-gray-600"}`}>{plan.description}</p>
                   <div className="flex items-center justify-center">
-                    <span className="text-4xl font-bold text-white">{plan.price}</span>
+                    <span className={`text-4xl font-bold ${plan.primary ? "text-white" : "text-gray-900"}`}>{plan.price}</span>
                     {plan.period && (
-                      <span className="text-slate-400 ml-2">{plan.period}</span>
+                      <span className={plan.primary ? "text-blue-100 ml-2" : "text-gray-600 ml-2"}>{plan.period}</span>
                     )}
                   </div>
                 </div>
@@ -966,8 +965,8 @@ export default function LandingPage() {
                 <ul className="space-y-4 mb-8">
                   {plan.features.map((feature, i) => (
                     <li key={i} className="flex items-start">
-                      <Check className="w-5 h-5 text-cyan-400 mr-3 flex-shrink-0 mt-0.5" />
-                      <span className="text-slate-300">{feature}</span>
+                      <Check className={`w-5 h-5 mr-3 flex-shrink-0 mt-0.5 ${plan.primary ? "text-white" : "text-blue-500"}`} />
+                      <span className={plan.primary ? "text-white" : "text-gray-700"}>{feature}</span>
                     </li>
                   ))}
                 </ul>
@@ -976,8 +975,8 @@ export default function LandingPage() {
                   onClick={() => setLocation("/login")}
                   className={`w-full py-3 rounded-xl font-medium transition-all ${
                     plan.primary
-                      ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:from-cyan-600 hover:to-blue-700 shadow-lg shadow-cyan-500/30"
-                      : "bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700"
+                      ? "bg-white text-blue-600 hover:bg-gray-50"
+                      : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-300"
                   }`}
                 >
                   {plan.cta}
@@ -989,7 +988,7 @@ export default function LandingPage() {
           <div className="mt-12 text-center">
             <button
               onClick={() => scrollToSection("contact")}
-              className="text-cyan-400 hover:text-cyan-300 font-medium inline-flex items-center"
+              className="text-blue-600 hover:text-blue-700 font-medium inline-flex items-center"
             >
               Lihat Detail Harga
               <ArrowRight className="ml-2 w-4 h-4" />
@@ -999,13 +998,13 @@ export default function LandingPage() {
       </section>
 
       {/* FAQ */}
-      <section className="py-20 bg-slate-900/30">
+      <section className="py-20 bg-gray-50">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
               Frequently Asked Questions
             </h2>
-            <p className="text-xl text-slate-400">
+            <p className="text-xl text-gray-600">
               Pertanyaan yang sering ditanyakan
             </p>
           </div>
@@ -1014,22 +1013,22 @@ export default function LandingPage() {
             {faqs.map((faq, idx) => (
               <div
                 key={idx}
-                className="bg-slate-900/50 rounded-xl border border-slate-800 overflow-hidden"
+                className="bg-white rounded-xl border border-gray-200 overflow-hidden"
               >
                 <button
                   onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
                   className="w-full px-6 py-4 flex items-center justify-between text-left"
                 >
-                  <span className="text-lg font-medium text-white">{faq.question}</span>
+                  <span className="text-lg font-medium text-gray-900">{faq.question}</span>
                   {openFaq === idx ? (
-                    <ChevronUp className="w-5 h-5 text-slate-400 flex-shrink-0 ml-4" />
+                    <ChevronUp className="w-5 h-5 text-gray-500 flex-shrink-0 ml-4" />
                   ) : (
-                    <ChevronDown className="w-5 h-5 text-slate-400 flex-shrink-0 ml-4" />
+                    <ChevronDown className="w-5 h-5 text-gray-500 flex-shrink-0 ml-4" />
                   )}
                 </button>
                 {openFaq === idx && (
                   <div className="px-6 pb-4">
-                    <p className="text-slate-400">{faq.answer}</p>
+                    <p className="text-gray-600">{faq.answer}</p>
                   </div>
                 )}
               </div>
@@ -1039,25 +1038,25 @@ export default function LandingPage() {
       </section>
 
       {/* CLOSING CTA */}
-      <section className="py-20">
+      <section className="py-20 bg-gradient-to-br from-blue-50 to-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
             Mulai pasang AI Agent untuk bisnis Anda hari ini
           </h2>
-          <p className="text-xl text-slate-400 mb-8">
+          <p className="text-xl text-gray-600 mb-8">
             Tanpa kartu kredit • Setup dalam 5 menit • Support Bahasa Indonesia
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <button
               onClick={() => setLocation("/login")}
-              className="px-8 py-4 text-lg font-semibold text-white bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl hover:from-cyan-600 hover:to-blue-700 transition-all shadow-xl shadow-cyan-500/30"
+              className="px-8 py-4 text-lg font-semibold text-white bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all shadow-xl shadow-blue-500/30"
             >
               Mulai Gratis
             </button>
             <button
               onClick={() => setLocation("/login")}
-              className="px-8 py-4 text-lg font-semibold text-slate-300 border-2 border-slate-600 rounded-xl hover:bg-slate-800 transition-colors"
+              className="px-8 py-4 text-lg font-semibold text-gray-700 border-2 border-gray-300 rounded-xl hover:bg-gray-50 transition-colors"
             >
               Minta Demo
             </button>
@@ -1066,18 +1065,18 @@ export default function LandingPage() {
       </section>
 
       {/* FOOTER */}
-      <footer className="py-12 bg-slate-900/50 border-t border-slate-800">
+      <footer className="py-12 bg-gray-900 border-t border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
             {/* Brand */}
             <div className="col-span-2">
               <div className="flex items-center mb-4">
-                <div className="w-8 h-8 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-lg flex items-center justify-center">
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
                   <Bot className="w-5 h-5 text-white" />
                 </div>
                 <span className="ml-2 text-xl font-bold text-white">Maldevta</span>
               </div>
-              <p className="text-slate-400 text-sm mb-4">
+              <p className="text-gray-400 text-sm mb-4">
                 Platform no-code untuk membuat AI agent yang bisa di-embed ke website dan WhatsApp.
               </p>
             </div>
@@ -1086,10 +1085,10 @@ export default function LandingPage() {
             <div>
               <h4 className="text-white font-semibold mb-4">Produk</h4>
               <ul className="space-y-2">
-                <li><a href="#features" className="text-slate-400 hover:text-white text-sm">Fitur</a></li>
-                <li><a href="#pricing" className="text-slate-400 hover:text-white text-sm">Harga</a></li>
-                <li><a href="#integrations" className="text-slate-400 hover:text-white text-sm">Integrasi</a></li>
-                <li><a href="#" className="text-slate-400 hover:text-white text-sm">Extension</a></li>
+                <li><a href="#features" className="text-gray-400 hover:text-white text-sm">Fitur</a></li>
+                <li><a href="#pricing" className="text-gray-400 hover:text-white text-sm">Harga</a></li>
+                <li><a href="#integrations" className="text-gray-400 hover:text-white text-sm">Integrasi</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-white text-sm">Extension</a></li>
               </ul>
             </div>
 
@@ -1097,10 +1096,10 @@ export default function LandingPage() {
             <div>
               <h4 className="text-white font-semibold mb-4">Solusi</h4>
               <ul className="space-y-2">
-                <li><a href="#usecases" className="text-slate-400 hover:text-white text-sm">Customer Support</a></li>
-                <li><a href="#usecases" className="text-slate-400 hover:text-white text-sm">Sales</a></li>
-                <li><a href="#usecases" className="text-slate-400 hover:text-white text-sm">Booking</a></li>
-                <li><a href="#usecases" className="text-slate-400 hover:text-white text-sm">E-commerce</a></li>
+                <li><a href="#usecases" className="text-gray-400 hover:text-white text-sm">Customer Support</a></li>
+                <li><a href="#usecases" className="text-gray-400 hover:text-white text-sm">Sales</a></li>
+                <li><a href="#usecases" className="text-gray-400 hover:text-white text-sm">Booking</a></li>
+                <li><a href="#usecases" className="text-gray-400 hover:text-white text-sm">E-commerce</a></li>
               </ul>
             </div>
 
@@ -1108,21 +1107,21 @@ export default function LandingPage() {
             <div>
               <h4 className="text-white font-semibold mb-4">Perusahaan</h4>
               <ul className="space-y-2">
-                <li><a href="#" className="text-slate-400 hover:text-white text-sm">Tentang</a></li>
-                <li><a href="#" className="text-slate-400 hover:text-white text-sm">Blog</a></li>
-                <li><a href="#" className="text-slate-400 hover:text-white text-sm">Karir</a></li>
-                <li><a href="#" className="text-slate-400 hover:text-white text-sm">Kontak</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-white text-sm">Tentang</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-white text-sm">Blog</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-white text-sm">Karir</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-white text-sm">Kontak</a></li>
               </ul>
             </div>
           </div>
 
-          <div className="mt-12 pt-8 border-t border-slate-800 flex flex-col md:flex-row items-center justify-between">
-            <p className="text-slate-400 text-sm">
+          <div className="mt-12 pt-8 border-t border-gray-800 flex flex-col md:flex-row items-center justify-between">
+            <p className="text-gray-400 text-sm">
               © 2025 Maldevta. All rights reserved.
             </p>
             <div className="flex space-x-6 mt-4 md:mt-0">
-              <a href="#" className="text-slate-400 hover:text-white text-sm">Privacy</a>
-              <a href="#" className="text-slate-400 hover:text-white text-sm">Terms</a>
+              <a href="#" className="text-gray-400 hover:text-white text-sm">Privacy</a>
+              <a href="#" className="text-gray-400 hover:text-white text-sm">Terms</a>
             </div>
           </div>
         </div>
