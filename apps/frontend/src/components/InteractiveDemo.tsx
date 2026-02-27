@@ -11,6 +11,8 @@ import {
   MessageCircle,
   Loader2,
 } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 // Demo scenarios with context and questions
 const demoScenarios = {
@@ -459,7 +461,9 @@ export function InteractiveDemo({ type = "full", activeScenario: propActiveScena
                   ? "bg-white text-gray-800 rounded-tl-none border border-gray-200"
                   : "bg-white text-gray-800 rounded-tl-none shadow-sm"
               }`}>
-                <div className="whitespace-pre-line">{msg.content}</div>
+                <div className="prose prose-sm max-w-none dark:prose-invert">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                </div>
               </div>
             </div>
           </div>

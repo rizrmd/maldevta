@@ -8,6 +8,8 @@ import {
 } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Building2, AlertCircle, Send, LogOut, MessageSquare } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 // Types
 type ApiError = {
@@ -330,7 +332,9 @@ export default function SubClientChatPage() {
                       : "bg-white text-slate-900 border border-slate-200 rounded-bl-sm"
                   }`}
                 >
-                  <p className="whitespace-pre-wrap break-words text-sm">{msg.content}</p>
+                  <div className="prose prose-sm max-w-none dark:prose-invert">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                  </div>
                 </div>
               </div>
             ))

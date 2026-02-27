@@ -48,6 +48,8 @@ import {
 import { useChatStore, useFileStore, useUIStore, useProjectStore } from "@/stores";
 import type { Message, Conversation } from "@/stores/chatStore";
 import { clsx } from "clsx";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 function ChatMessage({ message, isGenerating }: { message: Message; isGenerating?: boolean }) {
   const { rateMessage } = useChatStore();
@@ -134,8 +136,8 @@ function ChatMessage({ message, isGenerating }: { message: Message; isGenerating
           </div>
         )}
 
-        <div className="prose prose-sm max-w-none">
-          <p className="whitespace-pre-wrap break-words">{messageContent}</p>
+        <div className="prose prose-sm max-w-none dark:prose-invert">
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{messageContent}</ReactMarkdown>
         </div>
 
         {isGenerating && !isUser && (

@@ -167,7 +167,7 @@ func newChatModel(ctx context.Context, cfg *ModelConfig) (*openai.ChatModel, err
 
 	// Create model with optimized parameters for complete responses
 	// Increased max_tokens to ensure long responses are not truncated
-	maxTokens := 2000 // Increased to 2000 for complete, detailed responses
+	maxTokens := 4096 // Increased to 4096 to prevent responses from being cut off
 	temperature := float32(0.7)
 
 	fmt.Printf("[LLM] Creating new ChatModel: model=%s, baseURL=%s, maxTokens=%d, temperature=%.1f\n",
@@ -178,7 +178,7 @@ func newChatModel(ctx context.Context, cfg *ModelConfig) (*openai.ChatModel, err
 		Model:   cfg.Model,
 		BaseURL: cfg.BaseURL,
 		// Configuration for complete responses:
-		// - Max tokens at 2000 to handle long lists, detailed explanations
+		// - Max tokens at 4096 to handle long lists, detailed explanations without truncation
 		// - Temperature 0.7 for balanced creativity
 		MaxTokens:   &maxTokens,
 		Temperature: &temperature,
