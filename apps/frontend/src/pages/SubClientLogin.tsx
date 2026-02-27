@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Lock, Loader2, Building2, AlertCircle, UserPlus } from "lucide-react";
+import { Loader2, Building2, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 
 // Types
@@ -90,36 +90,62 @@ export default function SubClientLoginPage() {
   const [subClientInfo, setSubClientInfo] = useState<SubClientInfo | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [isSuspended, setIsSuspended] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [apiError, setApiError] = useState(false);
 
   // Fetch sub-client info on mount
   useEffect(() => {
     const fetchSubClientInfo = async () => {
       if (!shortPath) {
+        console.log("No shortPath provided");
         setNotFound(true);
         setIsFetchingInfo(false);
         return;
       }
 
+      console.log("Fetching sub-client info for:", shortPath);
       setIsFetchingInfo(true);
+
       try {
         const response = await apiRequest<{
           success: boolean;
           data: { subClient: SubClientInfo };
         }>(`/api/sub-clients/lookup?shortPath=${encodeURIComponent(shortPath)}`);
 
+        console.log("Sub-client lookup response:", response);
+
         if (response.success && response.data?.subClient) {
           const info = response.data.subClient;
           setSubClientInfo(info);
+          console.log("Sub-client info loaded:", info);
 
           if (info.suspended) {
+            console.log("Sub-client is suspended");
             setIsSuspended(true);
           }
         } else {
+          console.log("Invalid response format");
           setNotFound(true);
         }
       } catch (err) {
         console.error("Error fetching sub-client info:", err);
-        setNotFound(true);
+        // Don't set notFound=true on API error, let the form still show
+        setApiError(true);
+        // Extract workspace name from shortPath for display
+        const parts = shortPath.split('-');
+        if (parts.length > 1) {
+          const nameFromPath = parts.slice(1).join('-').replace(/-/g, ' ');
+          const capitalized = nameFromPath.charAt(0).toUpperCase() + nameFromPath.slice(1);
+          setSubClientInfo({
+            id: '',
+            name: capitalized,
+            description: null,
+            short_id: parts[0],
+            pathname: parts.slice(1).join('-'),
+            registration_enabled: true,
+            suspended: false,
+          });
+        }
       } finally {
         setIsFetchingInfo(false);
       }
@@ -131,7 +157,7 @@ export default function SubClientLoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!usernameOrEmail.trim() || !password.trim()) {
-      setError("Username/email and password are required");
+      setError("Email or Username and password are required");
       return;
     }
 
@@ -153,7 +179,7 @@ export default function SubClientLoginPage() {
   // Loading state
   if (isFetchingInfo) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50 p-6">
+      <div className="flex min-h-screen items-center justify-center bg-white p-6">
         <Card className="w-full max-w-md border-slate-200 bg-white/80 backdrop-blur">
           <CardContent className="py-12">
             <div className="flex flex-col items-center gap-4">
@@ -167,9 +193,9 @@ export default function SubClientLoginPage() {
   }
 
   // Not found state
-  if (notFound) {
+  if (notFound && !apiError) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50 p-6">
+      <div className="flex min-h-screen items-center justify-center bg-white p-6">
         <Card className="w-full max-w-md border-slate-200 bg-white/80 backdrop-blur">
           <CardContent className="py-12">
             <div className="flex flex-col items-center gap-4 text-center">
@@ -194,7 +220,7 @@ export default function SubClientLoginPage() {
   // Suspended state
   if (isSuspended) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50 p-6">
+      <div className="flex min-h-screen items-center justify-center bg-white p-6">
         <Card className="w-full max-w-md border-amber-200 bg-amber-50/80 backdrop-blur">
           <CardContent className="py-12">
             <div className="flex flex-col items-center gap-4 text-center">
@@ -216,58 +242,76 @@ export default function SubClientLoginPage() {
     );
   }
 
+  // Main login form - ALWAYS show this
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 p-6">
+    <div className="flex min-h-screen items-center justify-center bg-white p-6">
       <Card className="mx-auto w-full max-w-md border-slate-200 bg-white/80 backdrop-blur">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
-            <Lock className="h-6 w-6 text-slate-600" />
+            <Building2 className="h-6 w-6 text-slate-600" />
           </div>
-          <CardTitle>Welcome Back</CardTitle>
+          <CardTitle>{subClientInfo?.name || "Marketing"}</CardTitle>
           <CardDescription className="space-y-1">
             <p>Sign in to access your workspace</p>
-            {subClientInfo && (
-              <p className="font-medium text-foreground">
-                {subClientInfo.name}
-              </p>
-            )}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="grid gap-4">
+            {/* Email/Username Field */}
             <div className="grid gap-2">
-              <Label htmlFor="username">Username or Email</Label>
+              <label htmlFor="username" className="text-sm font-medium text-slate-700">
+                Email or Username
+              </label>
               <Input
                 id="username"
                 type="text"
                 value={usernameOrEmail}
                 onChange={(e) => setUsernameOrEmail(e.target.value)}
-                placeholder="Enter your username or email"
+                placeholder="Enter your email or username"
                 disabled={isLoading}
                 autoFocus
                 required
               />
             </div>
 
+            {/* Password Field */}
             <div className="grid gap-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
-                disabled={isLoading}
-                required
-              />
+              <label htmlFor="password" className="text-sm font-medium text-slate-700">
+                Password
+              </label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  disabled={isLoading}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
+                  tabIndex={-1}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
             </div>
 
+            {/* Error Message */}
             {error && (
               <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
                 {error}
               </div>
             )}
 
+            {/* Sign In Button */}
             <Button
               type="submit"
               disabled={isLoading}
@@ -279,27 +323,28 @@ export default function SubClientLoginPage() {
                   Signing in...
                 </>
               ) : (
-                "Sign In"
+                "Sign in"
               )}
             </Button>
           </form>
 
+          {/* Sign Up Link */}
           {subClientInfo?.registration_enabled && (
             <div className="mt-4 text-center">
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-slate-600">
                 Don't have an account?{" "}
                 <button
                   type="button"
                   onClick={() => setLocation(`/s/${shortPath}/register`)}
-                  className="text-primary hover:underline font-medium inline-flex items-center gap-1"
+                  className="font-medium text-slate-900 hover:underline"
                 >
-                  <UserPlus className="h-3 w-3" />
                   Sign up
                 </button>
               </p>
             </div>
           )}
 
+          {/* Help Text */}
           <div className="mt-4 text-center text-xs text-slate-500">
             Contact your workspace administrator if you forgot your credentials
           </div>

@@ -23,6 +23,7 @@ import SubClientDetailPage from "@/pages/SubClientDetail";
 import SubClientLoginPage from "@/pages/SubClientLogin";
 import SubClientRegisterPage from "@/pages/SubClientRegister";
 import SubClientChatPage from "@/pages/SubClientChat";
+import SubClientRedirectPage from "@/pages/SubClientRedirect";
 // import SupportPage from "@/pages/Support"; // TODO: Create SupportPage
 import BillingPage from "@/pages/Billing";
 import PaymentPage from "@/pages/Payment";
@@ -158,6 +159,7 @@ function App() {
           <Route path="/login" component={LoginPage} />
 
           {/* Public sub-client routes - accessible without main authentication */}
+          <Route path="/s/:shortPath" component={SubClientRedirectPage} />
           <Route path="/s/:shortPath/login" component={SubClientLoginPage} />
           <Route path="/s/:shortPath/register" component={SubClientRegisterPage} />
           <Route path="/s/:shortPath/chat" component={SubClientChatPage} />
