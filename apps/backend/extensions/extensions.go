@@ -83,6 +83,23 @@ type DebugLogsResponse struct {
 	BackendLogs  []DebugLogEntry `json:"backend_logs"`
 }
 
+// CreateExtensionRequest contains the fields to create a new custom extension
+type CreateExtensionRequest struct {
+	ID           string   `json:"id"`
+	Name         string   `json:"name"`
+	Description  string   `json:"description"`
+	Category     string   `json:"category"`
+	Capabilities []string `json:"capabilities"`
+	Code         string   `json:"code"`
+	UI           string   `json:"ui,omitempty"`
+}
+
+// CreateExtensionResponse returns the created extension
+type CreateExtensionResponse struct {
+	Extension *ExtensionMetadata `json:"extension"`
+	Message   string             `json:"message"`
+}
+
 func initService() (*Service, error) {
 	// Force database initialization by calling GetDB and executing a query
 	db, err := iam.GetDB()
@@ -258,7 +275,7 @@ func (s *Service) getDefaultExtensions() *ListExtensionsResponse {
 				ID:          "pdf",
 				Name:        "PDF",
 				Description: "Extract text content from PDF documents",
-				Author:      "AIBase",
+				Author:      "Maldevta",
 				Version:     "1.0.0",
 				Category:    "Documents",
 				Enabled:     true,
@@ -272,7 +289,7 @@ func (s *Service) getDefaultExtensions() *ListExtensionsResponse {
 				ID:          "excel",
 				Name:        "Excel",
 				Description: "Extract data from Excel spreadsheets (.xlsx) with SQL support via DuckDB",
-				Author:      "AIBase",
+				Author:      "Maldevta",
 				Version:     "1.0.0",
 				Category:    "Documents",
 				Enabled:     true,
@@ -286,7 +303,7 @@ func (s *Service) getDefaultExtensions() *ListExtensionsResponse {
 				ID:          "word",
 				Name:        "Word",
 				Description: "Extract text from Word documents (.docx)",
-				Author:      "AIBase",
+				Author:      "Maldevta",
 				Version:     "1.0.0",
 				Category:    "Documents",
 				Enabled:     true,
@@ -300,10 +317,10 @@ func (s *Service) getDefaultExtensions() *ListExtensionsResponse {
 				ID:          "image",
 				Name:        "Image",
 				Description: "Analyze images using AI vision (OpenAI Vision API)",
-				Author:      "AIBase",
+				Author:      "Maldevta",
 				Version:     "1.0.0",
 				Category:    "Documents",
-				Enabled:     false,
+				Enabled:     true,
 				IsDefault:   true,
 				Capabilities: []string{"📁 Process Uploaded Files",
 					"🪝Register Event Hooks",
@@ -315,10 +332,10 @@ func (s *Service) getDefaultExtensions() *ListExtensionsResponse {
 				ID:           "powerpoint",
 				Name:         "PowerPoint",
 				Description:  "Extract text from PowerPoint presentations (.pptx, .ppt)",
-				Author:       "AIBase",
+				Author:       "Maldevta",
 				Version:      "1.0.0",
 				Category:     "Documents",
-				Enabled:      false,
+				Enabled:      true,
 				IsDefault:    true,
 				Capabilities: []string{},
 			},
@@ -327,10 +344,10 @@ func (s *Service) getDefaultExtensions() *ListExtensionsResponse {
 				ID:           "search",
 				Name:         "Search",
 				Description:  "Web and image search using Brave Search API",
-				Author:       "AIBase",
+				Author:       "Maldevta",
 				Version:      "1.0.0",
 				Category:     "Web",
-				Enabled:      false,
+				Enabled:      true,
 				IsDefault:    true,
 				Capabilities: []string{"🌐 Network Access"},
 			},
@@ -339,7 +356,7 @@ func (s *Service) getDefaultExtensions() *ListExtensionsResponse {
 				ID:          "postgresql",
 				Name:        "PostgreSQL",
 				Description: "Query PostgreSQL databases with secure credential storage",
-				Author:      "AIBase",
+				Author:      "Maldevta",
 				Version:     "1.0.0",
 				Category:    "Database",
 				Enabled:     false,
@@ -352,7 +369,7 @@ func (s *Service) getDefaultExtensions() *ListExtensionsResponse {
 				ID:           "clickhouse",
 				Name:         "ClickHouse",
 				Description:  "Query ClickHouse databases",
-				Author:       "AIBase",
+				Author:       "Maldevta",
 				Version:      "1.0.0",
 				Category:     "Database",
 				Enabled:      false,
@@ -363,7 +380,7 @@ func (s *Service) getDefaultExtensions() *ListExtensionsResponse {
 				ID:           "trino",
 				Name:         "Trino",
 				Description:  "Query Trino databases",
-				Author:       "AIBase",
+				Author:       "Maldevta",
 				Version:      "1.0.0",
 				Category:     "Database",
 				Enabled:      false,
@@ -375,10 +392,10 @@ func (s *Service) getDefaultExtensions() *ListExtensionsResponse {
 				ID:           "chart",
 				Name:         "Chart",
 				Description:  "Display interactive charts (bar, line, pie, area) using ECharts",
-				Author:       "AIBase",
+				Author:       "Maldevta",
 				Version:      "1.0.0",
 				Category:     "Visualization",
-				Enabled:      false,
+				Enabled:      true,
 				IsDefault:    true,
 				Capabilities: []string{},
 			},
@@ -386,10 +403,10 @@ func (s *Service) getDefaultExtensions() *ListExtensionsResponse {
 				ID:           "table",
 				Name:         "Table",
 				Description:  "Display tabular data with sortable columns",
-				Author:       "AIBase",
+				Author:       "Maldevta",
 				Version:      "1.0.0",
 				Category:     "Visualization",
-				Enabled:      false,
+				Enabled:      true,
 				IsDefault:    true,
 				Capabilities: []string{},
 			},
@@ -397,10 +414,10 @@ func (s *Service) getDefaultExtensions() *ListExtensionsResponse {
 				ID:           "mermaid",
 				Name:         "Mermaid",
 				Description:  "Render Mermaid diagrams (flowcharts, sequence diagrams)",
-				Author:       "AIBase",
+				Author:       "Maldevta",
 				Version:      "1.0.0",
 				Category:     "Visualization",
-				Enabled:      false,
+				Enabled:      true,
 				IsDefault:    true,
 				Capabilities: []string{},
 			},
@@ -409,10 +426,10 @@ func (s *Service) getDefaultExtensions() *ListExtensionsResponse {
 				ID:          "chat-logger",
 				Name:        "Chat Logger",
 				Description: "Log chat messages for analytics (read-only)",
-				Author:      "AIBase",
+				Author:      "Maldevta",
 				Version:     "1.0.0",
 				Category:    "Chat",
-				Enabled:     false,
+				Enabled:     true,
 				IsDefault:   true,
 				Capabilities: []string{"👁️ Read Chat Messages",
 					"🪝Register Event Hooks"},
@@ -421,7 +438,7 @@ func (s *Service) getDefaultExtensions() *ListExtensionsResponse {
 				ID:          "profanity-filter",
 				Name:        "Profanity Filter",
 				Description: "Filter inappropriate content from user messages",
-				Author:      "AIBase",
+				Author:      "Maldevta",
 				Version:     "1.0.0",
 				Category:    "Chat",
 				Enabled:     false,
@@ -434,10 +451,10 @@ func (s *Service) getDefaultExtensions() *ListExtensionsResponse {
 				ID:          "response-enhancer",
 				Name:        "Response Enhancer",
 				Description: "Add formatting and disclaimers to AI responses",
-				Author:      "AIBase",
+				Author:      "Maldevta",
 				Version:     "1.0.0",
 				Category:    "Chat",
-				Enabled:     false,
+				Enabled:     true,
 				IsDefault:   true,
 				Capabilities: []string{"👁️ Read Chat Messages",
 					"✏️ Modify Chat Messages",
@@ -448,10 +465,10 @@ func (s *Service) getDefaultExtensions() *ListExtensionsResponse {
 				ID:           "context-manager",
 				Name:         "Context Manager",
 				Description:  "Read/modify conversation context and compaction settings",
-				Author:       "AIBase",
+				Author:       "Maldevta",
 				Version:      "1.0.0",
 				Category:     "Context",
-				Enabled:      false,
+				Enabled:      true,
 				IsDefault:    true,
 				Capabilities: []string{"context", "compaction"},
 			},
@@ -460,10 +477,10 @@ func (s *Service) getDefaultExtensions() *ListExtensionsResponse {
 				ID:           "peek",
 				Name:         "Peek",
 				Description:  "Paginated view of large outputs",
-				Author:       "AIBase",
+				Author:       "Maldevta",
 				Version:      "1.0.0",
 				Category:     "Utilities",
-				Enabled:      false,
+				Enabled:      true,
 				IsDefault:    true,
 				Capabilities: []string{},
 			},
@@ -471,10 +488,10 @@ func (s *Service) getDefaultExtensions() *ListExtensionsResponse {
 				ID:           "extension-creator",
 				Name:         "Extension Creator",
 				Description:  "Create extensions via natural language",
-				Author:       "AIBase",
+				Author:       "Maldevta",
 				Version:      "1.0.0",
 				Category:     "Utilities",
-				Enabled:      false,
+				Enabled:      true,
 				IsDefault:    true,
 				Capabilities: []string{},
 			},
@@ -521,6 +538,98 @@ func (s *Service) ListCategories(ctx context.Context) (*ListCategoriesResponse, 
 	}
 
 	return &ListCategoriesResponse{Categories: categories}, nil
+}
+
+// CreateExtension creates a new custom extension for a project
+//
+//encore:api auth method=POST path=/projects/:projectId/extensions
+func (s *Service) CreateExtension(ctx context.Context, projectId string, req *CreateExtensionRequest) (*CreateExtensionResponse, error) {
+	fmt.Printf("[CreateExtension] Creating extension: projectId=%s, id=%s\n", projectId, req.ID)
+
+	if err := s.requireProjectAccess(ctx, projectId); err != nil {
+		fmt.Printf("[CreateExtension] Auth check failed: %v\n", err)
+		return nil, err
+	}
+
+	// Validate required fields
+	req.ID = strings.TrimSpace(req.ID)
+	if req.ID == "" {
+		return nil, &errs.Error{Code: errs.InvalidArgument, Message: "extension ID is required"}
+	}
+	req.Name = strings.TrimSpace(req.Name)
+	if req.Name == "" {
+		return nil, &errs.Error{Code: errs.InvalidArgument, Message: "extension name is required"}
+	}
+	req.Description = strings.TrimSpace(req.Description)
+	if req.Description == "" {
+		return nil, &errs.Error{Code: errs.InvalidArgument, Message: "extension description is required"}
+	}
+
+	db, err := s.getDB()
+	if err != nil {
+		fmt.Printf("[CreateExtension] Failed to get DB: %v\n", err)
+		return nil, err
+	}
+
+	// Check if extension already exists
+	var existingID string
+	err = db.QueryRowContext(ctx, `
+		SELECT id FROM project_extensions
+		WHERE project_id = ? AND id = ?
+	`, projectId, req.ID).Scan(&existingID)
+
+	if err == nil {
+		// Extension already exists
+		return nil, &errs.Error{Code: errs.AlreadyExists, Message: fmt.Sprintf("extension '%s' already exists", req.ID)}
+	} else if !errors.Is(err, sql.ErrNoRows) {
+		// Other database error
+		return nil, fmt.Errorf("failed to check existing extension: %w", err)
+	}
+
+	// Prepare capabilities JSON
+	capabilitiesJSON, _ := json.Marshal(req.Capabilities)
+
+	// Prepare code and UI JSON (can be null)
+	var codeJSON, uiJSON sql.NullString
+	if req.Code != "" {
+		codeJSON = sql.NullString{String: req.Code, Valid: true}
+	}
+	if req.UI != "" {
+		uiJSON = sql.NullString{String: req.UI, Valid: true}
+	}
+
+	now := time.Now().UTC().Format(time.RFC3339)
+
+	// Insert the new extension
+	_, err = db.ExecContext(ctx, `
+		INSERT INTO project_extensions
+		(id, project_id, name, description, author, version, category, enabled, is_default, capabilities, code, ui, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, req.ID, projectId, req.Name, req.Description, "Custom", "1.0.0", req.Category,
+		1, // enabled by default
+		0, // is_default = false (custom extension)
+		string(capabilitiesJSON),
+		codeJSON,
+		uiJSON,
+		now, now)
+
+	if err != nil {
+		fmt.Printf("[CreateExtension] Failed to insert extension: %v\n", err)
+		return nil, fmt.Errorf("failed to create extension: %w", err)
+	}
+
+	fmt.Printf("[CreateExtension] Extension created successfully: %s\n", req.ID)
+
+	// Get the created extension
+	ext, err := s.getExtensionByID(ctx, projectId, req.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &CreateExtensionResponse{
+		Extension: ext,
+		Message:   fmt.Sprintf("Extension '%s' created successfully", req.Name),
+	}, nil
 }
 
 // getDefaultCategories returns the default categories

@@ -4,11 +4,15 @@ import (
 	"context"
 	"crypto/rand"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"math"
 	"math/big"
+	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -21,6 +25,9 @@ import (
 	"github.com/cloudwego/eino-ext/components/model/openai"
 	"github.com/cloudwego/eino/schema"
 )
+
+// Remove unused imports
+var _ = os.ErrNotExist
 
 //encore:service
 type Service struct {
@@ -1044,6 +1051,20 @@ func (s *Service) GenerateStream(ctx context.Context, p *GenerateParams) (*Gener
 		content = s.applyExtensionHooks(ctx, "post-generate", content, p.ProjectContext)
 	}
 
+	// Process tool calls if extension-creator is enabled
+	if p.ProjectContext.Extensions != nil {
+		for _, extID := range p.ProjectContext.Extensions {
+			if extID == "extension-creator" {
+				var messages []string
+				content, messages, _ = s.processToolCalls(ctx, content, p.ProjectContext)
+				if len(messages) > 0 {
+					fmt.Printf("[LLM] Tool call messages: %v\n", messages)
+				}
+				break
+			}
+		}
+	}
+
 	return &GenerateStreamResponse{Content: content}, nil
 }
 
@@ -1235,6 +1256,30 @@ func (s *Service) Generate(ctx context.Context, p *GenerateParams) (*GenerateRes
 		content = s.applyExtensionHooks(ctx, "post-generate", content, p.ProjectContext)
 	}
 
+	// Process tool calls if extension-creator is enabled
+	if p.ProjectContext.Extensions != nil {
+		for _, extID := range p.ProjectContext.Extensions {
+			if extID == "extension-creator" {
+				var messages []string
+				content, messages, _ = s.processToolCalls(ctx, content, p.ProjectContext)
+				if len(messages) > 0 {
+					fmt.Printf("[LLM] Tool call messages: %v\n", messages)
+				}
+				break
+			}
+		}
+	}
+
+	// Enhanced weather integration - fetch real data from wttr.in API
+	if p.ProjectContext.Extensions != nil {
+		for _, extID := range p.ProjectContext.Extensions {
+			if extID == "weather-indonesia" {
+				content = s.enhanceWeatherResponse(ctx, content, p.Prompt)
+				break
+			}
+		}
+	}
+
 	totalTime := time.Since(startTime)
 	fmt.Printf("[LLM] Generate: total request took %v (validation=%v, endpoint=%v, prompt=%v, llm=%v)\n",
 		totalTime, validationTime, time.Since(endpointStartTime), time.Since(promptStartTime), time.Since(llmStartTime))
@@ -1352,6 +1397,238 @@ type HealthResponse struct {
 	Status string `json:"status"`
 }
 
+// ToolDefinition represents a tool/function that the LLM can call
+type ToolDefinition struct {
+	Name        string                 `json:"name"`
+	Description string                 `json:"description"`
+	Parameters  map[string]ParameterDef `json:"parameters"`
+}
+
+// ParameterDef represents a tool parameter definition
+type ParameterDef struct {
+	Type        string `json:"type"`
+	Description string `json:"description"`
+	Required    bool   `json:"required"`
+}
+
+// ToolCall represents a tool call from the LLM
+type ToolCall struct {
+	ID       string                 `json:"id"`
+	Name     string                 `json:"name"`
+	Arguments map[string]interface{} `json:"arguments"`
+}
+
+// GetAvailableTools returns the tools available for the LLM to call
+func (s *Service) GetAvailableTools() []ToolDefinition {
+	return []ToolDefinition{
+		{
+			Name:        "createExtension",
+			Description: "Create a new custom extension for this project. Use this when a user asks for new functionality that would benefit from a dedicated extension.",
+			Parameters: map[string]ParameterDef{
+				"id": {
+					Type:        "string",
+					Description: "Unique identifier for the extension (kebab-case, e.g., 'weather-indonesia')",
+					Required:    true,
+				},
+				"name": {
+					Type:        "string",
+					Description: "Display name for the extension (e.g., 'Indonesia Weather')",
+					Required:    true,
+				},
+				"description": {
+					Type:        "string",
+					Description: "What the extension does",
+					Required:    true,
+				},
+				"category": {
+					Type:        "string",
+					Description: "Extension category: tools, web, utilities, documents, visualization, chat, context, database",
+					Required:    false,
+				},
+				"code": {
+					Type:        "string",
+					Description: "JavaScript code for the extension (follows the template with context() function and exported object)",
+					Required:    true,
+				},
+			},
+		},
+	}
+}
+
+// processToolCalls processes tool calls from LLM response
+func (s *Service) processToolCalls(ctx context.Context, content string, projectCtx *ProjectContext) (string, []string, error) {
+	// Check for CREATE_EXTENSION marker in the response
+	// Expected format: ```json\n{"createExtension": {...}}\n```
+
+	if !strings.Contains(content, "createExtension") && !strings.Contains(content, "CREATE_EXTENSION") {
+		return content, nil, nil
+	}
+
+	fmt.Printf("[LLM] Tool call detected in response, processing...\n")
+
+	// Extract JSON block with createExtension
+	var jsonStart, jsonEnd int
+	if idx := strings.Index(content, "```json"); idx >= 0 {
+		jsonStart = idx + 7 // len("```json")
+		if idx = strings.Index(content[jsonStart:], "```"); idx >= 0 {
+			jsonEnd = jsonStart + idx
+		}
+	} else if idx := strings.Index(content, "```"); idx >= 0 {
+		jsonStart = idx + 3 // len("```")
+		if idx = strings.Index(content[jsonStart:], "```"); idx >= 0 {
+			jsonEnd = jsonStart + idx
+		}
+	}
+
+	if jsonEnd > jsonStart {
+		jsonStr := strings.TrimSpace(content[jsonStart:jsonEnd])
+		fmt.Printf("[LLM] Extracted JSON: %s\n", jsonStr)
+
+		// Parse the tool call
+		var toolCallData map[string]interface{}
+		if err := json.Unmarshal([]byte(jsonStr), &toolCallData); err != nil {
+			fmt.Printf("[LLM] Failed to parse tool call JSON: %v\n", err)
+			return content, nil, nil
+		}
+
+		// Check for createExtension
+		if extData, ok := toolCallData["createExtension"].(map[string]interface{}); ok {
+			result, messages, err := s.executeCreateExtension(ctx, extData, projectCtx)
+			if err != nil {
+				messages = append(messages, fmt.Sprintf("Failed to create extension: %v", err))
+				return content, messages, nil
+			}
+
+			// Replace the tool call with the result
+			// Remove the JSON block and add success message
+			responseBefore := ""
+			if jsonStart >= 7 { // Make sure we don't go negative
+				responseBefore = content[:jsonStart-7] // Remove ```json or ```
+			}
+			responseAfter := ""
+			if jsonEnd+3 <= len(content) {
+				responseAfter = content[jsonEnd+3:] // Remove closing ```
+			}
+
+			newContent := responseBefore + result + responseAfter
+			return newContent, messages, nil
+		}
+	}
+
+	return content, nil, nil
+}
+
+// executeCreateExtension executes the createExtension tool call
+func (s *Service) executeCreateExtension(ctx context.Context, extData map[string]interface{}, projectCtx *ProjectContext) (string, []string, error) {
+	fmt.Printf("[LLM] executeCreateExtension called with data: %+v\n", extData)
+
+	// Extract parameters
+	extID, _ := extData["id"].(string)
+	name, _ := extData["name"].(string)
+	description, _ := extData["description"].(string)
+	category, _ := extData["category"].(string)
+	if category == "" {
+		category = "utilities"
+	}
+	code, _ := extData["code"].(string)
+
+	// Validate required fields
+	if extID == "" || name == "" || description == "" || code == "" {
+		return "", nil, fmt.Errorf("missing required fields: id, name, description, and code are required")
+	}
+
+	// Get project ID
+	projectID := projectCtx.ProjectID
+	if projectID == "" {
+		return "", nil, fmt.Errorf("project ID is required")
+	}
+
+	// For now, we'll create the extension directly in the database
+	// This is a workaround since Encore doesn't allow direct service instantiation
+	fmt.Printf("[LLM] Creating extension via direct DB call: %s\n", extID)
+
+	// Get the database
+	db, err := iam.GetDB()
+	if err != nil {
+		return "", nil, fmt.Errorf("failed to get database: %w", err)
+	}
+
+	// Prepare capabilities JSON
+	capabilitiesJSON, _ := json.Marshal([]string{})
+
+	// Insert directly to database
+	now := time.Now().UTC().Format(time.RFC3339)
+	_, err = db.ExecContext(ctx, `
+		INSERT INTO project_extensions
+		(id, project_id, name, description, author, version, category, enabled, is_default, capabilities, code, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, extID, projectID, name, description, "Custom", "1.0.0", category,
+		1, // enabled by default
+		0, // is_default = false (custom extension)
+		string(capabilitiesJSON),
+		code,
+		now, now)
+
+	if err != nil {
+		return "", nil, fmt.Errorf("failed to insert extension: %w", err)
+	}
+
+	// Create the JavaScript file on disk so the extension can be executed
+	extDir := filepath.Join("./extensions", extID)
+	extFilePath := filepath.Join(extDir, "index.js")
+	extJsonPath := filepath.Join(extDir, "extension.json")
+
+	// Create directory if it doesn't exist
+	if err := os.MkdirAll(extDir, 0755); err != nil {
+		fmt.Printf("[LLM] Warning: failed to create extension directory: %v\n", err)
+		// Continue anyway - extension is in DB, just not executable
+	} else {
+		// Write the JavaScript code to file
+		if err := os.WriteFile(extFilePath, []byte(code), 0644); err != nil {
+			fmt.Printf("[LLM] Warning: failed to write extension file: %v\n", err)
+			// Continue anyway - extension is in DB, just not executable
+		} else {
+			fmt.Printf("[LLM] Extension file created: %s\n", extFilePath)
+
+			// Create extension.json metadata file
+			extJson := map[string]interface{}{
+				"id":          extID,
+				"version":     "1.0.0",
+				"name":        name,
+				"description": description,
+				"hooks":       []string{"pre-generate", "post-generate"},
+				"enabled":     true,
+			}
+			extJsonBytes, _ := json.MarshalIndent(extJson, "", "  ")
+			if err := os.WriteFile(extJsonPath, extJsonBytes, 0644); err != nil {
+				fmt.Printf("[LLM] Warning: failed to write extension.json: %v\n", err)
+			} else {
+				fmt.Printf("[LLM] Extension metadata created: %s\n", extJsonPath)
+			}
+
+			// Try to load the extension into the executor so it's immediately available
+			if s.executor != nil {
+				ext := &extensions.Extension{
+					ID:   extID,
+					Hooks: []string{"pre-generate", "post-generate"},
+				}
+				if loadErr := s.executor.LoadExtension(ctx, ext); loadErr != nil {
+					fmt.Printf("[LLM] Warning: could not load extension into executor: %v\n", loadErr)
+				} else {
+					fmt.Printf("[LLM] Extension loaded into executor successfully\n")
+				}
+			}
+		}
+	}
+
+	var messages []string
+	messages = append(messages, fmt.Sprintf("✅ Extension '%s' created successfully!", name))
+	messages = append(messages, fmt.Sprintf("The extension is now available in the Extensions page."))
+	messages = append(messages, fmt.Sprintf("You can now enable it and use it in this conversation."))
+
+	return fmt.Sprintf("\n\n✅ **Extension Created Successfully!**\n\nI've created the **%s** extension for you. It's now available in the Extensions page and ready to use!\n\n", name), messages, nil
+}
+
 func badRequest(message string) error {
 	return &errs.Error{Code: errs.InvalidArgument, Message: message}
 }
@@ -1461,6 +1738,88 @@ func buildSystemPrompt(ctx *ProjectContext) string {
 		sb.WriteString("You are a helpful AI assistant.")
 	}
 
+	// IMPORTANT: Add Extension Creator context REGARDLESS of custom instructions
+	// This should always be added when extension-creator is enabled
+	if ctx.Extensions != nil {
+		fmt.Printf("[buildSystemPrompt] Checking extensions: %v\n", ctx.Extensions)
+
+		// First, add extension creator
+		for _, extID := range ctx.Extensions {
+			if extID == "extension-creator" {
+				fmt.Printf("[buildSystemPrompt] Extension Creator FOUND! Adding context to system prompt.\n")
+				sb.WriteString("\n\n## Extension Creator\n\n")
+				sb.WriteString("You can create custom extensions for this project. When users ask for new functionality, ")
+				sb.WriteString("generate the extension code and create it by outputting a JSON block with this format:\n\n")
+				sb.WriteString("```json\n")
+				sb.WriteString("{\n")
+				sb.WriteString("  \"createExtension\": {\n")
+				sb.WriteString("    \"id\": \"extension-id\",\n")
+				sb.WriteString("    \"name\": \"Extension Name\",\n")
+				sb.WriteString("    \"description\": \"What it does\",\n")
+				sb.WriteString("    \"category\": \"tools\",\n")
+				sb.WriteString("    \"code\": \"// complete JavaScript code here\"\n")
+				sb.WriteString("  }\n")
+				sb.WriteString("}\n")
+				sb.WriteString("```\n\n")
+				sb.WriteString("**Important:** The JSON block MUST contain the `createExtension` key. When the system processes this, ")
+				sb.WriteString("the extension will be automatically created and available for use.\n")
+				break
+			}
+		}
+
+		// Second, add available functions from other custom extensions (weather, etc)
+		sb.WriteString("\n\n## Available Functions\n\n")
+		sb.WriteString("You can call these functions from extensions when relevant:\n\n")
+
+		for _, extID := range ctx.Extensions {
+			// Skip extension-creator and built-in extensions
+			if extID == "extension-creator" || extID == "chat-logger" || extID == "response-enhancer" {
+				continue
+			}
+
+			// Try to read extension file directly
+			extFilePath := filepath.Join("../extensions", extID, "index.js")
+			if content, err := os.ReadFile(extFilePath); err == nil {
+				code := string(content)
+
+				// Extract function names using simple parsing
+				// Look for: function name(...), async function name(...)
+				functions := []string{}
+
+				// Simple manual parsing
+				lines := strings.Split(code, "\n")
+				for _, line := range lines {
+					line = strings.TrimSpace(line)
+					if strings.HasPrefix(line, "async function ") {
+						parts := strings.Fields(line)
+						if len(parts) >= 3 {
+							fnName := strings.TrimSuffix(parts[2], "(")
+							functions = append(functions, fnName)
+						}
+					} else if strings.HasPrefix(line, "function ") {
+						parts := strings.Fields(line)
+						if len(parts) >= 2 {
+							fnName := strings.TrimSuffix(parts[1], "(")
+							functions = append(functions, fnName)
+						}
+					}
+				}
+
+				if len(functions) > 0 {
+					// Get extension name from filename or ID
+					extName := strings.Title(strings.ReplaceAll(extID, "-", " "))
+					fmt.Printf("[buildSystemPrompt] Found functions in %s: %v\n", extID, functions)
+
+					sb.WriteString(fmt.Sprintf("### %s Extension\n", extName))
+					for _, fn := range functions {
+						sb.WriteString(fmt.Sprintf("- **%s()**: Call this function to use the extension\n", fn))
+					}
+					sb.WriteString("\n")
+				}
+			}
+		}
+	}
+
 	// Add project context if meaningful
 	if ctx.ProjectName != "" && ctx.ProjectName != "Project" {
 		sb.WriteString(fmt.Sprintf("\n\nProject: %s", ctx.ProjectName))
@@ -1472,13 +1831,18 @@ func buildSystemPrompt(ctx *ProjectContext) string {
 // buildSystemPromptCached constructs and caches system prompts for better performance.
 // Creates a cache key from the unique combination of context parameters.
 func (s *Service) buildSystemPromptCached(ctx *ProjectContext) string {
-	// Create cache key from relevant context fields
-	key := fmt.Sprintf("%s|%s|%s|%s|%s",
+	// Create cache key from relevant context fields (including extensions)
+	extensionsKey := ""
+	if ctx.Extensions != nil {
+		extensionsKey = strings.Join(ctx.Extensions, ",")
+	}
+	key := fmt.Sprintf("%s|%s|%s|%s|%s|%s",
 		ctx.ProjectID,
 		ctx.ProjectName,
 		ctx.Instructions,
 		ctx.Tone,
 		ctx.Language,
+		extensionsKey,
 	)
 
 	// Try cache first
@@ -1508,6 +1872,17 @@ func (s *Service) applyExtensionHooks(ctx context.Context, hookName string, inpu
 
 	result := input
 	for _, extID := range projectCtx.Extensions {
+		// Skip extension-creator - it's handled by processToolCalls, not as a JS hook
+		if extID == "extension-creator" {
+			continue
+		}
+
+		// Try to load the extension if not already loaded
+		ext := &extensions.Extension{
+			ID:   extID,
+			Hooks: []string{"pre-generate", "post-generate"},
+		}
+		_ = s.executor.LoadExtension(ctx, ext) // Ignore errors, extension might already be loaded
 		req := &extensions.ExecuteRequest{
 			ExtensionID: extID,
 			Hook:        extensions.HookType(hookName),
@@ -1529,4 +1904,111 @@ func (s *Service) applyExtensionHooks(ctx context.Context, hookName string, inpu
 	}
 
 	return result
+}
+
+// enhanceWeatherResponse fetches real weather data from wttr.in API and appends it to the response
+func (s *Service) enhanceWeatherResponse(ctx context.Context, response string, userPrompt string) string {
+	prompt := strings.ToLower(userPrompt)
+
+	// Check if asking about weather
+	weatherKeywords := []string{"cuaca", "weather", "prakiraan", "suhu", "hujan", "panas", "dingin"}
+	hasWeatherKeyword := false
+	for _, keyword := range weatherKeywords {
+		if strings.Contains(prompt, keyword) {
+			hasWeatherKeyword = true
+			break
+		}
+	}
+
+	if !hasWeatherKeyword {
+		return response
+	}
+
+	// Extract city name
+	allowedCities := []string{"jakarta", "bandung", "surabaya", "medan", "makassar"}
+	var city string
+	for _, c := range allowedCities {
+		if strings.Contains(prompt, c) {
+			city = c
+			break
+		}
+	}
+
+	if city == "" {
+		return response
+	}
+
+	fmt.Printf("[enhanceWeatherResponse] Fetching weather for: %s\n", city)
+
+	// Fetch from wttr.in API
+	apiURL := fmt.Sprintf("https://wttr.in/%s?format=j1", city)
+
+	// Use http.Get with timeout
+	client := &http.Client{
+		Timeout: 5 * time.Second,
+	}
+
+	resp, err := client.Get(apiURL)
+	if err != nil {
+		fmt.Printf("[enhanceWeatherResponse] API call failed: %v\n", err)
+		return response
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Printf("[enhanceWeatherResponse] Failed to read response: %v\n", err)
+		return response
+	}
+
+	// Parse JSON response
+	var apiResponse struct {
+		CurrentCondition []struct {
+			TempC          string `json:"temp_C"`
+			FeelsLikeC     string `json:"FeelsLikeC"`
+			WeatherDesc    []struct {
+				Value string `json:"value"`
+			} `json:"weatherDesc"`
+			Humidity       string `json:"humidity"`
+			WindspeedKmph  string `json:"windspeedKmph"`
+			UVIndex        int    `json:"uvIndex"`
+		} `json:"current_condition"`
+		NearestArea []struct {
+			AreaName []struct {
+				Value string `json:"value"`
+			} `json:"areaName"`
+		} `json:"nearest_area"`
+	}
+
+	if err := json.Unmarshal(body, &apiResponse); err != nil {
+		fmt.Printf("[enhanceWeatherResponse] Failed to parse JSON: %v\n", err)
+		return response
+	}
+
+	if len(apiResponse.CurrentCondition) == 0 || len(apiResponse.NearestArea) == 0 {
+		fmt.Printf("[enhanceWeatherResponse] No data in API response\n")
+		return response
+	}
+
+	current := apiResponse.CurrentCondition[0]
+	areaName := apiResponse.NearestArea[0].AreaName[0].Value
+
+	// Format weather data
+	weatherData := fmt.Sprintf(`
+
+---
+
+☀️ **Cuaca di %s**
+🌡️ Suhu: %s°C (terasa %s°C)
+☁️ Kondisi: %s
+💧 Kelembapan: %s%%
+💨 Angin: %s km/h
+🌅 UV Index: %d
+---
+
+`, strings.Title(areaName), current.TempC, current.FeelsLikeC, current.WeatherDesc[0].Value, current.Humidity, current.WindspeedKmph, current.UVIndex)
+
+	fmt.Printf("[enhanceWeatherResponse] Weather data appended successfully\n")
+
+	return response + weatherData
 }

@@ -98,7 +98,8 @@ export default function ExtensionsPage() {
     setLoading(true);
     setError("");
 
-    // Default/mock data - always have this as fallback
+    // Default/mock data fallback for demo mode or API errors
+    // NOTE: Keep this in sync with backend getDefaultExtensions() in apps/backend/extensions/extensions.go
     const defaultExtensions = [
       // Documents
       {
@@ -141,7 +142,7 @@ export default function ExtensionsPage() {
         author: "Maldevta",
         version: "1.0.0",
         category: "Documents",
-        enabled: false,
+        enabled: true,
         is_default: true,
         capabilities: ["Process Uploaded Files", "Register Event Hooks", "Generate AI Titles", "Create Logger", "Network Access"],
       },
@@ -152,7 +153,7 @@ export default function ExtensionsPage() {
         author: "Maldevta",
         version: "1.0.0",
         category: "Documents",
-        enabled: false,
+        enabled: true,
         is_default: true,
         capabilities: [],
       },
@@ -164,7 +165,7 @@ export default function ExtensionsPage() {
         author: "Maldevta",
         version: "1.0.0",
         category: "Web",
-        enabled: false,
+        enabled: true,
         is_default: true,
         capabilities: ["Network Access"],
       },
@@ -210,7 +211,7 @@ export default function ExtensionsPage() {
         author: "Maldevta",
         version: "1.0.0",
         category: "Visualization",
-        enabled: false,
+        enabled: true,
         is_default: true,
         capabilities: [],
       },
@@ -221,7 +222,7 @@ export default function ExtensionsPage() {
         author: "Maldevta",
         version: "1.0.0",
         category: "Visualization",
-        enabled: false,
+        enabled: true,
         is_default: true,
         capabilities: [],
       },
@@ -232,7 +233,7 @@ export default function ExtensionsPage() {
         author: "Maldevta",
         version: "1.0.0",
         category: "Visualization",
-        enabled: false,
+        enabled: true,
         is_default: true,
         capabilities: [],
       },
@@ -244,7 +245,7 @@ export default function ExtensionsPage() {
         author: "Maldevta",
         version: "1.0.0",
         category: "Chat",
-        enabled: false,
+        enabled: true,
         is_default: true,
         capabilities: ["Read Chat Messages", "Register Event Hooks"],
       },
@@ -266,7 +267,7 @@ export default function ExtensionsPage() {
         author: "Maldevta",
         version: "1.0.0",
         category: "Chat",
-        enabled: false,
+        enabled: true,
         is_default: true,
         capabilities: ["Read Chat Messages", "Modify Chat Messages", "Register Event Hooks"],
       },
@@ -278,7 +279,7 @@ export default function ExtensionsPage() {
         author: "Maldevta",
         version: "1.0.0",
         category: "Context",
-        enabled: false,
+        enabled: true,
         is_default: true,
         capabilities: ["context", "compaction"],
       },
@@ -290,7 +291,7 @@ export default function ExtensionsPage() {
         author: "Maldevta",
         version: "1.0.0",
         category: "Utilities",
-        enabled: false,
+        enabled: true,
         is_default: true,
         capabilities: [],
       },
@@ -301,7 +302,7 @@ export default function ExtensionsPage() {
         author: "Maldevta",
         version: "1.0.0",
         category: "Utilities",
-        enabled: false,
+        enabled: true,
         is_default: true,
         capabilities: [],
       },
@@ -338,10 +339,13 @@ export default function ExtensionsPage() {
 
       if (extResponse.ok) {
         const extData = await extResponse.json();
-        if (extData.extensions && extData.extensions.length > 0) {
+        // Trust API response - backend always returns extensions (inserts defaults if empty)
+        // Only set if extensions array exists (even if empty, which shouldn't happen)
+        if (extData.extensions !== undefined) {
           setExtensions(extData.extensions);
         } else {
-          // Use default if API returns empty
+          // Fallback only if API response is malformed
+          console.warn("API response malformed, using default extensions");
           setExtensions(defaultExtensions);
         }
       } else {
@@ -810,14 +814,18 @@ export default function ExtensionsPage() {
                           <span>Maldevta</span>
                         </div>
 
-                        {/* Built-in Badge - DI BAWAH VERSI, BARIS BARU */}
-                        {ext.is_default && (
-                          <div className="mt-1.5">
+                        {/* Built-in or Custom Badge - DI BAWAH VERSI, BARIS BARU */}
+                        <div className="mt-1.5">
+                          {ext.is_default ? (
                             <span className="px-2 py-0.5 rounded border border-gray-300 text-gray-600 text-xs">
                               Built-in
                             </span>
-                          </div>
-                        )}
+                          ) : (
+                            <span className="px-2 py-0.5 rounded border border-purple-300 text-purple-600 text-xs">
+                              Custom
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
 
